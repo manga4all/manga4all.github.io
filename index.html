@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manga 4 All</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #070707;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    header {
+      position: relative;
+      height: 90vh;
+      overflow: hidden;
+    }
+
+    header img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.35);
+      transform: scale(1.05);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.9));
+    }
+
+    .header-content {
+      position: absolute;
+      top: 50%;
+      left: 8%;
+      transform: translateY(-50%);
+      max-width: 600px;
+      z-index: 2;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #ff0055;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .header-content h1 {
+      font-size: 5rem;
+      margin-bottom: 20px;
+      line-height: 1;
+    }
+
+    .header-content p {
+      font-size: 1.2rem;
+      color: #d0d0d0;
+      line-height: 1.7;
+      margin-bottom: 30px;
+    }
+
+    .main-btn {
+      display: inline-block;
+      background: #ff0055;
+      color: white;
+      text-decoration: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-weight: bold;
+      transition: 0.3s;
+      box-shadow: 0 0 20px rgba(255,0,85,0.4);
+    }
+
+    .main-btn:hover {
+      transform: translateY(-3px);
+      background: #ff2b72;
+    }
+
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 999;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 8%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      margin-left: 25px;
+      transition: 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #ff0055;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: auto;
+      padding: 80px 6%;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      margin-bottom: 40px;
+    }
+
+    .manga-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+    }
+
+    .manga-card {
+      background: #121212;
+      border-radius: 20px;
+      overflow: hidden;
+      transition: 0.3s;
+      border: 1px solid #1f1f1f;
+    }
+
+    .manga-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 0 30px rgba(255,0,85,0.15);
+    }
+
+    .manga-card img {
+      width: 100%;
+      height: 360px;
+      object-fit: cover;
+    }
+
+    .manga-info {
+      padding: 25px;
+    }
+
+    .manga-info h3 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+
+    .chapters {
+      color: #aaaaaa;
+      line-height: 2;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #ff0055;
+      color: white;
+      text-decoration: none;
+      padding: 12px 22px;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      background: #ff2b72;
+    }
+
+    footer {
+      border-top: 1px solid #1c1c1c;
+      text-align: center;
+      padding: 40px;
+      color: #777;
+    }
+
+    @media(max-width: 768px){
+      .header-content {
+        left: 6%;
+        right: 6%;
+      }
+
+      .header-content h1 {
+        font-size: 3rem;
+      }
+
+      header {
+        height: 70vh;
+      }
+
+      nav {
+        padding: 15px 6%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo">Manga 4 All</div>
+
+    <div class="nav-links">
+      <a href="#">Inicio</a>
+      <a href="#">Directorio</a>
+    </div>
+  </nav>
+
+  <header>
+    <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1974&auto=format&fit=crop" alt="Banner">
+
+    <div class="overlay"></div>
+
+    <div class="header-content">
+      <div class="tag">LECTURA ONLINE</div>
+
+      <h1>Manga<br>4 All</h1>
+
+      <p>
+        Plataforma moderna para leer mangas online en PDF.
+        Catálogo organizado y lectura rápida desde cualquier dispositivo.
+      </p>
+
+      <a class="main-btn" href="#">Comenzar lectura</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <h2 class="section-title">Destacados</h2>
+
+    <div class="manga-grid">
+
+      <div class="manga-card">
+        <img src="https://upload.wikimedia.org/wikipedia/en/6/65/NarutoCoverTankobon1.jpg" alt="Manga">
+
+        <div class="manga-info">
+          <h3>Tu Manga</h3>
+
+          <div class="chapters">
+            • Tomo 1<br>
+            • Tomo 2<br>
+            • Tomo 3
+          </div>
+
+          <a class="btn" href="#">Leer ahora</a>
+        </div>
+      </div>
+
+      <div class="manga-card">
+        <img src="https://upload.wikimedia.org/wikipedia/en/0/0b/Bleachanime.png" alt="Manga">
+
+        <div class="manga-info">
+          <h3>Próximamente</h3>
+
+          <div class="chapters">
+            • Nuevos mangas<br>
+            • Nuevos tomos<br>
+            • Más contenido
+          </div>
+
+          <a class="btn" href="#">Explorar</a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>
+    Manga 4 All © 2026
+  </footer>
+
+</body>
+</html>
