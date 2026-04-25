@@ -16,7 +16,7 @@
 
   <link
     rel="stylesheet"
-    href="css/style.css?v=4"
+    href="css/style.css?v=5"
   >
 
   <style>
@@ -27,30 +27,35 @@
 
     .reader-container{
       width:100%;
-      max-width:1400px;
+      max-width:1200px;
       margin:auto;
-      padding-top:120px;
-      padding-bottom:60px;
+      padding-top:90px;
+      padding-bottom:40px;
       padding-left:20px;
       padding-right:20px;
     }
 
     .reader-top{
+      background:#111;
+      border:1px solid #1f1f1f;
+      border-radius:16px;
+      padding:18px 25px;
+      margin-bottom:25px;
+
       display:flex;
       justify-content:space-between;
       align-items:center;
-      margin-bottom:30px;
-      flex-wrap:wrap;
       gap:20px;
+      flex-wrap:wrap;
     }
 
     .reader-title{
-      font-size:2rem;
+      font-size:1.4rem;
     }
 
     .reader-actions{
       display:flex;
-      gap:15px;
+      gap:12px;
       flex-wrap:wrap;
     }
 
@@ -58,10 +63,11 @@
       background:#ff0055;
       color:white;
       text-decoration:none;
-      padding:12px 22px;
+      padding:10px 18px;
       border-radius:10px;
       transition:0.3s;
       font-weight:bold;
+      font-size:0.95rem;
     }
 
     .reader-btn:hover{
@@ -74,6 +80,39 @@
       border:none;
       border-radius:20px;
       background:#111;
+      margin-bottom:25px;
+    }
+
+    .reader-bottom{
+      background:#111;
+      border:1px solid #1f1f1f;
+      border-radius:16px;
+      padding:18px 25px;
+
+      display:flex;
+      justify-content:center;
+      gap:15px;
+      flex-wrap:wrap;
+    }
+
+    @media(max-width:768px){
+
+      .reader-top{
+        padding:15px;
+      }
+
+      .reader-title{
+        font-size:1.2rem;
+      }
+
+      .pdf-viewer{
+        height:75vh;
+      }
+
+      .reader-bottom{
+        padding:15px;
+      }
+
     }
 
   </style>
@@ -100,6 +139,8 @@
 
   <div class="reader-container">
 
+    <!-- TOP -->
+
     <div class="reader-top">
 
       <h1
@@ -113,7 +154,7 @@
 
         <a
           class="reader-btn"
-          id="backBtn"
+          id="backBtnTop"
           href="#"
         >
           Volver
@@ -121,7 +162,7 @@
 
         <a
           class="reader-btn"
-          id="prevBtn"
+          id="prevBtnTop"
           href="#"
         >
           ← Anterior
@@ -129,7 +170,7 @@
 
         <a
           class="reader-btn"
-          id="nextBtn"
+          id="nextBtnTop"
           href="#"
         >
           Siguiente →
@@ -139,11 +180,43 @@
 
     </div>
 
+    <!-- PDF -->
+
     <iframe
       class="pdf-viewer"
       id="pdfViewer"
       src=""
     ></iframe>
+
+    <!-- BOTTOM -->
+
+    <div class="reader-bottom">
+
+      <a
+        class="reader-btn"
+        id="backBtnBottom"
+        href="#"
+      >
+        Volver
+      </a>
+
+      <a
+        class="reader-btn"
+        id="prevBtnBottom"
+        href="#"
+      >
+        ← Anterior
+      </a>
+
+      <a
+        class="reader-btn"
+        id="nextBtnBottom"
+        href="#"
+      >
+        Siguiente →
+      </a>
+
+    </div>
 
   </div>
 
@@ -157,7 +230,9 @@
       collection,
       query,
       where,
-      getDocs
+      getDocs,
+      doc,
+      getDoc
     }
     from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
@@ -178,16 +253,44 @@
     const readerTitle =
     document.getElementById("readerTitle");
 
-    const prevBtn =
-    document.getElementById("prevBtn");
+    const prevBtnTop =
+    document.getElementById("prevBtnTop");
 
-    const nextBtn =
-    document.getElementById("nextBtn");
+    const nextBtnTop =
+    document.getElementById("nextBtnTop");
 
-    const backBtn =
-    document.getElementById("backBtn");
+    const backBtnTop =
+    document.getElementById("backBtnTop");
+
+    const prevBtnBottom =
+    document.getElementById("prevBtnBottom");
+
+    const nextBtnBottom =
+    document.getElementById("nextBtnBottom");
+
+    const backBtnBottom =
+    document.getElementById("backBtnBottom");
 
     async function loadReader(){
+
+      // MANGA
+
+      const mangaRef =
+      doc(db, "mangas", mangaId);
+
+      const mangaSnap =
+      await getDoc(mangaRef);
+
+      let mangaTitle = "";
+
+      if(mangaSnap.exists()){
+
+        mangaTitle =
+        mangaSnap.data().title;
+
+      }
+
+      // TOMOS
 
       const q = query(
 
@@ -224,10 +327,10 @@
       // TITULO
 
       readerTitle.innerHTML =
-      `Tomo ${currentTomo.number}`;
+      `${mangaTitle} | Tomo ${currentTomo.number}`;
 
       document.title =
-      `Tomo ${currentTomo.number}`;
+      `${mangaTitle} | Tomo ${currentTomo.number}`;
 
       // PDF
 
@@ -236,8 +339,14 @@
 
       // VOLVER
 
-      backBtn.href =
+      const backLink =
       `manga.html?id=${mangaId}`;
+
+      backBtnTop.href =
+      backLink;
+
+      backBtnBottom.href =
+      backLink;
 
       // ANTERIOR
 
@@ -248,13 +357,22 @@
 
       if(prevTomo){
 
-        prevBtn.href =
+        const prevLink =
         `reader.html?manga=${mangaId}&number=${prevTomo.number}`;
+
+        prevBtnTop.href =
+        prevLink;
+
+        prevBtnBottom.href =
+        prevLink;
 
       }
       else{
 
-        prevBtn.style.display =
+        prevBtnTop.style.display =
+        "none";
+
+        prevBtnBottom.style.display =
         "none";
 
       }
@@ -268,13 +386,22 @@
 
       if(nextTomo){
 
-        nextBtn.href =
+        const nextLink =
         `reader.html?manga=${mangaId}&number=${nextTomo.number}`;
+
+        nextBtnTop.href =
+        nextLink;
+
+        nextBtnBottom.href =
+        nextLink;
 
       }
       else{
 
-        nextBtn.style.display =
+        nextBtnTop.style.display =
+        "none";
+
+        nextBtnBottom.style.display =
         "none";
 
       }
