@@ -247,4 +247,68 @@ footer{
   .section-title{
     font-size:2rem;
   }
+  
+}
+.manga-page{
+  display:flex;
+  gap:50px;
+  margin-top:120px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+
+.manga-cover-side{
+  width:300px;
+}
+
+.manga-cover-side img{
+  width:100%;
+  border-radius:20px;
+  box-shadow:0 0 20px rgba(0,0,0,0.5);
+}
+
+.manga-content-side{
+  flex:1;
+}
+
+.manga-content-side h1{
+  font-size:3rem;
+  margin-bottom:20px;
+}
+
+.manga-content-side p{
+  color:#bbb;
+  line-height:1.8;
+  margin-bottom:40px;
+}
+
+.chapters-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:25px;
+}
+
+.chapter-card{
+  background:#111;
+  border-radius:15px;
+  overflow:hidden;
+  text-decoration:none;
+  color:white;
+  transition:0.3s;
+  border:1px solid #1f1f1f;
+}
+
+.chapter-card:hover{
+  transform:translateY(-5px);
+}
+
+.chapter-card img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+}
+
+.chapter-info{
+  padding:15px;
+  text-align:center;
 }
