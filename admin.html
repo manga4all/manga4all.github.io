@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Admin Upload</title>
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial,sans-serif;
+    }
+
+    body{
+      background:#070707;
+      color:white;
+      padding:40px;
+    }
+
+    h1{
+      margin-bottom:30px;
+      font-size:2rem;
+    }
+
+    .form-container{
+      max-width:700px;
+      margin:auto;
+      background:#111;
+      padding:30px;
+      border-radius:20px;
+      border:1px solid #1f1f1f;
+    }
+
+    .input-group{
+      margin-bottom:20px;
+    }
+
+    label{
+      display:block;
+      margin-bottom:10px;
+      color:#bbb;
+    }
+
+    input{
+      width:100%;
+      padding:15px;
+      border:none;
+      border-radius:10px;
+      background:#1a1a1a;
+      color:white;
+      font-size:16px;
+    }
+
+    button{
+      width:100%;
+      padding:15px;
+      border:none;
+      border-radius:10px;
+      background:#ff0055;
+      color:white;
+      font-size:16px;
+      cursor:pointer;
+      transition:0.3s;
+      font-weight:bold;
+    }
+
+    button:hover{
+      background:#ff2b72;
+    }
+
+    .result{
+      margin-top:20px;
+      text-align:center;
+      color:#00ff88;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="form-container">
+
+    <h1>
+      Subir Tomo
+    </h1>
+
+    <div class="input-group">
+
+      <label>
+        ID del Manga
+      </label>
+
+      <input
+        type="text"
+        id="mangaId"
+        placeholder="MT1L5qCUnia0xFNv5Ldy"
+      >
+
+    </div>
+
+    <div class="input-group">
+
+      <label>
+        Número del Tomo
+      </label>
+
+      <input
+        type="number"
+        id="number"
+        placeholder="1"
+      >
+
+    </div>
+
+    <div class="input-group">
+
+      <label>
+        Link portada Drive
+      </label>
+
+      <input
+        type="text"
+        id="cover"
+        placeholder="https://drive.google.com/file/d/XXXXX/view"
+      >
+
+    </div>
+
+    <div class="input-group">
+
+      <label>
+        Link PDF Drive
+      </label>
+
+      <input
+        type="text"
+        id="pdf"
+        placeholder="https://drive.google.com/file/d/XXXXX/view"
+      >
+
+    </div>
+
+    <button id="uploadBtn">
+
+      Subir Tomo
+
+    </button>
+
+    <div
+      class="result"
+      id="result"
+    ></div>
+
+  </div>
+
+  <script type="module">
+
+    import { initializeApp }
+    from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      Timestamp
+    }
+    from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+
+      apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
+      authDomain: "manga4all-f520f.firebaseapp.com",
+      projectId: "manga4all-f520f",
+      storageBucket: "manga4all-f520f.firebasestorage.app",
+      messagingSenderId: "372561836700",
+      appId: "1:372561836700:web:cbb295bda656abd2ea0b59"
+
+    };
+
+    const app = initializeApp(firebaseConfig);
+
+    const db = getFirestore(app);
+
+    const uploadBtn =
+    document.getElementById("uploadBtn");
+
+    const result =
+    document.getElementById("result");
+
+    function extractDriveId(url){
+
+      const match =
+      url.match(/\/d\/(.*?)\//);
+
+      return match ? match[1] : null;
+    }
+
+    uploadBtn.addEventListener("click", async () => {
+
+      try{
+
+        const mangaId =
+        document.getElementById("mangaId").value;
+
+        const number =
+        parseInt(
+          document.getElementById("number").value
+        );
+
+        const coverUrl =
+        document.getElementById("cover").value;
+
+        const pdfUrl =
+        document.getElementById("pdf").value;
+
+        const coverId =
+        extractDriveId(coverUrl);
+
+        const pdfId =
+        extractDriveId(pdfUrl);
+
+        const finalCover =
+
+        `https://drive.google.com/thumbnail?id=${coverId}&sz=w1000`;
+
+        const finalPdf =
+
+        `https://drive.google.com/file/d/${pdfId}/preview`;
+
+        await addDoc(
+          collection(db, "tomos"),
+          {
+
+            mangaId,
+
+            number,
+
+            cover: finalCover,
+
+            pdf: finalPdf,
+
+            createdAt: Timestamp.now()
+
+          }
+        );
+
+        result.innerHTML =
+        "Tomo subido correctamente 😄🔥";
+
+      }
+      catch(error){
+
+        console.error(error);
+
+        result.innerHTML =
+        "Error al subir tomo";
+
+      }
+
+    });
+
+  </script>
+
+</body>
+
+</html>
