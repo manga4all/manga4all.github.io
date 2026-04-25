@@ -1,4 +1,3 @@
-// scripts
 import {
   db,
   collection,
@@ -8,6 +7,8 @@ import {
 const mangaGrid = document.querySelector(".manga-grid");
 
 async function loadMangas(){
+
+  mangaGrid.innerHTML = "";
 
   const querySnapshot = await getDocs(
     collection(db, "mangas")
@@ -21,25 +22,17 @@ async function loadMangas(){
 
       <div class="manga-card">
 
-        <div class="manga-card">
+        <div class="cover-container">
 
-  <div class="cover-container">
-    <img class="cover" src="${manga.cover}" alt="${manga.title}">
-  </div>
+          <img
+            class="cover"
+            src="${manga.cover}"
+            alt="${manga.title}"
+          >
 
-  <div class="manga-info">
+        </div>
 
-    <h3>${manga.title}</h3>
-
-    <p>${manga.description}</p>
-
-    <a class="btn" href="#">
-      Leer
-    </a>
-
-  </div>
-
-</div>
+        <div class="manga-info">
 
           <h3>${manga.title}</h3>
 
