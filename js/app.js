@@ -21,9 +21,25 @@ async function loadMangas(){
 
       <div class="manga-card">
 
-        <img src="${manga.cover}" alt="${manga.title}">
+        <div class="manga-card">
 
-        <div class="manga-info">
+  <div class="cover-container">
+    <img class="cover" src="${manga.cover}" alt="${manga.title}">
+  </div>
+
+  <div class="manga-info">
+
+    <h3>${manga.title}</h3>
+
+    <p>${manga.description}</p>
+
+    <a class="btn" href="#">
+      Leer
+    </a>
+
+  </div>
+
+</div>
 
           <h3>${manga.title}</h3>
 
