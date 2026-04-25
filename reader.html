@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>
+    Lector
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="css/style.css?v=4"
+  >
+
+  <style>
+
+    body{
+      background:#050505;
+    }
+
+    .reader-container{
+      width:100%;
+      max-width:1400px;
+      margin:auto;
+      padding-top:120px;
+      padding-bottom:60px;
+      padding-left:20px;
+      padding-right:20px;
+    }
+
+    .reader-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:30px;
+      flex-wrap:wrap;
+      gap:20px;
+    }
+
+    .reader-title{
+      font-size:2rem;
+    }
+
+    .reader-actions{
+      display:flex;
+      gap:15px;
+      flex-wrap:wrap;
+    }
+
+    .reader-btn{
+      background:#ff0055;
+      color:white;
+      text-decoration:none;
+      padding:12px 22px;
+      border-radius:10px;
+      transition:0.3s;
+      font-weight:bold;
+    }
+
+    .reader-btn:hover{
+      background:#ff2b72;
+    }
+
+    .pdf-viewer{
+      width:100%;
+      height:85vh;
+      border:none;
+      border-radius:20px;
+      background:#111;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <nav>
+
+    <div class="logo">
+      Manga 4 All
+    </div>
+
+    <div class="nav-links">
+
+      <a href="index.html">
+        Inicio
+      </a>
+
+    </div>
+
+  </nav>
+
+  <div class="reader-container">
+
+    <div class="reader-top">
+
+      <h1
+        class="reader-title"
+        id="readerTitle"
+      >
+        Cargando...
+      </h1>
+
+      <div class="reader-actions">
+
+        <a
+          class="reader-btn"
+          id="backBtn"
+          href="#"
+        >
+          Volver
+        </a>
+
+        <a
+          class="reader-btn"
+          id="prevBtn"
+          href="#"
+        >
+          ← Anterior
+        </a>
+
+        <a
+          class="reader-btn"
+          id="nextBtn"
+          href="#"
+        >
+          Siguiente →
+        </a>
+
+      </div>
+
+    </div>
+
+    <iframe
+      class="pdf-viewer"
+      id="pdfViewer"
+      src=""
+    ></iframe>
+
+  </div>
+
+  <script type="module">
+
+    import {
+      db
+    } from "./js/firebase.js";
+
+    import {
+      collection,
+      query,
+      where,
+      getDocs
+    }
+    from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const params =
+    new URLSearchParams(window.location.search);
+
+    const mangaId =
+    params.get("manga");
+
+    const currentNumber =
+    parseInt(
+      params.get("number")
+    );
+
+    const pdfViewer =
+    document.getElementById("pdfViewer");
+
+    const readerTitle =
+    document.getElementById("readerTitle");
+
+    const prevBtn =
+    document.getElementById("prevBtn");
+
+    const nextBtn =
+    document.getElementById("nextBtn");
+
+    const backBtn =
+    document.getElementById("backBtn");
+
+    async function loadReader(){
+
+      const q = query(
+
+        collection(db, "tomos"),
+
+        where("mangaId", "==", mangaId)
+
+      );
+
+      const querySnapshot =
+      await getDocs(q);
+
+      let tomos = [];
+
+      querySnapshot.forEach((doc) => {
+
+        tomos.push(doc.data());
+
+      });
+
+      tomos.sort(
+        (a,b) => a.number - b.number
+      );
+
+      const currentTomo =
+      tomos.find(
+        t => t.number === currentNumber
+      );
+
+      if(!currentTomo){
+        return;
+      }
+
+      // TITULO
+
+      readerTitle.innerHTML =
+      `Tomo ${currentTomo.number}`;
+
+      document.title =
+      `Tomo ${currentTomo.number}`;
+
+      // PDF
+
+      pdfViewer.src =
+      currentTomo.pdf;
+
+      // VOLVER
+
+      backBtn.href =
+      `manga.html?id=${mangaId}`;
+
+      // ANTERIOR
+
+      const prevTomo =
+      tomos.find(
+        t => t.number === currentNumber - 1
+      );
+
+      if(prevTomo){
+
+        prevBtn.href =
+        `reader.html?manga=${mangaId}&number=${prevTomo.number}`;
+
+      }
+      else{
+
+        prevBtn.style.display =
+        "none";
+
+      }
+
+      // SIGUIENTE
+
+      const nextTomo =
+      tomos.find(
+        t => t.number === currentNumber + 1
+      );
+
+      if(nextTomo){
+
+        nextBtn.href =
+        `reader.html?manga=${mangaId}&number=${nextTomo.number}`;
+
+      }
+      else{
+
+        nextBtn.style.display =
+        "none";
+
+      }
+
+    }
+
+    loadReader();
+
+  </script>
+
+</body>
+
+</html>
