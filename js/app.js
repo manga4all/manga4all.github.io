@@ -38,7 +38,10 @@ async function loadMangas(){
 
           <p>${manga.description}</p>
 
-          <a class="btn" href="#">
+          <a
+            class="btn"
+            href="manga.html?id=${doc.id}"
+          >
             Leer
           </a>
 
