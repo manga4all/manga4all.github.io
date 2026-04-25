@@ -5,11 +5,17 @@
 
   <meta charset="UTF-8">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+  content="width=device-width, initial-scale=1.0">
 
-  <title>Manga</title>
+  <title id="pageTitle">
+    Cargando...
+  </title>
 
-  <link rel="stylesheet" href="css/style.css?v=2">
+  <link
+    rel="stylesheet"
+    href="css/style.css?v=3"
+  >
 
 </head>
 
@@ -65,7 +71,128 @@
 
   </section>
 
-  <script type="module" src="js/manga.js"></script>
+  <script type="module">
+
+    import {
+      db
+    } from "./js/firebase.js";
+
+    import {
+      doc,
+      getDoc,
+      collection,
+      query,
+      where,
+      getDocs,
+      orderBy
+    }
+    from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const params =
+    new URLSearchParams(window.location.search);
+
+    const mangaId =
+    params.get("id");
+
+    const mangaTitle =
+    document.getElementById("mangaTitle");
+
+    const mangaDescription =
+    document.getElementById("mangaDescription");
+
+    const mangaCover =
+    document.getElementById("mangaCover");
+
+    const chaptersGrid =
+    document.querySelector(".chapters-grid");
+
+    async function loadManga(){
+
+      // MANGA
+
+      const mangaRef =
+      doc(db, "mangas", mangaId);
+
+      const mangaSnap =
+      await getDoc(mangaRef);
+
+      if(mangaSnap.exists()){
+
+        const manga =
+        mangaSnap.data();
+
+        // TITULO PAGINA
+
+        document.title =
+        manga.title + " | Manga 4 All";
+
+        // DATOS
+
+        mangaTitle.textContent =
+        manga.title;
+
+        mangaDescription.textContent =
+        manga.description;
+
+        mangaCover.src =
+        manga.cover;
+      }
+
+      // TOMOS
+
+      const q = query(
+
+        collection(db, "tomos"),
+
+        where("mangaId", "==", mangaId),
+
+        orderBy("number")
+
+      );
+
+      const querySnapshot =
+      await getDocs(q);
+
+      chaptersGrid.innerHTML = "";
+
+      querySnapshot.forEach((docItem) => {
+
+        const tomo =
+        docItem.data();
+
+        chaptersGrid.innerHTML += `
+
+          <a
+            class="chapter-card"
+            href="reader.html?manga=${mangaId}&number=${tomo.number}"
+          >
+
+            <img
+              src="${tomo.cover}"
+              alt="Tomo ${tomo.number}"
+            >
+
+            <div class="chapter-info">
+
+              <h3>
+                Tomo ${tomo.number}
+              </h3>
+
+              <span class="btn">
+                Leer
+              </span>
+
+            </div>
+
+          </a>
+
+        `;
+      });
+    }
+
+    loadManga();
+
+  </script>
 
 </body>
 
