@@ -2,416 +2,299 @@
 <html lang="es">
 
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>
-    Lector
-  </title>
-
-  <link
-    rel="stylesheet"
-    href="css/style.css?v=5"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lector - Manga 4 All</title>
+  <link rel="stylesheet" href="css/style.css?v=5">
 
   <style>
-
-    body{
-      background:#050505;
+    /* RESET Y ESTILOS BASE */
+    body {
+      background: #050505;
+      color: #ffffff;
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .reader-container{
-      width:100%;
-      max-width:1200px;
-      margin:auto;
-      padding-top:90px;
-      padding-bottom:40px;
-      padding-left:20px;
-      padding-right:20px;
+    .reader-container {
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      padding-top: 80px;
+      padding-bottom: 40px;
     }
 
-    .reader-top{
-      background:#111;
-      border:1px solid #1f1f1f;
-      border-radius:16px;
-      padding:18px 25px;
-      margin-bottom:25px;
-
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:20px;
-      flex-wrap:wrap;
+    /* BARRAS DE NAVEGACIÓN (TOP Y BOTTOM) */
+    .reader-nav {
+      background: #111;
+      border: 1px solid #1f1f1f;
+      border-radius: 16px;
+      padding: 15px 20px;
+      margin: 10px 15px 25px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
     }
 
-    .reader-title{
-      font-size:1.4rem;
+    .reader-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 0;
+      flex: 1;
     }
 
-    .reader-actions{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
+    .reader-actions {
+      display: flex;
+      gap: 10px;
     }
 
-    .reader-btn{
-      background:#ff0055;
-      color:white;
-      text-decoration:none;
-      padding:10px 18px;
-      border-radius:10px;
-      transition:0.3s;
-      font-weight:bold;
-      font-size:0.95rem;
+    .reader-btn {
+      background: #ff0055;
+      color: white;
+      text-decoration: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      transition: 0.3s;
+      font-weight: bold;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      display: inline-block;
     }
 
-    .reader-btn:hover{
-      background:#ff2b72;
+    .reader-btn:hover {
+      background: #ff2b72;
+      transform: translateY(-2px);
     }
 
-    .pdf-viewer{
-      width:100%;
-      height:85vh;
-      border:none;
-      border-radius:20px;
-      background:#111;
-      margin-bottom:25px;
+    .reader-btn.disabled {
+      background: #333;
+      pointer-events: none;
+      opacity: 0.5;
     }
 
-    .reader-bottom{
-      background:#111;
-      border:1px solid #1f1f1f;
-      border-radius:16px;
-      padding:18px 25px;
-
-      display:flex;
-      justify-content:center;
-      gap:15px;
-      flex-wrap:wrap;
+    /* CONTENEDOR DE IMÁGENES */
+    .image-viewer {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #000;
     }
 
-    @media(max-width:768px){
+    .manga-page {
+      width: 100%;
+      height: auto;
+      display: block;
+      /* Sin márgenes para lectura fluida entre páginas */
+      margin: 0; 
+    }
 
-      .reader-top{
-        padding:15px;
+    /* PANTALLA DE CARGA Y ERRORES */
+    #statusMessage {
+      text-align: center;
+      padding: 40px;
+      font-size: 1.1rem;
+      color: #888;
+    }
+
+    /* NAVBAR PRINCIPAL FIJA */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(17, 17, 17, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #1f1f1f;
+    }
+
+    .logo {
+      font-weight: bold;
+      color: #ff0055;
+      font-size: 1.5rem;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    @media(max-width: 768px) {
+      .reader-title {
+        font-size: 1rem;
+        width: 100%;
+        text-align: center;
       }
-
-      .reader-title{
-        font-size:1.2rem;
+      .reader-nav {
+        justify-content: center;
       }
-
-      .pdf-viewer{
-        height:75vh;
-      }
-
-      .reader-bottom{
-        padding:15px;
-      }
-
     }
-
   </style>
-
 </head>
 
 <body>
 
   <nav>
-
-    <div class="logo">
-      Manga 4 All
-    </div>
-
+    <div class="logo">Manga 4 All</div>
     <div class="nav-links">
-
-      <a href="index.html">
-        Inicio
-      </a>
-
+      <a href="index.html">Inicio</a>
     </div>
-
   </nav>
 
   <div class="reader-container">
 
-    <!-- TOP -->
-
-    <div class="reader-top">
-
-      <h1
-        class="reader-title"
-        id="readerTitle"
-      >
-        Cargando...
-      </h1>
-
+    <div class="reader-nav">
+      <h1 class="reader-title" id="readerTitle">Cargando...</h1>
       <div class="reader-actions">
-
-        <a
-          class="reader-btn"
-          id="backBtnTop"
-          href="#"
-        >
-          Volver
-        </a>
-
-        <a
-          class="reader-btn"
-          id="prevBtnTop"
-          href="#"
-        >
-          ← Anterior
-        </a>
-
-        <a
-          class="reader-btn"
-          id="nextBtnTop"
-          href="#"
-        >
-          Siguiente →
-        </a>
-
+        <a class="reader-btn" id="backBtnTop" href="#">Volver</a>
+        <a class="reader-btn" id="prevBtnTop" href="#">←</a>
+        <a class="reader-btn" id="nextBtnTop" href="#">→</a>
       </div>
-
     </div>
 
-    <!-- PDF -->
+    <div id="statusMessage">Iniciando lector...</div>
 
-    <iframe
-      class="pdf-viewer"
-      id="pdfViewer"
-      src=""
-    ></iframe>
+    <div class="image-viewer" id="imageViewer"></div>
 
-    <!-- BOTTOM -->
-
-    <div class="reader-bottom">
-
-      <a
-        class="reader-btn"
-        id="backBtnBottom"
-        href="#"
-      >
-        Volver
-      </a>
-
-      <a
-        class="reader-btn"
-        id="prevBtnBottom"
-        href="#"
-      >
-        ← Anterior
-      </a>
-
-      <a
-        class="reader-btn"
-        id="nextBtnBottom"
-        href="#"
-      >
-        Siguiente →
-      </a>
-
+    <div class="reader-nav" id="bottomNav" style="display: none;">
+      <div class="reader-actions" style="margin: auto;">
+        <a class="reader-btn" id="backBtnBottom" href="#">Volver al índice</a>
+        <a class="reader-btn" id="prevBtnBottom" href="#">Capítulo Anterior</a>
+        <a class="reader-btn" id="nextBtnBottom" href="#">Siguiente Capítulo</a>
+      </div>
     </div>
 
   </div>
 
   <script type="module">
+    import { db } from "./js/firebase.js";
+    import { 
+      collection, query, where, getDocs, doc, getDoc 
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    import {
-      db
-    } from "./js/firebase.js";
+    // Obtener parámetros de la URL
+    const params = new URLSearchParams(window.location.search);
+    const mangaId = params.get("manga");
+    const currentNumber = parseInt(params.get("number"));
 
-    import {
-      collection,
-      query,
-      where,
-      getDocs,
-      doc,
-      getDoc
-    }
-    from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    const imageViewer = document.getElementById("imageViewer");
+    const statusMessage = document.getElementById("statusMessage");
+    const readerTitle = document.getElementById("readerTitle");
+    const bottomNav = document.getElementById("bottomNav");
 
-    const params =
-    new URLSearchParams(window.location.search);
+    // Agrupamos botones para facilitar la actualización
+    const ui = {
+      prevBtns: [document.getElementById("prevBtnTop"), document.getElementById("prevBtnBottom")],
+      nextBtns: [document.getElementById("nextBtnTop"), document.getElementById("nextBtnBottom")],
+      backBtns: [document.getElementById("backBtnTop"), document.getElementById("backBtnBottom")]
+    };
 
-    const mangaId =
-    params.get("manga");
-
-    const currentNumber =
-    parseInt(
-      params.get("number")
-    );
-
-    const pdfViewer =
-    document.getElementById("pdfViewer");
-
-    const readerTitle =
-    document.getElementById("readerTitle");
-
-    const prevBtnTop =
-    document.getElementById("prevBtnTop");
-
-    const nextBtnTop =
-    document.getElementById("nextBtnTop");
-
-    const backBtnTop =
-    document.getElementById("backBtnTop");
-
-    const prevBtnBottom =
-    document.getElementById("prevBtnBottom");
-
-    const nextBtnBottom =
-    document.getElementById("nextBtnBottom");
-
-    const backBtnBottom =
-    document.getElementById("backBtnBottom");
-
-    async function loadReader(){
-
-      // MANGA
-
-      const mangaRef =
-      doc(db, "mangas", mangaId);
-
-      const mangaSnap =
-      await getDoc(mangaRef);
-
-      let mangaTitle = "";
-
-      if(mangaSnap.exists()){
-
-        mangaTitle =
-        mangaSnap.data().title;
-
-      }
-
-      // TOMOS
-
-      const q = query(
-
-        collection(db, "tomos"),
-
-        where("mangaId", "==", mangaId)
-
-      );
-
-      const querySnapshot =
-      await getDocs(q);
-
-      let tomos = [];
-
-      querySnapshot.forEach((doc) => {
-
-        tomos.push(doc.data());
-
-      });
-
-      tomos.sort(
-        (a,b) => a.number - b.number
-      );
-
-      const currentTomo =
-      tomos.find(
-        t => t.number === currentNumber
-      );
-
-      if(!currentTomo){
+    async function loadReader() {
+      if (!mangaId || isNaN(currentNumber)) {
+        statusMessage.innerText = "Error: Parámetros de lectura inválidos.";
         return;
       }
 
-      // TITULO
+      try {
+        // 1. Obtener datos del Manga (para el título)
+        const mangaRef = doc(db, "mangas", mangaId);
+        const mangaSnap = await getDoc(mangaRef);
+        let mangaTitle = "Manga";
+        if (mangaSnap.exists()) {
+          mangaTitle = mangaSnap.data().title;
+        }
 
-      readerTitle.innerHTML =
-      `${mangaTitle} | Tomo ${currentTomo.number}`;
+        // 2. Obtener lista de tomos del manga para navegación
+        const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
+        const querySnapshot = await getDocs(q);
+        
+        let tomos = [];
+        querySnapshot.forEach((doc) => {
+          tomos.push(doc.data());
+        });
+        
+        // Ordenamos los tomos numéricamente
+        tomos.sort((a, b) => a.number - b.number);
 
-      document.title =
-      `${mangaTitle} | Tomo ${currentTomo.number}`;
+        // Buscamos el tomo actual
+        const currentTomo = tomos.find(t => t.number === currentNumber);
 
-      // PDF
+        if (!currentTomo) {
+          statusMessage.innerText = "El capítulo solicitado no existe.";
+          return;
+        }
 
-      pdfViewer.src =
-      currentTomo.pdf;
+        // 3. Actualizar interfaz
+        const fullTitle = `${mangaTitle} | Cap. ${currentTomo.number}`;
+        readerTitle.innerText = fullTitle;
+        document.title = fullTitle;
 
-      // VOLVER
+        // 4. Cargar imágenes
+        if (currentTomo.images && Array.isArray(currentTomo.images) && currentTomo.images.length > 0) {
+          statusMessage.style.display = "none";
+          imageViewer.innerHTML = ""; // Limpiar visor
 
-      const backLink =
-      `manga.html?id=${mangaId}`;
+          currentTomo.images.forEach((url) => {
+            const img = document.createElement("img");
+            img.src = url;
+            img.className = "manga-page";
+            img.loading = "lazy"; // Solo carga cuando el usuario hace scroll
+            img.alt = "Página";
+            
+            // Si una imagen falla (link roto de Drive), la ocultamos
+            img.onerror = () => img.style.display = 'none';
+            
+            imageViewer.appendChild(img);
+          });
+          
+          bottomNav.style.display = "flex";
+        } else {
+          statusMessage.innerText = "Este capítulo aún no tiene imágenes cargadas.";
+        }
 
-      backBtnTop.href =
-      backLink;
+        // 5. Configurar botones de navegación
+        const backPath = `manga.html?id=${mangaId}`;
+        ui.backBtns.forEach(btn => btn.href = backPath);
 
-      backBtnBottom.href =
-      backLink;
+        // Lógica botón Anterior
+        const prevTomo = tomos.find(t => t.number === currentNumber - 1);
+        if (prevTomo) {
+          const prevUrl = `reader.html?manga=${mangaId}&number=${prevTomo.number}`;
+          ui.prevBtns.forEach(btn => btn.href = prevUrl);
+        } else {
+          ui.prevBtns.forEach(btn => btn.classList.add("disabled"));
+        }
 
-      // ANTERIOR
+        // Lógica botón Siguiente
+        const nextTomo = tomos.find(t => t.number === currentNumber + 1);
+        if (nextTomo) {
+          const nextUrl = `reader.html?manga=${mangaId}&number=${nextTomo.number}`;
+          ui.nextBtns.forEach(btn => btn.href = nextUrl);
+        } else {
+          ui.nextBtns.forEach(btn => btn.classList.add("disabled"));
+        }
 
-      const prevTomo =
-      tomos.find(
-        t => t.number === currentNumber - 1
-      );
+        // Volver arriba al cambiar de capítulo
+        window.scrollTo(0, 0);
 
-      if(prevTomo){
-
-        const prevLink =
-        `reader.html?manga=${mangaId}&number=${prevTomo.number}`;
-
-        prevBtnTop.href =
-        prevLink;
-
-        prevBtnBottom.href =
-        prevLink;
-
+      } catch (error) {
+        console.error("Error en el lector:", error);
+        statusMessage.innerText = "Error al conectar con la base de datos.";
       }
-      else{
-
-        prevBtnTop.style.display =
-        "none";
-
-        prevBtnBottom.style.display =
-        "none";
-
-      }
-
-      // SIGUIENTE
-
-      const nextTomo =
-      tomos.find(
-        t => t.number === currentNumber + 1
-      );
-
-      if(nextTomo){
-
-        const nextLink =
-        `reader.html?manga=${mangaId}&number=${nextTomo.number}`;
-
-        nextBtnTop.href =
-        nextLink;
-
-        nextBtnBottom.href =
-        nextLink;
-
-      }
-      else{
-
-        nextBtnTop.style.display =
-        "none";
-
-        nextBtnBottom.style.display =
-        "none";
-
-      }
-
     }
 
     loadReader();
-
   </script>
 
 </body>
-
 </html>
