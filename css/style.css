@@ -1,62 +1,208 @@
-/* 1. Ajuste del Título del Header */
-.header-content h1 {
-    font-size: 3.5rem; /* Ajusta según prefieras */
-    white-space: nowrap;
-    margin-bottom: 10px;
+/* --- CONFIGURACIÓN BASE --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* 2. Tarjetas más pequeñas */
+body {
+    background-color: #070707;
+    color: white;
+    line-height: 1.6;
+}
+
+/* --- NAVEGACIÓN --- */
+nav {
+    background: #111;
+    padding: 15px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1f1f1f;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.logo {
+    color: #ff0055;
+    font-weight: bold;
+    font-size: 1.6rem;
+}
+
+.nav-links a {
+    color: #bbb;
+    text-decoration: none;
+    margin-left: 20px;
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+.nav-links a:hover {
+    color: #ff0055;
+}
+
+/* --- HEADER (BANNER) --- */
+header {
+    position: relative;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+}
+
+header img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(7,7,7,0.2), #070707);
+    z-index: -1;
+}
+
+.header-content {
+    max-width: 800px;
+    padding: 0 20px;
+}
+
+.header-content h1 {
+    font-size: 4rem;
+    margin-bottom: 10px;
+    white-space: nowrap; /* Título en una sola línea */
+    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.header-content p {
+    color: #ccc;
+    font-size: 1.1rem;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    border-left: 4px solid #ff0055;
+    padding-left: 15px;
+}
+
+/* --- GRID DE MANGAS --- */
 .manga-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Bajamos de 200px a 160px */
-    gap: 20px;
-    padding: 20px 0;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Tarjetas más pequeñas */
+    gap: 25px;
 }
 
+/* --- TARJETA DE MANGA (CARD) --- */
 .manga-card {
-    position: relative; /* Necesario para el tooltip */
+    position: relative;
     background: #111;
-    border-radius: 10px;
-    overflow: visible; /* Para que el tooltip pueda sobresalir si es necesario */
-    transition: transform 0.3s;
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+    border: 1px solid #1f1f1f;
+    display: flex;
+    flex-direction: column;
 }
 
-.manga-card img {
+.manga-card:hover {
+    transform: translateY(-10px);
+    z-index: 50;
+}
+
+.cover-container {
     width: 100%;
     aspect-ratio: 2/3;
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+}
+
+.cover {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 8px;
 }
 
-/* 3. Lógica del Tooltip de Sinopsis */
-.manga-info p {
-    display: none; /* Escondemos la sinopsis normal */
+.manga-info {
+    padding: 12px;
+    text-align: center;
 }
 
-/* Creamos el tooltip */
+.manga-info h3 {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn {
+    display: block;
+    background: #ff0055;
+    color: white;
+    text-decoration: none;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #ff2b72;
+}
+
+/* --- TOOLTIP DE SINOPSIS --- */
 .manga-card::after {
-    content: attr(data-description); /* Usaremos un atributo data en el JS */
+    content: attr(data-description);
     position: absolute;
-    bottom: 110%;
+    bottom: 105%;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.95);
-    color: #fff;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 0.8rem;
-    width: 200px;
-    text-align: center;
+    background: rgba(15, 15, 15, 0.98);
+    color: #eee;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    width: 240px;
+    line-height: 1.4;
     border: 1px solid #ff0055;
-    z-index: 100;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s;
+    transition: 0.3s;
     pointer-events: none;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    z-index: 999;
 }
 
 .manga-card:hover::after {
     opacity: 1;
     visibility: visible;
+}
+
+/* --- FOOTER --- */
+footer {
+    text-align: center;
+    padding: 50px;
+    color: #444;
+    font-size: 0.8rem;
+    border-top: 1px solid #111;
 }
