@@ -2,81 +2,38 @@
 <html lang="es">
 
 <head>
-
   <meta charset="UTF-8">
-
-  <meta name="viewport"
-  content="width=device-width, initial-scale=1.0">
-
-  <title id="pageTitle">
-    Cargando...
-  </title>
-
-  <link
-    rel="stylesheet"
-    href="css/style.css?v=3"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="pageTitle">Cargando...</title>
+  <link rel="stylesheet" href="css/style.css?v=3">
 </head>
 
 <body>
 
   <nav>
-
-    <div class="logo">
-      Manga 4 All
-    </div>
-
+    <div class="logo">Manga 4 All</div>
     <div class="nav-links">
-
-      <a href="index.html">
-        Inicio
-      </a>
-
+      <a href="index.html">Inicio</a>
     </div>
-
   </nav>
 
   <section class="container">
-
     <div class="manga-page">
-
       <div class="manga-cover-side">
-
-        <img
-          id="mangaCover"
-          src=""
-          alt=""
-        >
-
+        <img id="mangaCover" src="" alt="">
       </div>
 
       <div class="manga-content-side">
-
         <h1 id="mangaTitle"></h1>
-
         <p id="mangaDescription"></p>
-
-        <h2 class="section-title">
-          Capítulos
-        </h2>
-
-        <div class="chapters-grid">
-
-        </div>
-
+        <h2 class="section-title">Capítulos</h2>
+        <div class="chapters-grid"></div>
       </div>
-
     </div>
-
   </section>
 
   <script type="module">
-
-    import {
-      db
-    } from "./js/firebase.js";
-
+    import { db } from "./js/firebase.js";
     import {
       doc,
       getDoc,
@@ -85,115 +42,60 @@
       where,
       getDocs,
       orderBy
-    }
-    from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    const params =
-    new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
+    const mangaId = params.get("id");
 
-    const mangaId =
-    params.get("id");
+    const mangaTitle = document.getElementById("mangaTitle");
+    const mangaDescription = document.getElementById("mangaDescription");
+    const mangaCover = document.getElementById("mangaCover");
+    const chaptersGrid = document.querySelector(".chapters-grid");
 
-    const mangaTitle =
-    document.getElementById("mangaTitle");
+    async function loadManga() {
+      // DATOS DEL MANGA
+      const mangaRef = doc(db, "mangas", mangaId);
+      const mangaSnap = await getDoc(mangaRef);
 
-    const mangaDescription =
-    document.getElementById("mangaDescription");
-
-    const mangaCover =
-    document.getElementById("mangaCover");
-
-    const chaptersGrid =
-    document.querySelector(".chapters-grid");
-
-    async function loadManga(){
-
-      // MANGA
-
-      const mangaRef =
-      doc(db, "mangas", mangaId);
-
-      const mangaSnap =
-      await getDoc(mangaRef);
-
-      if(mangaSnap.exists()){
-
-        const manga =
-        mangaSnap.data();
-
-        // TITULO PAGINA
-
-        document.title =
-        manga.title + " | Manga 4 All";
-
-        // DATOS
-
-        mangaTitle.textContent =
-        manga.title;
-
-        mangaDescription.textContent =
-        manga.description;
-
-        mangaCover.src =
-        manga.cover;
+      if (mangaSnap.exists()) {
+        const manga = mangaSnap.data();
+        document.title = manga.title + " | Manga 4 All";
+        mangaTitle.textContent = manga.title;
+        mangaDescription.textContent = manga.description;
+        mangaCover.src = manga.cover;
       }
 
-      // TOMOS
-
+      // LISTADO DE CAPÍTULOS (TOMOS)
       const q = query(
-
         collection(db, "tomos"),
-
         where("mangaId", "==", mangaId),
-
         orderBy("number")
-
       );
 
-      const querySnapshot =
-      await getDocs(q);
-
+      const querySnapshot = await getDocs(q);
       chaptersGrid.innerHTML = "";
 
       querySnapshot.forEach((docItem) => {
+        const tomo = docItem.data();
 
-        const tomo =
-        docItem.data();
+        // --- CORRECCIÓN DE VISUALIZACIÓN ---
+        // Usamos parseFloat para quitar los ceros a la izquierda (001 -> 1, 000.5 -> 0.5)
+        const numeroParaMostrar = parseFloat(tomo.number);
 
         chaptersGrid.innerHTML += `
-
-          <a
-            class="chapter-card"
-            href="reader.html?manga=${mangaId}&number=${tomo.number}"
-          >
-
-            <img
-              src="${tomo.cover}"
-              alt="Tomo ${tomo.number}"
-            >
-
+          <a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+            <img src="${tomo.cover}" alt="Capítulo ${numeroParaMostrar}">
             <div class="chapter-info">
-
-              <h3>
-                Capítulo ${tomo.number}
-              </h3>
-
-              <span class="btn">
-                Leer
-              </span>
-
+              <h3>Capítulo ${numeroParaMostrar}</h3>
+              <span class="btn">Leer</span>
             </div>
-
           </a>
-
         `;
       });
     }
 
     loadManga();
-
   </script>
 
 </body>
-
 </html>
