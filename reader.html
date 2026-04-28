@@ -15,7 +15,6 @@
         }
         .logo { color: #ff0055; font-weight: bold; font-size: 1.5rem; text-decoration: none; }
 
-        /* NAVEGACIÓN */
         .nav-controls {
             background: #111; padding: 15px; display: flex; justify-content: center;
             align-items: center; gap: 10px; border-bottom: 1px solid #1f1f1f;
@@ -26,7 +25,7 @@
             text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center;
         }
         .btn:hover { background: #ff2b72; transform: translateY(-2px); }
-        .btn:disabled, .btn.disabled { background: #333; cursor: not-allowed; opacity: 0.5; pointer-events: none; }
+        .btn.disabled { background: #333; cursor: not-allowed; opacity: 0.5; pointer-events: none; }
         .btn-list { background: #222; }
         
         #chapter-title { font-size: 1.1rem; font-weight: bold; color: #eee; margin: 0 10px; min-width: 120px; text-align: center; }
@@ -68,14 +67,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
         import { 
-            getFirestore, collection, query, where, getDocs, orderBy 
+            getFirestore, collection, query, where, getDocs 
         } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
             authDomain: "manga4all-f520f.firebaseapp.com",
             projectId: "manga4all-f520f",
-            databaseURL: "https://manga4all-f520f-default-rtdb.firebaseio.com",
             storageBucket: "manga4all-f520f.firebasestorage.app",
             messagingSenderId: "372561836700",
             appId: "1:372561836700:web:cbb295bda656abd2ea0b59"
@@ -87,23 +85,21 @@
         async function loadChapter() {
             const urlParams = new URLSearchParams(window.location.search);
             const mangaId = urlParams.get('manga');
-            const chapterParam = urlParams.get('number'); // Ej: "001" o "1"
+            const chapterParam = urlParams.get('number');
 
             if (!mangaId || !chapterParam) return;
 
-            // Configurar botón volver al listado del manga
+            // Link para volver al listado del manga
             document.getElementById('btn-back-manga').href = `manga.html?id=${mangaId}`;
 
             const readerContent = document.getElementById('reader-content');
             const titleElement = document.getElementById('chapter-title');
 
             try {
-                // --- SOPORTE HÍBRIDO (STRING O INT) ---
-                // 1. Intentamos buscar como String
+                // BUSQUEDA HIBRIDA
                 let q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", String(chapterParam)));
                 let querySnapshot = await getDocs(q);
 
-                // 2. Si no hay resultados, intentamos como Número (int)
                 if (querySnapshot.empty && !isNaN(chapterParam)) {
                     q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", Number(chapterParam)));
                     querySnapshot = await getDocs(q);
@@ -117,26 +113,25 @@
                 const docData = querySnapshot.docs[0].data();
                 titleElement.innerText = "Cap. " + parseFloat(docData.number);
 
-                // Renderizar imágenes
+                // Cargar imágenes
                 readerContent.innerHTML = "";
-                docData.images.forEach((imgUrl, i) => {
+                docData.images.forEach((imgUrl) => {
                     const img = document.createElement('img');
                     img.src = imgUrl;
                     img.loading = "lazy";
                     readerContent.appendChild(img);
                 });
 
-                // --- LÓGICA DE NAVEGACIÓN ---
+                // Configurar Botones
                 setupNavigation(mangaId, chapterParam);
 
             } catch (error) {
                 console.error(error);
-                readerContent.innerHTML = '<div class="status-msg">Error de conexión.</div>';
+                readerContent.innerHTML = '<div class="status-msg">Error de conexión con Firestore.</div>';
             }
         }
 
         async function setupNavigation(mangaId, currentNum) {
-            // Obtenemos todos los capítulos del manga para saber cuál es el anterior y siguiente
             const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
             const navSnapshot = await getDocs(q);
             
@@ -145,32 +140,31 @@
                 chapters.push(doc.data().number);
             });
 
-            // Ordenar capítulos matemáticamente
+            // Ordenamiento numérico estricto
             chapters.sort((a, b) => parseFloat(a) - parseFloat(b));
 
-            // Encontrar el índice del capítulo actual
-            // Buscamos coincidencia ya sea como número o como string
-            const currentIndex = chapters.findIndex(c => String(c) === String(currentNum) || Number(c) === Number(currentNum));
+            // Búsqueda flexible de índice (String o Float)
+            const currentIndex = chapters.findIndex(c => 
+                String(c) === String(currentNum) || parseFloat(c) === parseFloat(currentNum)
+            );
 
-            const prevBtn = document.getElementById('prev-btn');
-            const nextBtn = document.getElementById('next-btn');
-            const prevBtnB = document.getElementById('prev-btn-bottom');
-            const nextBtnB = document.getElementById('next-btn-bottom');
+            const prevBtns = [document.getElementById('prev-btn'), document.getElementById('prev-btn-bottom')];
+            const nextBtns = [document.getElementById('next-btn'), document.getElementById('next-btn-bottom')];
 
+            // Anterior
             if (currentIndex > 0) {
                 const prevUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex - 1]}`;
-                prevBtn.href = prevBtnB.href = prevUrl;
+                prevBtns.forEach(btn => { btn.href = prevUrl; btn.classList.remove('disabled'); });
             } else {
-                prevBtn.classList.add('disabled');
-                prevBtnB.classList.add('disabled');
+                prevBtns.forEach(btn => { btn.classList.add('disabled'); btn.href = "#"; });
             }
 
-            if (currentIndex < chapters.length - 1) {
+            // Siguiente
+            if (currentIndex !== -1 && currentIndex < chapters.length - 1) {
                 const nextUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex + 1]}`;
-                nextBtn.href = nextBtnB.href = nextUrl;
+                nextBtns.forEach(btn => { btn.href = nextUrl; btn.classList.remove('disabled'); });
             } else {
-                nextBtn.classList.add('disabled');
-                nextBtnB.classList.add('disabled');
+                nextBtns.forEach(btn => { btn.classList.add('disabled'); btn.href = "#"; });
             }
         }
 
