@@ -95,6 +95,69 @@ header {
     height: auto !important; 
     display: block; margin: 0; padding: 0;
 }
+/* --- SECCIÓN DE ACTUALIZACIONES (HORIZONTAL) --- */
+.updates-scroll {
+    display: flex;
+    overflow-x: auto; /* Permite el movimiento de izquierda a derecha */
+    gap: 20px;
+    padding: 10px 5px 25px 5px;
+    scroll-snap-type: x mandatory; /* Hace que las tarjetas se detengan suavemente */
+    scrollbar-width: thin;
+    scrollbar-color: #ff0055 #111;
+}
+
+/* Estilo del scrollbar para Chrome/Edge/Safari */
+.updates-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+.updates-scroll::-webkit-scrollbar-track {
+    background: #111;
+    border-radius: 10px;
+}
+.updates-scroll::-webkit-scrollbar-thumb {
+    background: #ff0055;
+    border-radius: 10px;
+}
+
+.update-item {
+    flex: 0 0 150px; /* Ancho fijo de cada capítulo en la fila */
+    scroll-snap-align: start;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.update-item:hover {
+    transform: scale(1.05);
+}
+
+.update-cover-wrapper {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #222;
+    margin-bottom: 10px;
+}
+
+.update-cover-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.update-info h4 {
+    font-size: 0.85rem;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.update-info span {
+    font-size: 0.75rem;
+    color: #ff0055;
+    font-weight: bold;
+}
 .nav-controls { display: flex; justify-content: center; align-items: center; gap: 25px; padding: 35px; background: #070707; }
 .chapter-label { font-weight: bold; font-size: 1.3rem; min-width: 180px; text-align: center; }
 
