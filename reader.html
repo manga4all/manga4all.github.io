@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="tabTitle">Cargando... | M4A</title>
-  <link rel="stylesheet" href="css/style.css?v=19">
+  <title id="tabTitle">Manga 4 All</title>
+  <link rel="stylesheet" href="css/style.css?v=20">
   <style>
     .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px; background: #111; position: sticky; top: 70px; z-index: 1000; }
     .btn-nav { background: #ff0055; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s; }
@@ -13,7 +13,6 @@
     .manga-pages-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; min-height: 50vh; }
     .manga-pages-container img { width: 100%; height: auto; display: block; background: #111; }
     .list-btn { background: #333; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
-    .error-msg { text-align: center; padding: 50px; color: #ff0055; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -21,10 +20,7 @@
   <nav>
     <div class="nav-left">
         <a href="index.html" class="logo">Manga 4 All</a>
-        <div class="nav-links">
-            <a href="index.html">Inicio</a>
-            <a href="directory.html">Directorio</a>
-        </div>
+        <div class="nav-links"><a href="index.html">Inicio</a><a href="directory.html">Directorio</a></div>
     </div>
   </nav>
 
@@ -50,47 +46,56 @@
 
   <script type="module">
     import { db } from "./js/firebase.js";
-    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const mangaId = params.get("manga");
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
 
-    // Función de limpieza de números (.00 y ceros a la izquierda)
     function limpiarNumero(num) {
         if (!num) return "";
         const n = parseFloat(num);
         return isNaN(n) ? num : n.toString();
     }
 
-    const numeroParaMostrar = limpiarNumero(rawNumber);
+    const numeroLimpio = limpiarNumero(rawNumber);
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
-      // --- CAMBIO SOLICITADO: Título de la pestaña dinámico ---
-      document.title = `Cap. ${numeroParaMostrar} | M4A`;
-
-      // Etiquetas visuales en la página
-      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numeroParaMostrar}`;
-      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numeroParaMostrar}`;
-
-      const listUrl = `manga.html?id=${mangaId}`;
-      document.querySelectorAll(".list-btn").forEach(b => b.href = listUrl);
+      // Título y Etiquetas
+      document.title = `Cap. ${numeroLimpio} | M4A`;
+      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numeroLimpio}`;
+      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numeroLimpio}`;
+      document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
 
       try {
+        // --- GUARDAR EN "ÚLTIMO VISTO" ---
+        // Obtenemos el nombre del manga para que el historial se vea bien
+        const mangaDoc = await getDoc(doc(db, "mangas", mangaId));
+        if (mangaDoc.exists()) {
+            const mangaData = mangaDoc.exists() ? mangaDoc.data() : { title: "Manga" };
+            const historial = {
+                id: mangaId,
+                title: mangaData.title,
+                chapter: numeroLimpio,
+                image: mangaData.cover || mangaData.image,
+                time: Date.now()
+            };
+            localStorage.setItem("lastSeen", JSON.stringify(historial));
+        }
+
+        // Cargar Capítulos
         const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const snap = await getDocs(q);
-        
         let allChapters = [];
-        snap.forEach(doc => {
-            const data = doc.data();
+        snap.forEach(d => {
+            let data = d.data();
             data.normNum = String(data.number).trim();
             allChapters.push(data);
         });
 
         allChapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-
         const currentIndex = allChapters.findIndex(c => c.normNum === rawNumber);
         const tomoActual = allChapters[currentIndex];
 
@@ -102,42 +107,34 @@
             img.src = url;
             container.appendChild(img);
           });
-        } else {
-            document.getElementById("mangaPages").innerHTML = `<p class="error-msg">No se encontraron imágenes.</p>`;
         }
 
         // Navegación
-        if (currentIndex > 0) {
-            setupBtn("prev", allChapters[currentIndex - 1].number);
-        } else {
-            lockBtn("prev");
-        }
-
-        if (currentIndex !== -1 && currentIndex < allChapters.length - 1) {
-            setupBtn("next", allChapters[currentIndex + 1].number);
-        } else {
-            lockBtn("next");
-        }
+        setupNav(currentIndex, allChapters);
 
       } catch (e) { console.error(e); }
     }
 
-    function setupBtn(type, target) {
-        const url = `reader.html?manga=${mangaId}&number=${target}`;
-        document.getElementById(type + "BtnTop").href = url;
-        document.getElementById(type + "BtnBottom").href = url;
-        document.getElementById(type + "BtnTop").classList.remove("disabled");
-        document.getElementById(type + "BtnBottom").classList.remove("disabled");
-    }
+    function setupNav(index, list) {
+        if (index > 0) {
+            const p = list[index-1].number;
+            document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${p}`;
+            document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${p}`;
+        } else {
+            document.getElementById("prevBtnTop").classList.add("disabled");
+            document.getElementById("prevBtnBottom").classList.add("disabled");
+        }
 
-    function lockBtn(type) {
-        const bT = document.getElementById(type + "BtnTop");
-        const bB = document.getElementById(type + "BtnBottom");
-        bT.classList.add("disabled");
-        bB.classList.add("disabled");
-        bT.removeAttribute("href");
-        bB.removeAttribute("href");
-        if(type === "next") bT.textContent = bB.textContent = "FIN";
+        if (index !== -1 && index < list.length - 1) {
+            const n = list[index+1].number;
+            document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${n}`;
+            document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${n}`;
+        } else {
+            const nT = document.getElementById("nextBtnTop");
+            const nB = document.getElementById("nextBtnBottom");
+            nT.classList.add("disabled"); nB.classList.add("disabled");
+            nT.textContent = nB.textContent = "FIN";
+        }
     }
 
     loadReader();
