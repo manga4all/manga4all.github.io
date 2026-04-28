@@ -25,10 +25,10 @@
             text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center;
         }
         .btn:hover { background: #ff2b72; transform: translateY(-2px); }
-        .btn.disabled { background: #333; cursor: not-allowed; opacity: 0.5; pointer-events: none; }
-        .btn-list { background: #222; }
+        .btn.disabled { background: #333 !important; cursor: not-allowed; opacity: 0.3; pointer-events: none; }
+        .btn-list { background: #1a1a1a; border: 1px solid #333; }
         
-        #chapter-title { font-size: 1.1rem; font-weight: bold; color: #eee; margin: 0 10px; min-width: 120px; text-align: center; }
+        .chapter-label { font-size: 1.1rem; font-weight: bold; color: #eee; margin: 0 10px; min-width: 140px; text-align: center; }
 
         .manga-container {
             max-width: 800px; margin: 0 auto; width: 100%;
@@ -47,10 +47,10 @@
     </header>
 
     <div class="nav-controls">
-        <a id="btn-back-manga" href="#" class="btn btn-list">☰ Lista</a>
-        <a id="prev-btn" href="#" class="btn">←</a>
-        <span id="chapter-title">Cargando...</span>
-        <a id="next-btn" href="#" class="btn">→</a>
+        <a id="btn-back-manga-top" href="#" class="btn btn-list">☰ Lista</a>
+        <a id="prev-btn-top" href="#" class="btn">←</a>
+        <span id="chapter-title-top" class="chapter-label">Cargando...</span>
+        <a id="next-btn-top" href="#" class="btn">→</a>
     </div>
 
     <div id="reader-content" class="manga-container">
@@ -59,9 +59,11 @@
         </div>
     </div>
 
-    <div class="nav-controls" style="border-top: 1px solid #1f1f1f; padding: 50px;">
-        <a id="prev-btn-bottom" href="#" class="btn">Anterior</a>
-        <a id="next-btn-bottom" href="#" class="btn">Siguiente</a>
+    <div class="nav-controls" style="border-top: 1px solid #1f1f1f; border-bottom: none; padding: 40px 15px 60px 15px;">
+        <a id="btn-back-manga-bottom" href="#" class="btn btn-list">☰ Lista</a>
+        <a id="prev-btn-bottom" href="#" class="btn">←</a>
+        <span id="chapter-title-bottom" class="chapter-label">Cargando...</span>
+        <a id="next-btn-bottom" href="#" class="btn">→</a>
     </div>
 
     <script type="module">
@@ -89,14 +91,17 @@
 
             if (!mangaId || !chapterParam) return;
 
-            // Link para volver al listado del manga
-            document.getElementById('btn-back-manga').href = `manga.html?id=${mangaId}`;
+            // Configurar botones de volver
+            const listUrl = `manga.html?id=${mangaId}`;
+            document.getElementById('btn-back-manga-top').href = listUrl;
+            document.getElementById('btn-back-manga-bottom').href = listUrl;
 
             const readerContent = document.getElementById('reader-content');
-            const titleElement = document.getElementById('chapter-title');
+            const titleTop = document.getElementById('chapter-title-top');
+            const titleBottom = document.getElementById('chapter-title-bottom');
 
             try {
-                // BUSQUEDA HIBRIDA
+                // Búsqueda híbrida (String o Number)
                 let q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", String(chapterParam)));
                 let querySnapshot = await getDocs(q);
 
@@ -111,9 +116,10 @@
                 }
 
                 const docData = querySnapshot.docs[0].data();
-                titleElement.innerText = "Cap. " + parseFloat(docData.number);
+                const cleanTitle = "Capítulo " + parseFloat(docData.number);
+                titleTop.innerText = titleBottom.innerText = cleanTitle;
 
-                // Cargar imágenes
+                // Render de imágenes
                 readerContent.innerHTML = "";
                 docData.images.forEach((imgUrl) => {
                     const img = document.createElement('img');
@@ -122,12 +128,12 @@
                     readerContent.appendChild(img);
                 });
 
-                // Configurar Botones
+                // Navegación
                 setupNavigation(mangaId, chapterParam);
 
             } catch (error) {
                 console.error(error);
-                readerContent.innerHTML = '<div class="status-msg">Error de conexión con Firestore.</div>';
+                readerContent.innerHTML = '<div class="status-msg">Error de conexión.</div>';
             }
         }
 
@@ -140,18 +146,16 @@
                 chapters.push(doc.data().number);
             });
 
-            // Ordenamiento numérico estricto
             chapters.sort((a, b) => parseFloat(a) - parseFloat(b));
 
-            // Búsqueda flexible de índice (String o Float)
             const currentIndex = chapters.findIndex(c => 
                 String(c) === String(currentNum) || parseFloat(c) === parseFloat(currentNum)
             );
 
-            const prevBtns = [document.getElementById('prev-btn'), document.getElementById('prev-btn-bottom')];
-            const nextBtns = [document.getElementById('next-btn'), document.getElementById('next-btn-bottom')];
+            const prevBtns = [document.getElementById('prev-btn-top'), document.getElementById('prev-btn-bottom')];
+            const nextBtns = [document.getElementById('next-btn-top'), document.getElementById('next-btn-bottom')];
 
-            // Anterior
+            // Botón Anterior
             if (currentIndex > 0) {
                 const prevUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex - 1]}`;
                 prevBtns.forEach(btn => { btn.href = prevUrl; btn.classList.remove('disabled'); });
@@ -159,7 +163,7 @@
                 prevBtns.forEach(btn => { btn.classList.add('disabled'); btn.href = "#"; });
             }
 
-            // Siguiente
+            // Botón Siguiente
             if (currentIndex !== -1 && currentIndex < chapters.length - 1) {
                 const nextUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex + 1]}`;
                 nextBtns.forEach(btn => { btn.href = nextUrl; btn.classList.remove('disabled'); });
