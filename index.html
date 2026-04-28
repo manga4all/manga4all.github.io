@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga 4 All</title>
-  <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/style.css?v=21">
 </head>
 <body>
 
@@ -26,14 +26,11 @@
     <div class="overlay"></div>
     <div class="header-content">
       <h1>Manga 4 All</h1>
-      <p>
-        Tu portal definitivo para sumergirte en el mundo del manga en español. 
-        Disfruta de una experiencia de lectura optimizada con carga instantánea.
-      </p>
+      <p>Tu portal definitivo para sumergirte en el mundo del manga en español.</p>
     </div>
   </header>
 
-  <div id="continue-container" class="container" style="display: none; margin-bottom: 0;">
+  <div id="continue-container" class="container" style="display: none; margin-bottom: 30px;">
       <h2 class="section-title">Continuar Leyendo</h2>
       <div id="continue-card-place"></div>
   </div>
@@ -41,21 +38,43 @@
   <div class="container" style="margin-bottom: 0;">
       <h2 class="section-title">Últimas Actualizaciones</h2>
       <div class="updates-wrapper">
-          <div id="updates-track" class="updates-track">
-              </div>
+          <div id="updates-track" class="updates-track"></div>
       </div>
   </div>
 
   <main class="container">
     <h2 class="section-title">Destacados</h2>
-    <div id="manga-grid" class="manga-grid">
-        </div>
+    <div id="manga-grid" class="manga-grid"></div>
   </main>
 
   <footer>Manga 4 All © 2026</footer>
 
   <script type="module" src="js/app.js"></script>
   <script src="js/navbar.js"></script>
+
+  <script>
+    function renderHistorial() {
+        const contenedor = document.getElementById("continue-container");
+        const lugarCard = document.getElementById("continue-card-place");
+        const storage = localStorage.getItem("manga_last_seen");
+
+        if (storage && contenedor && lugarCard) {
+            const m = JSON.parse(storage);
+            contenedor.style.display = "block";
+            lugarCard.innerHTML = `
+                <a href="reader.html?manga=${m.id}&number=${m.chapter}" class="manga-card" style="display: flex; gap: 20px; align-items: center; background: #111; padding: 20px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white;">
+                    <img src="${m.image}" style="width: 80px; height: 120px; object-fit: cover; border-radius: 8px;">
+                    <div>
+                        <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem;">REANUDAR LECTURA</span>
+                        <h3 style="margin: 5px 0; font-size: 1.4rem;">${m.title}</h3>
+                        <p style="color: #ccc;">Capítulo ${m.chapter}</p>
+                    </div>
+                </a>
+            `;
+        }
+    }
+    // Forzamos la ejecución al cargar la ventana
+    window.addEventListener('load', renderHistorial);
+  </script>
 </body>
 </html>
-
