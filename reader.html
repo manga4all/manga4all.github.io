@@ -63,18 +63,15 @@
 
             if (!mangaId || !chapterParam) return;
 
-            // Configurar botones de volver a la lista
             const listUrl = `manga.html?id=${mangaId}`;
             document.getElementById('btn-back-manga-top').href = listUrl;
             document.getElementById('btn-back-manga-bottom').href = listUrl;
 
             try {
-                // 1. Obtener nombre del manga para la pestaña
                 const mangaRef = doc(db, "mangas", mangaId);
                 const mangaSnap = await getDoc(mangaRef);
                 const mangaName = mangaSnap.exists() ? mangaSnap.data().title : "Manga";
 
-                // 2. Búsqueda Híbrida (String o Number)
                 let q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", String(chapterParam)));
                 let querySnapshot = await getDocs(q);
                 
@@ -87,15 +84,23 @@
                     const docData = querySnapshot.docs[0].data();
                     const cleanNumber = parseFloat(docData.number);
                     
-                    // Actualizar Títulos
                     const fullTitle = `Capítulo ${cleanNumber}`;
                     document.getElementById('chapter-title-top').innerText = fullTitle;
                     document.getElementById('chapter-title-bottom').innerText = fullTitle;
                     document.title = `${mangaName} ${fullTitle} | M4A`;
 
-                    // Cargar Imágenes
+                    // --- GUARDAR PROGRESO (NUEVO) ---
+                    const progress = {
+                        mangaId: mangaId,
+                        mangaTitle: mangaName,
+                        mangaCover: mangaSnap.data().cover,
+                        chapterNumber: chapterParam, 
+                        displayNumber: cleanNumber   
+                    };
+                    localStorage.setItem('lastReadM4A', JSON.stringify(progress));
+
                     const content = document.getElementById('reader-content');
-                    content.innerHTML = ""; // Limpiar
+                    content.innerHTML = ""; 
                     docData.images.forEach(url => {
                         const img = document.createElement('img');
                         img.src = url;
@@ -103,7 +108,6 @@
                         content.appendChild(img);
                     });
 
-                    // Configurar Navegación (Anterior/Siguiente)
                     setupNavigation(mangaId, chapterParam);
                 } else {
                     document.getElementById('reader-content').innerHTML = "<div style='text-align:center; padding:50px;'>El capítulo no existe.</div>";
@@ -116,20 +120,14 @@
         async function setupNavigation(mangaId, currentNum) {
             const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
             const navSnapshot = await getDocs(q);
-            
             let chapters = [];
             navSnapshot.forEach(doc => chapters.push(doc.data().number));
-            
-            // Orden matemático
             chapters.sort((a, b) => parseFloat(a) - parseFloat(b));
-
-            // Encontrar índice actual
             const currentIndex = chapters.findIndex(c => parseFloat(c) === parseFloat(currentNum));
 
             const prevBtns = [document.getElementById('prev-btn-top'), document.getElementById('prev-btn-bottom')];
             const nextBtns = [document.getElementById('next-btn-top'), document.getElementById('next-btn-bottom')];
 
-            // Botón Anterior
             if (currentIndex > 0) {
                 const prevUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex - 1]}`;
                 prevBtns.forEach(btn => { 
@@ -143,7 +141,6 @@
                 });
             }
 
-            // Botón Siguiente
             if (currentIndex !== -1 && currentIndex < chapters.length - 1) {
                 const nextUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex + 1]}`;
                 nextBtns.forEach(btn => { 
