@@ -12,9 +12,9 @@ nav {
 .nav-links a { color: #bbb; text-decoration: none; margin-left: 20px; font-size: 0.9rem; transition: 0.3s; }
 .nav-links a:hover { color: #ff0055; }
 
-/* --- HEADER / BANNER (Para Index) --- */
+/* --- HEADER / BANNER --- */
 header { position: relative; height: 400px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
-header img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+header img.banner-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
 .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(7,7,7,0.2), #070707); z-index: -1; }
 .header-content h1 { font-size: 4rem; margin-bottom: 10px; white-space: nowrap; }
 
@@ -50,30 +50,52 @@ header img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; obj
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 25px;
+    align-items: start; /* Alinea al inicio para evitar estiramientos */
 }
 
 /* --- TARJETAS (CARDS) --- */
 .manga-card, .chapter-card {
-    position: relative;
     background: #111;
     border-radius: 12px;
     transition: 0.3s ease;
     border: 1px solid #1f1f1f;
     text-decoration: none;
     color: white;
+    overflow: hidden; /* Importante para que la imagen no se salga */
+    display: flex;
+    flex-direction: column;
 }
 
 .manga-card:hover, .chapter-card:hover { transform: translateY(-10px); border-color: #ff0055; }
 
-.cover-container { width: 100%; aspect-ratio: 2/3; overflow: hidden; border-radius: 12px 12px 0 0; }
-.cover-container img, .chapter-card img { width: 100%; height: 100%; object-fit: cover; }
+/* Ajuste de Imagen para que todas sean iguales */
+.manga-card img, .chapter-card img {
+    width: 100%;
+    height: 230px; /* ALTURA FIJA PARA TODOS LOS CAPÍTULOS */
+    object-fit: cover; /* Recorta la imagen para que encaje sin deformarse */
+    border-radius: 12px 12px 0 0;
+}
 
-.manga-info, .chapter-info { padding: 12px; text-align: center; }
-.manga-info h3, .chapter-info h3 { font-size: 0.9rem; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.manga-info, .chapter-info { 
+    padding: 15px; 
+    text-align: center; 
+    flex-grow: 1; /* Empuja el botón al fondo si hay poco texto */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.manga-info h3, .chapter-info h3 { 
+    font-size: 0.9rem; 
+    margin-bottom: 12px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+}
 
 .btn {
     display: block; background: #ff0055; color: white; text-decoration: none; 
-    padding: 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; transition: 0.3s;
+    padding: 10px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; transition: 0.3s;
 }
 
 /* Tooltip para Index */
@@ -85,12 +107,4 @@ header img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; obj
 }
 .manga-card:hover::after { opacity: 1; visibility: visible; }
 
-/* Footer */
 footer { text-align: center; padding: 50px; color: #444; font-size: 0.8rem; margin-top: 50px; }
-
-/* RESPONSIVO */
-@media (max-width: 768px) {
-    .manga-page { flex-direction: column; align-items: center; text-align: center; }
-    .manga-cover-side { flex: 0 0 250px; width: 250px; }
-    .header-content h1 { font-size: 2.5rem; }
-}
