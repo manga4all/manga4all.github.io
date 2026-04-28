@@ -6,47 +6,38 @@
     <title>Lector - Manga 4 All</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #070707; color: white; min-height: 100vh; display: flex; flex-direction: column; }
+        body { background: #070707; color: white; min-height: 100vh; }
 
-        /* HEADER */
         header { 
             background: #111; padding: 15px 20px; border-bottom: 1px solid #1f1f1f;
             display: flex; justify-content: space-between; align-items: center;
             position: sticky; top: 0; z-index: 100;
         }
         .logo { color: #ff0055; font-weight: bold; font-size: 1.5rem; text-decoration: none; }
-        .nav-link { color: white; text-decoration: none; font-size: 0.9rem; }
 
-        /* CONTROLES SUPERIORES */
-        .controls {
+        /* NAVEGACIÓN */
+        .nav-controls {
             background: #111; padding: 15px; display: flex; justify-content: center;
-            align-items: center; gap: 15px; border-bottom: 1px solid #1f1f1f;
+            align-items: center; gap: 10px; border-bottom: 1px solid #1f1f1f;
         }
         .btn {
-            background: #ff0055; color: white; border: none; padding: 8px 20px;
+            background: #ff0055; color: white; border: none; padding: 10px 18px;
             border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;
-            text-decoration: none; font-size: 0.9rem;
+            text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center;
         }
         .btn:hover { background: #ff2b72; transform: translateY(-2px); }
-        .btn-secondary { background: #222; }
+        .btn:disabled, .btn.disabled { background: #333; cursor: not-allowed; opacity: 0.5; pointer-events: none; }
+        .btn-list { background: #222; }
         
-        #chapter-title { font-size: 1.1rem; font-weight: bold; color: #eee; }
+        #chapter-title { font-size: 1.1rem; font-weight: bold; color: #eee; margin: 0 10px; min-width: 120px; text-align: center; }
 
-        /* CONTENEDOR DE IMÁGENES */
         .manga-container {
             max-width: 800px; margin: 0 auto; width: 100%;
             display: flex; flex-direction: column; align-items: center;
         }
-        .manga-container img {
-            width: 100%; height: auto; display: block; background: #000;
-            /* Evita espacios en blanco entre imágenes de Manhwa */
-            margin: 0; padding: 0; 
-        }
+        .manga-container img { width: 100%; height: auto; display: block; margin: 0; }
 
-        /* MENSAJES DE ESTADO */
-        .status-msg {
-            text-align: center; padding: 100px 20px; color: #888; font-size: 1.2rem;
-        }
+        .status-msg { text-align: center; padding: 100px 20px; color: #888; }
         .loader { color: #ff0055; font-weight: bold; }
     </style>
 </head>
@@ -54,35 +45,37 @@
 
     <header>
         <a href="index.html" class="logo">Manga 4 All</a>
-        <a href="index.html" class="nav-link">Inicio</a>
     </header>
 
-    <div class="controls">
-        <a href="index.html" class="btn btn-secondary">Volver</a>
+    <div class="nav-controls">
+        <a id="btn-back-manga" href="#" class="btn btn-list">☰ Lista</a>
+        <a id="prev-btn" href="#" class="btn">←</a>
         <span id="chapter-title">Cargando...</span>
+        <a id="next-btn" href="#" class="btn">→</a>
     </div>
 
     <div id="reader-content" class="manga-container">
         <div id="loader" class="status-msg">
-            <span class="loader">Cargando capítulo...</span>
-            <br><small>Espera a que las imágenes se preparen</small>
+            <span class="loader">Cargando páginas...</span>
         </div>
     </div>
 
-    <div class="controls" style="border-top: 1px solid #1f1f1f; border-bottom: none; padding: 40px;">
-        <a href="index.html" class="btn btn-secondary">Volver al Inicio</a>
+    <div class="nav-controls" style="border-top: 1px solid #1f1f1f; padding: 50px;">
+        <a id="prev-btn-bottom" href="#" class="btn">Anterior</a>
+        <a id="next-btn-bottom" href="#" class="btn">Siguiente</a>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
         import { 
-            getFirestore, collection, query, where, getDocs 
+            getFirestore, collection, query, where, getDocs, orderBy 
         } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
             authDomain: "manga4all-f520f.firebaseapp.com",
             projectId: "manga4all-f520f",
+            databaseURL: "https://manga4all-f520f-default-rtdb.firebaseio.com",
             storageBucket: "manga4all-f520f.firebasestorage.app",
             messagingSenderId: "372561836700",
             appId: "1:372561836700:web:cbb295bda656abd2ea0b59"
@@ -94,60 +87,93 @@
         async function loadChapter() {
             const urlParams = new URLSearchParams(window.location.search);
             const mangaId = urlParams.get('manga');
-            const chapterNumberStr = urlParams.get('number'); // Viene como "001" o "000.5"
+            const chapterParam = urlParams.get('number'); // Ej: "001" o "1"
+
+            if (!mangaId || !chapterParam) return;
+
+            // Configurar botón volver al listado del manga
+            document.getElementById('btn-back-manga').href = `manga.html?id=${mangaId}`;
 
             const readerContent = document.getElementById('reader-content');
             const titleElement = document.getElementById('chapter-title');
 
-            if (!mangaId || !chapterNumberStr) {
-                readerContent.innerHTML = '<div class="status-msg">URL inválida. Falta ID o número de capítulo.</div>';
-                return;
-            }
-
             try {
-                // CONSULTA: Buscamos comparando Strings para evitar el error de Int vs String
-                const q = query(
-                    collection(db, "tomos"),
-                    where("mangaId", "==", mangaId),
-                    where("number", "==", String(chapterNumberStr))
-                );
+                // --- SOPORTE HÍBRIDO (STRING O INT) ---
+                // 1. Intentamos buscar como String
+                let q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", String(chapterParam)));
+                let querySnapshot = await getDocs(q);
 
-                const querySnapshot = await getDocs(q);
+                // 2. Si no hay resultados, intentamos como Número (int)
+                if (querySnapshot.empty && !isNaN(chapterParam)) {
+                    q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", Number(chapterParam)));
+                    querySnapshot = await getDocs(q);
+                }
 
                 if (querySnapshot.empty) {
-                    readerContent.innerHTML = '<div class="status-msg">El capítulo solicitado no existe en la base de datos.</div>';
-                    titleElement.innerText = "Error";
+                    readerContent.innerHTML = '<div class="status-msg">El capítulo no existe.</div>';
                     return;
                 }
 
-                // Si lo encuentra, extraemos la data
                 const docData = querySnapshot.docs[0].data();
-                
-                // LIMPIEZA VISUAL DEL TÍTULO: 
-                // parseFloat("001") -> 1 | parseFloat("000.5") -> 0.5
-                titleElement.innerText = "Capítulo " + parseFloat(docData.number);
+                titleElement.innerText = "Cap. " + parseFloat(docData.number);
 
-                // RENDERIZAR IMÁGENES
-                readerContent.innerHTML = ""; // Limpiar loader
-                docData.images.forEach((imgUrl, index) => {
+                // Renderizar imágenes
+                readerContent.innerHTML = "";
+                docData.images.forEach((imgUrl, i) => {
                     const img = document.createElement('img');
                     img.src = imgUrl;
-                    img.alt = `Página ${index + 1}`;
-                    img.loading = "lazy"; // Optimización de carga
-                    
-                    // Manejo de error si una imagen falla
-                    img.onerror = () => { img.style.display = 'none'; };
-                    
+                    img.loading = "lazy";
                     readerContent.appendChild(img);
                 });
 
+                // --- LÓGICA DE NAVEGACIÓN ---
+                setupNavigation(mangaId, chapterParam);
+
             } catch (error) {
-                console.error("Error al cargar capítulo:", error);
-                readerContent.innerHTML = '<div class="status-msg">Ocurrió un error al conectar con Firebase.</div>';
+                console.error(error);
+                readerContent.innerHTML = '<div class="status-msg">Error de conexión.</div>';
             }
         }
 
-        // Ejecutar carga al iniciar
+        async function setupNavigation(mangaId, currentNum) {
+            // Obtenemos todos los capítulos del manga para saber cuál es el anterior y siguiente
+            const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
+            const navSnapshot = await getDocs(q);
+            
+            let chapters = [];
+            navSnapshot.forEach(doc => {
+                chapters.push(doc.data().number);
+            });
+
+            // Ordenar capítulos matemáticamente
+            chapters.sort((a, b) => parseFloat(a) - parseFloat(b));
+
+            // Encontrar el índice del capítulo actual
+            // Buscamos coincidencia ya sea como número o como string
+            const currentIndex = chapters.findIndex(c => String(c) === String(currentNum) || Number(c) === Number(currentNum));
+
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtnB = document.getElementById('prev-btn-bottom');
+            const nextBtnB = document.getElementById('next-btn-bottom');
+
+            if (currentIndex > 0) {
+                const prevUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex - 1]}`;
+                prevBtn.href = prevBtnB.href = prevUrl;
+            } else {
+                prevBtn.classList.add('disabled');
+                prevBtnB.classList.add('disabled');
+            }
+
+            if (currentIndex < chapters.length - 1) {
+                const nextUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex + 1]}`;
+                nextBtn.href = nextBtnB.href = nextUrl;
+            } else {
+                nextBtn.classList.add('disabled');
+                nextBtnB.classList.add('disabled');
+            }
+        }
+
         loadChapter();
     </script>
 </body>
