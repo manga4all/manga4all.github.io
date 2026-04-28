@@ -9,9 +9,9 @@ import {
 const mangaGrid = document.getElementById("manga-grid");
 const continueContainer = document.getElementById("continue-container");
 const continueCardPlace = document.getElementById("continue-card-place");
-const updatesList = document.getElementById("updates-list");
+const updatesTrack = document.getElementById("updates-track");
 
-// 1. Lógica de Continuar Leyendo
+// 1. LÓGICA: CONTINUAR LEYENDO
 function checkLastRead() {
     const saved = localStorage.getItem('lastReadM4A');
     if (saved && continueContainer && continueCardPlace) {
@@ -39,30 +39,39 @@ function checkLastRead() {
     }
 }
 
-// 2. Lógica de Últimas Actualizaciones (Slider)
+// 2. LÓGICA: ÚLTIMAS ACTUALIZACIONES (CARRUSEL INFINITO)
 async function loadUpdates() {
-    if (!updatesList) return;
+    if (!updatesTrack) return;
     try {
         const q = query(collection(db, "tomos"), limit(10));
         const querySnapshot = await getDocs(q);
-        updatesList.innerHTML = "";
+        
+        let htmlContent = "";
+
         querySnapshot.forEach((doc) => {
             const tomo = doc.data();
-            updatesList.innerHTML += `
+            const num = parseFloat(tomo.number);
+            htmlContent += `
                 <a href="reader.html?manga=${tomo.mangaId}&number=${tomo.number}" class="update-item">
                     <div class="update-cover-wrapper">
-                        <img src="${tomo.cover}" alt="Capítulo ${tomo.number}">
+                        <img src="${tomo.cover}" alt="Capítulo ${num}">
                     </div>
                     <div class="update-info">
-                        <span>Capítulo ${parseFloat(tomo.number)}</span>
+                        <span>Capítulo ${num}</span>
                     </div>
                 </a>
             `;
         });
-    } catch (e) { console.error(e); }
+
+        // Duplicamos el contenido para que el bucle sea infinito y fluido
+        updatesTrack.innerHTML = htmlContent + htmlContent;
+
+    } catch (e) { 
+        console.error("Error cargando actualizaciones:", e); 
+    }
 }
 
-// 3. Lógica de Destacados
+// 3. LÓGICA: DESTACADOS
 async function loadMangas() {
     if (!mangaGrid) return;
     try {
@@ -70,7 +79,7 @@ async function loadMangas() {
         mangaGrid.innerHTML = "";
         querySnapshot.forEach((doc) => {
             const manga = doc.data();
-            const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "";
+            const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "Sin descripción.";
             mangaGrid.innerHTML += `
                 <div class="manga-card" data-description="${cleanDesc}">
                     <div class="cover-container">
@@ -82,9 +91,12 @@ async function loadMangas() {
                     </div>
                 </div>`;
         });
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Error cargando destacados:", e); 
+    }
 }
 
+// Ejecución inicial
 checkLastRead();
 loadUpdates();
 loadMangas();
