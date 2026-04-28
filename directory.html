@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directorio | Manga 4 All</title>
+  <link rel="stylesheet" href="css/style.css?v=15">
+  <style>
+    /* Estilos específicos para los filtros del directorio */
+    .filter-section {
+      background: #111;
+      padding: 25px;
+      border-radius: 15px;
+      border: 1px solid #222;
+      margin-bottom: 40px;
+    }
+    .filter-group {
+      margin-bottom: 20px;
+    }
+    .filter-group:last-child { margin-bottom: 0; }
+    .filter-label {
+      display: block;
+      color: #ff0055;
+      font-weight: bold;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .filter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .filter-btn {
+      background: #1a1a1a;
+      color: #ccc;
+      border: 1px solid #333;
+      padding: 8px 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: 0.3s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: #ff0055;
+      color: white;
+      border-color: #ff0055;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="nav-left">
+        <a href="index.html" class="logo">Manga 4 All</a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="directory.html" style="color: #ff0055;">Directorio</a>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" placeholder="Buscar manga...">
+    </div>
+  </nav>
+
+  <main class="container">
+    <h1 class="section-title">Directorio de Mangas</h1>
+
+    <aside class="filter-section">
+        <div class="filter-group">
+            <span class="filter-label">Ordenar Alfabéticamente</span>
+            <div class="filter-options">
+                <button class="filter-btn active" onclick="sortAlphabetical('asc')">A - Z</button>
+                <button class="filter-btn" onclick="sortAlphabetical('desc')">Z - A</button>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <span class="filter-label">Filtrar por Género</span>
+            <div id="genre-container" class="filter-options">
+                <button class="filter-btn active" onclick="filterByGenre('Todos')">Todos</button>
+                </div>
+        </div>
+    </aside>
+
+    <div id="directory-grid" class="manga-grid">
+        </div>
+  </main>
+
+  <footer>Manga 4 All © 2026</footer>
+
+  <script type="module" src="js/directory.js"></script>
+</body>
+</html>
