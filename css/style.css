@@ -1,8 +1,8 @@
-/* --- BASE --- */
+/* --- RESET Y BASE --- */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body { background-color: #070707; color: white; padding-top: 70px; }
+body { background-color: #070707; color: white; line-height: 1.4; padding-top: 70px; }
 
-/* --- NAVBAR --- */
+/* --- NAVBAR FIJA --- */
 nav { 
     background: #111; padding: 0 40px; display: flex; 
     justify-content: space-between; align-items: center; 
@@ -12,14 +12,15 @@ nav {
 .nav-left { display: flex; align-items: center; gap: 45px; }
 .logo { color: #ff0055; font-weight: bold; font-size: 1.7rem; text-decoration: none; }
 .nav-links { display: flex; gap: 35px; }
-.nav-links a { color: #ccc; text-decoration: none; font-size: 1rem; transition: 0.3s; }
+.nav-links a { color: #ccc; text-decoration: none; font-size: 1rem; transition: 0.3s; font-weight: 500; }
 .nav-links a:hover { color: #ff0055; }
+
 .search-container input {
     background: #1a1a1a; border: 1px solid #333; padding: 10px 18px; 
     border-radius: 25px; color: white; outline: none; width: 280px;
 }
 
-/* --- HEADER --- */
+/* --- HEADER / BANNER --- */
 header { 
     position: relative; height: 380px; display: flex; 
     align-items: center; justify-content: center; overflow: hidden;
@@ -30,16 +31,46 @@ header {
 .header-content h1 { font-size: 4rem; margin-bottom: 15px; }
 .header-content p { font-size: 1.2rem; color: #ddd; line-height: 1.7; }
 
-/* --- CONTENEDORES Y GRIDS --- */
+/* --- CONTENEDORES --- */
 .container { max-width: 1250px; margin: 0 auto; padding: 20px; }
 .section-title { font-size: 1.7rem; margin: 40px 0 20px 0; border-left: 6px solid #ff0055; padding-left: 18px; }
 
+/* --- CARRUSEL AUTOMÁTICO (ULTIMAS ACTUALIZACIONES) --- */
+.updates-wrapper {
+    width: 100%;
+    overflow: hidden; /* Esconde la barra de scroll por completo */
+    position: relative;
+    padding: 20px 0;
+}
+.updates-track {
+    display: flex;
+    gap: 30px;
+    width: max-content;
+    animation: scroll-loop 40s linear infinite; /* Movimiento fluido */
+}
+/* Pausa al pasar el mouse para facilitar el clic */
+.updates-wrapper:hover .updates-track { animation-play-state: paused; }
+
+@keyframes scroll-loop {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.update-item { flex: 0 0 160px; text-decoration: none; transition: 0.3s; }
+.update-cover-wrapper { 
+    width: 100%; aspect-ratio: 2 / 3; border-radius: 12px; 
+    overflow: hidden; border: 1px solid #222; margin-bottom: 10px; 
+}
+.update-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+.update-info span { font-size: 0.85rem; color: #ff0055; font-weight: bold; display: block; text-align: center; }
+
+/* --- GRID DE DESTACADOS --- */
 .manga-grid { 
     display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); 
     gap: 35px; 
 }
 
-/* --- CARDS --- */
+/* --- TARJETAS (INDEX / DESTACADOS) --- */
 .manga-card { 
     background: #111; border-radius: 12px; border: 1px solid #222; 
     text-decoration: none; color: white; transition: 0.4s; position: relative;
@@ -51,6 +82,7 @@ header {
 .manga-info { padding: 18px; text-align: center; }
 .manga-info h3 { font-size: 1.1rem; margin-bottom: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .btn { background: #ff0055; color: white; padding: 10px; border-radius: 8px; font-weight: bold; text-decoration: none; display: block; text-align: center; }
+.btn.disabled { background: #333 !important; color: #666 !important; cursor: not-allowed; pointer-events: none; opacity: 0.5; }
 
 /* --- TOOLTIP --- */
 .manga-card::after {
@@ -60,18 +92,10 @@ header {
 }
 .manga-card:hover::after { opacity: 1; visibility: visible; }
 
-/* --- SLIDER DE ACTUALIZACIONES (HORIZONTAL) --- */
-.updates-scroll {
-    display: flex; gap: 20px; overflow-x: auto; padding: 10px 5px 25px 5px;
-    scroll-snap-type: x mandatory; scrollbar-width: thin; scrollbar-color: #ff0055 #111;
-}
-.updates-scroll::-webkit-scrollbar { height: 6px; }
-.updates-scroll::-webkit-scrollbar-thumb { background: #ff0055; border-radius: 10px; }
-
-.update-item { flex: 0 0 160px; scroll-snap-align: start; text-decoration: none; transition: 0.3s; }
-.update-item:hover { transform: scale(1.05); }
-.update-cover-wrapper { width: 100%; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; border: 1px solid #222; margin-bottom: 10px; }
-.update-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-.update-info span { font-size: 0.8rem; color: #ff0055; font-weight: bold; display: block; text-align: center; }
+/* --- READER IMÁGENES --- */
+.manga-container { max-width: 900px; margin: 30px auto; display: flex; flex-direction: column; align-items: center; }
+.manga-container img { width: 100%; height: auto; display: block; }
+.nav-controls { display: flex; justify-content: center; align-items: center; gap: 25px; padding: 35px; background: #070707; }
+.chapter-label { font-weight: bold; font-size: 1.3rem; min-width: 180px; text-align: center; }
 
 footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #111; margin-top: 50px; }
