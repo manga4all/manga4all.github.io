@@ -18,9 +18,12 @@ async function loadMangas(){
 
     const manga = doc.data();
 
+    // Limpiamos comillas dobles para que no rompan el atributo HTML del tooltip
+    const cleanDesc = manga.description.replace(/"/g, '&quot;');
+
     mangaGrid.innerHTML += `
 
-      <div class="manga-card">
+      <div class="manga-card" data-description="${cleanDesc}">
 
         <div class="cover-container">
 
@@ -35,8 +38,6 @@ async function loadMangas(){
         <div class="manga-info">
 
           <h3>${manga.title}</h3>
-
-          <p>${manga.description}</p>
 
           <a
             class="btn"
