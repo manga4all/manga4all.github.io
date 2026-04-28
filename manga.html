@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="pageTitle">Cargando...</title>
-  <link rel="stylesheet" href="css/style.css?v=6">
+  <title id="pageTitle">Cargando... | M4A</title>
+  <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 
   <nav>
-    <div class="logo">Manga 4 All</div>
-    <div class="nav-links">
-      <a href="index.html">Inicio</a>
+    <div class="nav-left">
+        <a href="index.html" class="logo">Manga 4 All</a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="directory.html">Directorio</a>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" placeholder="Buscar manga...">
     </div>
   </nav>
 
@@ -20,14 +26,11 @@
       <div class="manga-cover-side">
         <img id="mangaCover" src="" alt="">
       </div>
-
       <div class="manga-content-side">
         <h1 id="mangaTitle">Cargando...</h1>
-        <p id="mangaDescription">Esperando datos de la base de datos...</p>
-        
-        <h2 class="section-title">Capítulos Disponibles</h2>
-        <div class="chapters-grid">
-           </div>
+        <p id="mangaDescription">Esperando datos...</p>
+        <h2 class="section-title">Capítulos</h2>
+        <div class="chapters-grid"></div>
       </div>
     </div>
   </section>
@@ -36,59 +39,29 @@
 
   <script type="module">
     import { db } from "./js/firebase.js";
-    import {
-      doc, getDoc, collection, query, where, getDocs, orderBy
-    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-
+    import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
     const params = new URLSearchParams(window.location.search);
     const mangaId = params.get("id");
-
-    const mangaTitle = document.getElementById("mangaTitle");
-    const mangaDescription = document.getElementById("mangaDescription");
-    const mangaCover = document.getElementById("mangaCover");
-    const chaptersGrid = document.querySelector(".chapters-grid");
-
     async function loadManga() {
       if(!mangaId) return;
-
-      // 1. OBTENER INFORMACIÓN DEL MANGA
       const mangaRef = doc(db, "mangas", mangaId);
       const mangaSnap = await getDoc(mangaRef);
-
       if (mangaSnap.exists()) {
         const manga = mangaSnap.data();
-        document.title = manga.title + " | Manga 4 All";
-        mangaTitle.textContent = manga.title;
-        mangaDescription.textContent = manga.description;
-        mangaCover.src = manga.cover;
+        document.getElementById("mangaTitle").textContent = manga.title;
+        document.getElementById("mangaDescription").textContent = manga.description;
+        document.getElementById("mangaCover").src = manga.cover;
+        document.title = manga.title + " | M4A";
       }
-
-      // 2. OBTENER CAPÍTULOS
-      const q = query(
-        collection(db, "tomos"),
-        where("mangaId", "==", mangaId),
-        orderBy("number")
-      );
-
+      const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), orderBy("number"));
       const querySnapshot = await getDocs(q);
-      chaptersGrid.innerHTML = "";
-
+      const grid = document.querySelector(".chapters-grid");
+      grid.innerHTML = "";
       querySnapshot.forEach((docItem) => {
         const tomo = docItem.data();
-        const numeroLimpio = parseFloat(tomo.number);
-
-        chaptersGrid.innerHTML += `
-          <a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}">
-            <img src="${tomo.cover}" alt="Capítulo ${numeroLimpio}">
-            <div class="chapter-info">
-              <h3>Capítulo ${numeroLimpio}</h3>
-              <span class="btn">Leer ahora</span>
-            </div>
-          </a>
-        `;
+        grid.innerHTML += `<a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}"><img src="${tomo.cover}"><div class="chapter-info"><h3>Capítulo ${parseFloat(tomo.number)}</h3><span class="btn">Leer ahora</span></div></a>`;
       });
     }
-
     loadManga();
   </script>
 </body>
