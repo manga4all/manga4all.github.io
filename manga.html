@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageTitle">Cargando... | M4A</title>
-  <link rel="stylesheet" href="css/style.css?v=8">
+  <link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
 
@@ -23,47 +23,108 @@
 
   <section class="container">
     <div class="manga-page">
+      
       <div class="manga-cover-side">
-        <img id="mangaCover" src="" alt="">
+        <img id="mangaCover" src="" alt="Portada">
       </div>
+
       <div class="manga-content-side">
         <h1 id="mangaTitle">Cargando...</h1>
-        <p id="mangaDescription">Esperando datos...</p>
-        <h2 class="section-title">Capítulos</h2>
-        <div class="chapters-grid"></div>
+        
+        <div id="mangaGenres" style="margin-bottom: 15px; color: #ff0055; font-weight: bold; font-size: 0.9rem;"></div>
+        
+        <p id="mangaDescription">Esperando datos de la base de datos...</p>
+        
+        <h2 class="section-title">Capítulos Disponibles</h2>
+        
+        <div class="chapters-grid" id="chaptersGrid">
+           </div>
       </div>
+
     </div>
   </section>
 
   <footer>Manga 4 All © 2026</footer>
 
+  <script src="js/navbar.js"></script>
+
   <script type="module">
     import { db } from "./js/firebase.js";
-    import { doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import {
+      doc, getDoc, collection, query, where, getDocs, orderBy
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
     const params = new URLSearchParams(window.location.search);
     const mangaId = params.get("id");
-    async function loadManga() {
+
+    const mangaTitle = document.getElementById("mangaTitle");
+    const mangaDescription = document.getElementById("mangaDescription");
+    const mangaCover = document.getElementById("mangaCover");
+    const mangaGenres = document.getElementById("mangaGenres");
+    const chaptersGrid = document.getElementById("chaptersGrid");
+
+    async function loadMangaData() {
       if(!mangaId) return;
-      const mangaRef = doc(db, "mangas", mangaId);
-      const mangaSnap = await getDoc(mangaRef);
-      if (mangaSnap.exists()) {
-        const manga = mangaSnap.data();
-        document.getElementById("mangaTitle").textContent = manga.title;
-        document.getElementById("mangaDescription").textContent = manga.description;
-        document.getElementById("mangaCover").src = manga.cover;
-        document.title = manga.title + " | M4A";
+
+      try {
+        // 1. OBTENER INFORMACIÓN DEL MANGA
+        const mangaRef = doc(db, "mangas", mangaId);
+        const mangaSnap = await getDoc(mangaRef);
+
+        if (mangaSnap.exists()) {
+          const manga = mangaSnap.data();
+          
+          document.title = manga.title + " | Manga 4 All";
+          mangaTitle.textContent = manga.title;
+          mangaDescription.textContent = manga.description;
+          mangaCover.src = manga.cover;
+
+          // Mostrar Géneros (Si existen)
+          if (manga.genres && manga.genres.length > 0) {
+            mangaGenres.textContent = manga.genres.join(" • ");
+          }
+        }
+
+        // 2. OBTENER CAPÍTULOS ORDENADOS
+        const q = query(
+          collection(db, "tomos"),
+          where("mangaId", "==", mangaId)
+        );
+
+        const querySnapshot = await getDocs(q);
+        let chapters = [];
+        
+        querySnapshot.forEach((docItem) => {
+          chapters.push(docItem.data());
+        });
+
+        // Ordenar matemáticamente para evitar errores de 001, 1, 1.5
+        chapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+
+        chaptersGrid.innerHTML = "";
+        chapters.forEach((tomo) => {
+          const numeroLimpio = parseFloat(tomo.number);
+
+          // Estructura de tarjeta idéntica al index para mantener coherencia
+          chaptersGrid.innerHTML += `
+            <a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+              <div class="cover-container">
+                <img src="${tomo.cover}" alt="Capítulo ${numeroLimpio}">
+              </div>
+              <div class="chapter-info">
+                <h3>Capítulo ${numeroLimpio}</h3>
+                <span class="btn">Leer ahora</span>
+              </div>
+            </a>
+          `;
+        });
+
+      } catch (error) {
+        console.error("Error cargando manga.html:", error);
       }
-      const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), orderBy("number"));
-      const querySnapshot = await getDocs(q);
-      const grid = document.querySelector(".chapters-grid");
-      grid.innerHTML = "";
-      querySnapshot.forEach((docItem) => {
-        const tomo = docItem.data();
-        grid.innerHTML += `<a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}"><img src="${tomo.cover}"><div class="chapter-info"><h3>Capítulo ${parseFloat(tomo.number)}</h3><span class="btn">Leer ahora</span></div></a>`;
-      });
     }
-    loadManga();
+
+    loadMangaData();
   </script>
-  <script src="js/navbar.js"></script>
 </body>
 </html>
