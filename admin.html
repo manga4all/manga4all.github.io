@@ -1,46 +1,252 @@
-<!DOCTYPE html>
-<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manga 4 All</title>
-  <link rel="stylesheet" href="css/style.css?v=14">
+  <title>Manga4All - Consola de Admin</title>
+  <title>Manga4All - Consola de Admin (JSON Edition)</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #070707; color: white; padding: 20px; }
+
+    .admin-container { max-width: 900px; margin: auto; }
+
+    /* ESTILO DE PESTAÑAS (TABS) */
+    .tabs-header { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #1f1f1f; padding-bottom: 10px; }
+    .tab-btn { 
+      background: #1a1a1a; color: #888; border: none; padding: 12px 25px; 
+@@ -29,7 +28,10 @@
+      background: #1a1a1a; color: white; font-size: 15px; border: 1px solid transparent;
+    }
+    input:focus, textarea:focus { border-color: #ff0055; outline: none; background: #222; }
+    textarea { height: 120px; resize: vertical; }
+    
+    .file-input-wrapper {
+      background: #1a1a1a; padding: 20px; border: 2px dashed #333; border-radius: 10px; text-align: center; margin-bottom: 18px;
+    }
+
+    button.primary-btn { 
+      width: 100%; padding: 15px; border: none; border-radius: 10px; 
+@@ -38,7 +40,6 @@
+    }
+    button.primary-btn:hover { background: #ff2b72; transform: translateY(-2px); }
+
+    /* CUADRO DE RESULTADO ID */
+    .id-display { 
+      background: #000; border: 1px dashed #00ff88; padding: 15px; 
+      border-radius: 10px; margin-top: 20px; display: none; text-align: center;
+@@ -48,6 +49,7 @@
+    .result-msg { margin-top: 15px; text-align: center; font-weight: bold; }
+    .success { color: #00ff88; }
+    .error { color: #ff3333; }
+    .info { color: #00ccff; font-size: 0.9rem; }
+  </style>
 </head>
-<body>
 
-  <nav>
-    <div class="nav-left">
-        <a href="index.html" class="logo">Manga 4 All</a>
-        <div class="nav-links">
-            <a href="index.html">Inicio</a>
-            <a href="directory.html">Directorio</a>
+@@ -56,14 +58,14 @@
+  <div class="admin-container">
+    <div class="tabs-header">
+      <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
+      <button class="tab-btn" onclick="openTab('chapterTab')">📂 Subir Capítulo</button>
+      <button class="tab-btn" onclick="openTab('chapterTab')">📂 Subir Capítulos (JSON)</button>
+    </div>
+
+    <div id="mangaTab" class="tab-content active">
+      <h1>Registrar Nueva Serie</h1>
+      <div class="input-group">
+        <label>Título del Manga</label>
+        <input type="text" id="mangaTitle" placeholder="Ej: Rooster Fighter">
+        <input type="text" id="mangaTitle" placeholder="Ej: Dungeon Meshi">
+      </div>
+      <div class="input-group">
+        <label>Descripción</label>
+@@ -84,26 +86,28 @@ <h1>Registrar Nueva Serie</h1>
+    </div>
+
+    <div id="chapterTab" class="tab-content">
+      <h1>Publicar Capítulo</h1>
+      <h1>Publicar Capítulos Masivos</h1>
+      <div class="input-group">
+        <label>ID del Manga (El que obtuviste en la otra pestaña)</label>
+        <input type="text" id="targetMangaId" placeholder="Ej: MT1L5qCUnia0xFNv5Ldy">
+      </div>
+      <div class="input-group" style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label>Número del Capítulo</label>
+          <input type="number" id="chapterNum" placeholder="1">
         </div>
+        <div style="flex: 2;">
+          <label>Portada del Capítulo (Link Drive)</label>
+          <input type="text" id="chapterCover" placeholder="Link Drive">
+        </div>
+        <label>ID del Manga (Donde se subirán los capítulos)</label>
+        <input type="text" id="targetMangaId" placeholder="ID obtenido de la pestaña anterior">
+      </div>
+
+      <div class="input-group">
+        <label>Lista de Imágenes (Copiadas del Script de Google)</label>
+        <textarea id="imagesList" style="height: 200px;" placeholder="Pega los links aquí..."></textarea>
+        <label>Portada Predeterminada para los capítulos (Link Drive)</label>
+        <input type="text" id="chapterCoverBase" placeholder="Opcional: Portada para los tomos">
+        <small style="color: #666;">Nota: Se aplicará la misma portada a todo el lote del JSON.</small>
+      </div>
+      <button class="primary-btn" id="uploadChapterBtn">Publicar Capítulo</button>
+
+      <div class="file-input-wrapper">
+        <label style="color: #ff0055; cursor: pointer;">
+          📁 Seleccionar archivo JSON del Script
+          <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
+        </label>
+        <div id="fileNameDisplay" style="margin-top: 10px; font-size: 0.8rem; color: #888;">Ningún archivo seleccionado</div>
+      </div>
+
+      <button class="primary-btn" id="uploadJsonBtn">🚀 Iniciar Carga Masiva</button>
+      
+      <div id="chapterStatus" class="result-msg"></div>
     </div>
-    <div class="search-container">
-        <input type="text" placeholder="Buscar manga...">
-    </div>
-  </nav>
+  </div>
+@@ -128,23 +132,29 @@ <h1>Publicar Capítulo</h1>
 
-  <header>
-    <img src="assets/banners/1299859.jpg" alt="Banner" class="banner-img">
-    <div class="overlay"></div>
-    <div class="header-content">
-      <h1>Manga 4 All</h1>
-      <p>
-        Tu portal definitivo para sumergirte en el mundo del manga en español. 
-        Disfruta de una experiencia de lectura optimizada, con carga instantánea y 
-        un catálogo seleccionado para que no te pierdas ni un solo capítulo de tus obras favoritas.
-      </p>
-    </div>
-  </header>
+    // --- UTILIDADES ---
+    function extractDriveId(url) {
+      if(!url) return null;
+      const match = url.match(/\/d\/(.*?)\/|id=(.*?)($|&)/);
+      return match ? (match[1] || match[2]) : null;
+    }
 
-  <main class="container">
-    <h2 class="section-title">Destacados</h2>
-    <div class="manga-grid"></div>
-  </main>
+    // --- LÓGICA DE TABS ---
+    function formatDriveThumbnail(url, size = "w1600") {
+      const id = extractDriveId(url);
+      return id ? `https://drive.google.com/thumbnail?id=${id}&sz=${size}` : null;
+    }
 
-  <footer>Manga 4 All © 2026</footer>
+    // --- UI TABS ---
+    window.openTab = (tabName) => {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.currentTarget.classList.add('active');
+    };
 
-  <script type="module" src="js/app.js"></script>
+    window.copyId = () => {
+      const id = document.getElementById('newMangaId').innerText;
+      navigator.clipboard.writeText(id);
+      alert("ID Copiado al portapapeles");
+    };
+    // Mostrar nombre del archivo seleccionado
+    document.getElementById('jsonFileInput').addEventListener('change', function(e) {
+      const fileName = e.target.files[0] ? e.target.files[0].name : "Ningún archivo seleccionado";
+      document.getElementById('fileNameDisplay').innerText = fileName;
+    });
+
+    // --- ACCIÓN: CREAR MANGA ---
+    document.getElementById('createMangaBtn').addEventListener('click', async () => {
+@@ -160,9 +170,7 @@ <h1>Publicar Capítulo</h1>
+      }
+
+      try {
+        const coverId = extractDriveId(coverUrl);
+        const finalCover = `https://drive.google.com/thumbnail?id=${coverId}&sz=w1000`;
+
+        const finalCover = formatDriveThumbnail(coverUrl, "w1000");
+        const docRef = await addDoc(collection(db, "mangas"), {
+          title,
+          description,
+@@ -180,47 +188,66 @@ <h1>Publicar Capítulo</h1>
+      }
+    });
+
+    // --- ACCIÓN: SUBIR CAPÍTULO ---
+    document.getElementById('uploadChapterBtn').addEventListener('click', async () => {
+    // --- ACCIÓN: SUBIR JSON (CARGA MASIVA) ---
+    document.getElementById('uploadJsonBtn').addEventListener('click', async () => {
+      const mangaId = document.getElementById('targetMangaId').value.trim();
+      const number = parseInt(document.getElementById('chapterNum').value);
+      const coverUrl = document.getElementById('chapterCover').value.trim();
+      const rawImages = document.getElementById('imagesList').value.trim();
+      const coverUrlBase = document.getElementById('chapterCoverBase').value.trim();
+      const fileInput = document.getElementById('jsonFileInput');
+      const status = document.getElementById('chapterStatus');
+
+      if (!mangaId || isNaN(number) || !coverUrl || !rawImages) {
+        status.innerHTML = "❌ Completa los datos del capítulo";
+      if (!mangaId || !fileInput.files[0]) {
+        status.innerHTML = "❌ Indica el ID del Manga y selecciona el JSON";
+        status.className = "result-msg error";
+        return;
+      }
+
+      try {
+        const coverId = extractDriveId(coverUrl);
+        const finalCover = `https://drive.google.com/thumbnail?id=${coverId}&sz=w1000`;
+        
+        const lines = rawImages.split('\n');
+        const imagesArray = lines.map(line => {
+          const id = extractDriveId(line.trim());
+          return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w1600` : null;
+        }).filter(url => url !== null);
+
+        await addDoc(collection(db, "tomos"), {
+          mangaId,
+          number,
+          cover: finalCover,
+          images: imagesArray,
+          createdAt: Timestamp.now()
+        });
+
+        status.innerHTML = `✅ Capítulo ${number} subido con éxito`;
+        status.className = "result-msg success";
+        document.getElementById('imagesList').value = "";
+        document.getElementById('chapterNum').value = number + 1;
+      } catch (e) {
+        status.innerHTML = "❌ Error al subir capítulo";
+        console.error(e);
+      }
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        try {
+          const chaptersData = JSON.parse(e.target.result);
+          const finalChapterCover = formatDriveThumbnail(coverUrlBase, "w1000") || "";
+          
+          status.innerHTML = "⏳ Iniciando carga masiva...";
+          status.className = "result-msg info";
+
+          let count = 0;
+
+          for (const item of chaptersData) {
+            // item.capitulo es el string (ej: "000.01")
+            // item.links es el array de links de Drive
+            
+            const transformedImages = item.links.map(link => formatDriveThumbnail(link, "w1600")).filter(u => u !== null);
+
+            await addDoc(collection(db, "tomos"), {
+              mangaId,
+              number: String(item.capitulo), // Se guarda como String
+              cover: finalChapterCover,
+              images: transformedImages,
+              createdAt: Timestamp.now()
+            });
+
+            count++;
+            status.innerHTML = `⏳ Cargando: ${count} / ${chaptersData.length} (Cap. ${item.capitulo})`;
+          }
+
+          status.innerHTML = `✅ ¡Éxito! Se subieron ${count} capítulos correctamente.`;
+          status.className = "result-msg success";
+        } catch (err) {
+          status.innerHTML = "❌ Error al procesar el archivo JSON";
+          console.error(err);
+        }
+      };
+
+      reader.readAsText(file);
+    });
+
+    window.copyId = () => {
+      const id = document.getElementById('newMangaId').innerText;
+      navigator.clipboard.writeText(id);
+      alert("ID Copiado");
+    };
+  </script>
 </body>
 </html>
