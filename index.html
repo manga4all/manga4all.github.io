@@ -26,11 +26,11 @@
     <div class="overlay"></div>
     <div class="header-content">
       <h1>Manga 4 All</h1>
-      <p>Tu portal definitivo para sumergirte en el mundo del manga en español.</p>
+      <p>Tu portal definitivo para sumergirte en el mundo del manga en español. Disfruta de una experiencia de lectura optimizada.</p>
     </div>
   </header>
 
-  <div id="continue-container" class="container" style="display: none; margin-bottom: 30px;">
+  <div id="continue-container" class="container" style="display: none; margin-bottom: 40px;">
       <h2 class="section-title">Continuar Leyendo</h2>
       <div id="continue-card-place"></div>
   </div>
@@ -38,13 +38,15 @@
   <div class="container" style="margin-bottom: 0;">
       <h2 class="section-title">Últimas Actualizaciones</h2>
       <div class="updates-wrapper">
-          <div id="updates-track" class="updates-track"></div>
+          <div id="updates-track" class="updates-track">
+              </div>
       </div>
   </div>
 
   <main class="container">
     <h2 class="section-title">Destacados</h2>
-    <div id="manga-grid" class="manga-grid"></div>
+    <div id="manga-grid" class="manga-grid">
+        </div>
   </main>
 
   <footer>Manga 4 All © 2026</footer>
@@ -61,19 +63,24 @@
         if (storage && contenedor && lugarCard) {
             const m = JSON.parse(storage);
             contenedor.style.display = "block";
+            
+            // Usamos un diseño flex horizontal que ignora las reglas de .manga-card
             lugarCard.innerHTML = `
-                <a href="reader.html?manga=${m.id}&number=${m.chapter}" class="manga-card" style="display: flex; gap: 20px; align-items: center; background: #111; padding: 20px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white;">
-                    <img src="${m.image}" style="width: 80px; height: 120px; object-fit: cover; border-radius: 8px;">
-                    <div>
-                        <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem;">REANUDAR LECTURA</span>
-                        <h3 style="margin: 5px 0; font-size: 1.4rem;">${m.title}</h3>
-                        <p style="color: #ccc;">Capítulo ${m.chapter}</p>
+                <a href="reader.html?manga=${m.id}&number=${m.chapter}" style="display: flex; align-items: center; gap: 30px; background: #111; padding: 25px; border-radius: 15px; border: 1px solid #ff0055; text-decoration: none; color: white; transition: 0.3s; margin-top: 10px;">
+                    <img src="${m.image}" style="width: 110px; height: 160px; object-fit: cover; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); border: 1px solid #333;">
+                    <div style="flex: 1; text-align: left;">
+                        <span style="color: #ff0055; font-weight: bold; font-size: 0.9rem; letter-spacing: 1px; display: block; margin-bottom: 5px;">REANUDAR LECTURA</span>
+                        <h3 style="margin: 0; font-size: 1.8rem; line-height: 1.2; font-weight: 800;">${m.title}</h3>
+                        <p style="color: #ccc; font-size: 1.2rem; margin-top: 5px;">Capítulo ${m.chapter}</p>
+                        <div style="display: inline-block; margin-top: 15px; background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.9rem;">
+                            Continuar →
+                        </div>
                     </div>
                 </a>
             `;
         }
     }
-    // Forzamos la ejecución al cargar la ventana
+    // Ejecutar al cargar la página
     window.addEventListener('load', renderHistorial);
   </script>
 </body>
