@@ -1,162 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-browser-title">Lector | M4A</title>
-    <link rel="stylesheet" href="css/style.css?v=13">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lector | Manga 4 All</title>
+  <link rel="stylesheet" href="css/style.css?v=18">
+  <style>
+    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px; background: #111; position: sticky; top: 70px; z-index: 1000; }
+    .btn-nav { background: #ff0055; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s; }
+    .btn-nav.disabled { background: #333 !important; color: #777 !important; pointer-events: none !important; opacity: 0.6; cursor: default; }
+    #chapterLabelTop, #chapterLabelBottom { font-weight: bold; color: white; text-align: center; min-width: 140px; }
+    .manga-pages-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; min-height: 50vh; }
+    .manga-pages-container img { width: 100%; height: auto; display: block; background: #111; }
+    .list-btn { background: #333; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    .error-msg { text-align: center; padding: 50px; color: #ff0055; font-weight: bold; }
+  </style>
 </head>
 <body>
 
-    <nav>
-        <div class="nav-left">
-            <a href="index.html" class="logo">Manga 4 All</a>
-            <div class="nav-links">
-                <a href="index.html">Inicio</a>
-                <a href="directory.html">Directorio</a>
-            </div>
+  <nav>
+    <div class="nav-left">
+        <a href="index.html" class="logo">Manga 4 All</a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="directory.html">Directorio</a>
         </div>
-        <div class="search-container">
-            <input type="text" placeholder="Buscar manga...">
-        </div>
-    </nav>
-
-    <div class="nav-controls">
-        <a id="btn-back-manga-top" href="#" class="btn" style="background:#222">☰ Lista</a>
-        <a id="prev-btn-top" href="#" class="btn">←</a>
-        <span id="chapter-title-top" class="chapter-label">Cargando...</span>
-        <a id="next-btn-top" href="#" class="btn">→</a>
     </div>
+  </nav>
 
-    <main id="reader-content" class="manga-container">
-        </main>
+  <div class="reader-nav">
+    <a href="#" id="listBtnTop" class="list-btn">☰ Lista</a>
+    <a href="#" id="prevBtnTop" class="btn-nav">←</a>
+    <span id="chapterLabelTop">Cargando...</span>
+    <a href="#" id="nextBtnTop" class="btn-nav">→</a>
+  </div>
 
-    <div class="nav-controls" style="padding: 60px 0;">
-        <a id="btn-back-manga-bottom" href="#" class="btn" style="background:#222">☰ Lista</a>
-        <a id="prev-btn-bottom" href="#" class="btn">←</a>
-        <span id="chapter-title-bottom" class="chapter-label">Cargando...</span>
-        <a id="next-btn-bottom" href="#" class="btn">→</a>
-    </div>
+  <div class="manga-pages-container" id="mangaPages"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-        import { 
-            getFirestore, collection, query, where, getDocs, doc, getDoc 
-        } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+  <div class="reader-nav" style="margin-bottom: 50px;">
+    <a href="#" id="listBtnBottom" class="list-btn">☰ Lista</a>
+    <a href="#" id="prevBtnBottom" class="btn-nav">←</a>
+    <span id="chapterLabelBottom">Cargando...</span>
+    <a href="#" id="nextBtnBottom" class="btn-nav">→</a>
+  </div>
 
-        const firebaseConfig = { 
-            apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo", 
-            authDomain: "manga4all-f520f.firebaseapp.com", 
-            projectId: "manga4all-f520f", 
-            storageBucket: "manga4all-f520f.firebasestorage.app", 
-            messagingSenderId: "372561836700", 
-            appId: "1:372561836700:web:cbb295bda656abd2ea0b59" 
-        };
+  <footer>Manga 4 All © 2026</footer>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+  <script src="js/navbar.js"></script>
 
-        async function loadChapter() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mangaId = urlParams.get('manga');
-            const chapterParam = urlParams.get('number');
+  <script type="module">
+    import { db } from "./js/firebase.js";
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-            if (!mangaId || !chapterParam) return;
+    const params = new URLSearchParams(window.location.search);
+    const mangaId = params.get("manga");
+    const currentNumber = params.get("number") ? params.get("number").trim() : null;
 
-            const listUrl = `manga.html?id=${mangaId}`;
-            document.getElementById('btn-back-manga-top').href = listUrl;
-            document.getElementById('btn-back-manga-bottom').href = listUrl;
+    async function loadReader() {
+      if (!mangaId || !currentNumber) return;
 
-            try {
-                const mangaRef = doc(db, "mangas", mangaId);
-                const mangaSnap = await getDoc(mangaRef);
-                const mangaName = mangaSnap.exists() ? mangaSnap.data().title : "Manga";
+      const listUrl = `manga.html?id=${mangaId}`;
+      document.querySelectorAll(".list-btn").forEach(b => b.href = listUrl);
+      document.getElementById("chapterLabelTop").textContent = `Capítulo ${currentNumber}`;
+      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${currentNumber}`;
 
-                let q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", String(chapterParam)));
-                let querySnapshot = await getDocs(q);
-                
-                if (querySnapshot.empty && !isNaN(chapterParam)) {
-                    q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", Number(chapterParam)));
-                    querySnapshot = await getDocs(q);
-                }
+      try {
+        // 1. Traer todos los capítulos del manga
+        const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
+        const snap = await getDocs(q);
+        
+        let allChapters = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            // Normalizamos el número para evitar fallos de comparación
+            data.normNum = String(data.number).trim();
+            allChapters.push(data);
+        });
 
-                if (!querySnapshot.empty) {
-                    const docData = querySnapshot.docs[0].data();
-                    const cleanNumber = parseFloat(docData.number);
-                    
-                    const fullTitle = `Capítulo ${cleanNumber}`;
-                    document.getElementById('chapter-title-top').innerText = fullTitle;
-                    document.getElementById('chapter-title-bottom').innerText = fullTitle;
-                    document.title = `${mangaName} ${fullTitle} | M4A`;
+        // 2. Ordenar matemáticamente
+        allChapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
 
-                    // --- GUARDAR PROGRESO (NUEVO) ---
-                    const progress = {
-                        mangaId: mangaId,
-                        mangaTitle: mangaName,
-                        mangaCover: mangaSnap.data().cover,
-                        chapterNumber: chapterParam, 
-                        displayNumber: cleanNumber   
-                    };
-                    localStorage.setItem('lastReadM4A', JSON.stringify(progress));
+        // 3. Buscar el capítulo actual en la lista ordenada
+        const currentIndex = allChapters.findIndex(c => c.normNum === currentNumber);
+        const tomoActual = allChapters[currentIndex];
 
-                    const content = document.getElementById('reader-content');
-                    content.innerHTML = ""; 
-                    docData.images.forEach(url => {
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.loading = "lazy";
-                        content.appendChild(img);
-                    });
-
-                    setupNavigation(mangaId, chapterParam);
-                } else {
-                    document.getElementById('reader-content').innerHTML = "<div style='text-align:center; padding:50px;'>El capítulo no existe.</div>";
-                }
-            } catch (error) {
-                console.error("Error:", error);
-            }
+        const container = document.getElementById("mangaPages");
+        
+        if (tomoActual && tomoActual.images && tomoActual.images.length > 0) {
+          container.innerHTML = "";
+          tomoActual.images.forEach(url => {
+            const img = document.createElement("img");
+            img.src = url;
+            container.appendChild(img);
+          });
+        } else {
+          container.innerHTML = `<p class="error-msg">No se encontraron imágenes para el capítulo ${currentNumber}.</p>`;
         }
 
-        async function setupNavigation(mangaId, currentNum) {
-            const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
-            const navSnapshot = await getDocs(q);
-            let chapters = [];
-            navSnapshot.forEach(doc => chapters.push(doc.data().number));
-            chapters.sort((a, b) => parseFloat(a) - parseFloat(b));
-            const currentIndex = chapters.findIndex(c => parseFloat(c) === parseFloat(currentNum));
-
-            const prevBtns = [document.getElementById('prev-btn-top'), document.getElementById('prev-btn-bottom')];
-            const nextBtns = [document.getElementById('next-btn-top'), document.getElementById('next-btn-bottom')];
-
-            if (currentIndex > 0) {
-                const prevUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex - 1]}`;
-                prevBtns.forEach(btn => { 
-                    btn.href = prevUrl; 
-                    btn.classList.remove('disabled'); 
-                });
-            } else {
-                prevBtns.forEach(btn => { 
-                    btn.href = "#"; 
-                    btn.classList.add('disabled'); 
-                });
-            }
-
-            if (currentIndex !== -1 && currentIndex < chapters.length - 1) {
-                const nextUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex + 1]}`;
-                nextBtns.forEach(btn => { 
-                    btn.href = nextUrl; 
-                    btn.classList.remove('disabled'); 
-                });
-            } else {
-                nextBtns.forEach(btn => { 
-                    btn.href = "#"; 
-                    btn.classList.add('disabled'); 
-                });
-            }
+        // 4. Configurar botones de navegación basándonos en el INDEX
+        // Botón Anterior
+        if (currentIndex > 0) {
+            updateNavButtons("prev", allChapters[currentIndex - 1].number);
+        } else {
+            disableButtons("prev");
         }
 
-        loadChapter();
-    </script>
-    <script src="js/navbar.js"></script>
+        // Botón Siguiente
+        if (currentIndex !== -1 && currentIndex < allChapters.length - 1) {
+            updateNavButtons("next", allChapters[currentIndex + 1].number);
+        } else {
+            disableButtons("next");
+        }
+
+      } catch (e) {
+        console.error("Error crítico:", e);
+        document.getElementById("mangaPages").innerHTML = `<p class="error-msg">Error de conexión con la base de datos.</p>`;
+      }
+    }
+
+    function updateNavButtons(type, targetNum) {
+        const url = `reader.html?manga=${mangaId}&number=${targetNum}`;
+        document.getElementById(type + "BtnTop").href = url;
+        document.getElementById(type + "BtnBottom").href = url;
+        document.getElementById(type + "BtnTop").classList.remove("disabled");
+        document.getElementById(type + "BtnBottom").classList.remove("disabled");
+    }
+
+    function disableButtons(type) {
+        const bT = document.getElementById(type + "BtnTop");
+        const bB = document.getElementById(type + "BtnBottom");
+        bT.classList.add("disabled");
+        bB.classList.add("disabled");
+        bT.removeAttribute("href");
+        bB.removeAttribute("href");
+        if(type === "next") {
+            bT.textContent = bB.textContent = "FIN";
+        }
+    }
+
+    loadReader();
+  </script>
 </body>
 </html>
