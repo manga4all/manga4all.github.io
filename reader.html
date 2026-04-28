@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lector - Manga 4 All</title>
+    <title id="page-browser-title">Cargando... | M4A</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: #070707; color: white; min-height: 100vh; }
@@ -69,7 +69,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
         import { 
-            getFirestore, collection, query, where, getDocs 
+            getFirestore, collection, query, where, getDocs, doc, getDoc 
         } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -91,7 +91,7 @@
 
             if (!mangaId || !chapterParam) return;
 
-            // Configurar botones de volver
+            // Links volver al manga
             const listUrl = `manga.html?id=${mangaId}`;
             document.getElementById('btn-back-manga-top').href = listUrl;
             document.getElementById('btn-back-manga-bottom').href = listUrl;
@@ -101,7 +101,15 @@
             const titleBottom = document.getElementById('chapter-title-bottom');
 
             try {
-                // Búsqueda híbrida (String o Number)
+                // 1. Obtener datos del MANGA para el título de la pestaña
+                const mangaRef = doc(db, "mangas", mangaId);
+                const mangaSnap = await getDoc(mangaRef);
+                let mangaName = "Manga";
+                if (mangaSnap.exists()) {
+                    mangaName = mangaSnap.data().title;
+                }
+
+                // 2. Búsqueda híbrida del capítulo
                 let q = query(collection(db, "tomos"), where("mangaId", "==", mangaId), where("number", "==", String(chapterParam)));
                 let querySnapshot = await getDocs(q);
 
@@ -116,10 +124,16 @@
                 }
 
                 const docData = querySnapshot.docs[0].data();
-                const cleanTitle = "Capítulo " + parseFloat(docData.number);
-                titleTop.innerText = titleBottom.innerText = cleanTitle;
+                const cleanNumber = parseFloat(docData.number);
+                
+                // ACTUALIZACIÓN DE TÍTULOS
+                const fullTitle = `Capítulo ${cleanNumber}`;
+                titleTop.innerText = titleBottom.innerText = fullTitle;
+                
+                // ACTUALIZACIÓN DE LA PESTAÑA (Browser Tab)
+                document.title = `${mangaName} Capítulo ${cleanNumber} | M4A`;
 
-                // Render de imágenes
+                // Render imágenes
                 readerContent.innerHTML = "";
                 docData.images.forEach((imgUrl) => {
                     const img = document.createElement('img');
@@ -128,7 +142,6 @@
                     readerContent.appendChild(img);
                 });
 
-                // Navegación
                 setupNavigation(mangaId, chapterParam);
 
             } catch (error) {
@@ -155,7 +168,6 @@
             const prevBtns = [document.getElementById('prev-btn-top'), document.getElementById('prev-btn-bottom')];
             const nextBtns = [document.getElementById('next-btn-top'), document.getElementById('next-btn-bottom')];
 
-            // Botón Anterior
             if (currentIndex > 0) {
                 const prevUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex - 1]}`;
                 prevBtns.forEach(btn => { btn.href = prevUrl; btn.classList.remove('disabled'); });
@@ -163,7 +175,6 @@
                 prevBtns.forEach(btn => { btn.classList.add('disabled'); btn.href = "#"; });
             }
 
-            // Botón Siguiente
             if (currentIndex !== -1 && currentIndex < chapters.length - 1) {
                 const nextUrl = `reader.html?manga=${mangaId}&number=${chapters[currentIndex + 1]}`;
                 nextBtns.forEach(btn => { btn.href = nextUrl; btn.classList.remove('disabled'); });
