@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageTitle">Cargando...</title>
-  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
-
 <body>
 
   <nav>
@@ -24,24 +22,22 @@
       </div>
 
       <div class="manga-content-side">
-        <h1 id="mangaTitle"></h1>
-        <p id="mangaDescription"></p>
-        <h2 class="section-title">Capítulos</h2>
-        <div class="chapters-grid"></div>
+        <h1 id="mangaTitle">Cargando...</h1>
+        <p id="mangaDescription">Esperando datos de la base de datos...</p>
+        
+        <h2 class="section-title">Capítulos Disponibles</h2>
+        <div class="chapters-grid">
+           </div>
       </div>
     </div>
   </section>
 
+  <footer>Manga 4 All © 2026</footer>
+
   <script type="module">
     import { db } from "./js/firebase.js";
     import {
-      doc,
-      getDoc,
-      collection,
-      query,
-      where,
-      getDocs,
-      orderBy
+      doc, getDoc, collection, query, where, getDocs, orderBy
     } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
@@ -53,7 +49,9 @@
     const chaptersGrid = document.querySelector(".chapters-grid");
 
     async function loadManga() {
-      // DATOS DEL MANGA
+      if(!mangaId) return;
+
+      // 1. OBTENER INFORMACIÓN DEL MANGA
       const mangaRef = doc(db, "mangas", mangaId);
       const mangaSnap = await getDoc(mangaRef);
 
@@ -65,7 +63,7 @@
         mangaCover.src = manga.cover;
       }
 
-      // LISTADO DE CAPÍTULOS (TOMOS)
+      // 2. OBTENER CAPÍTULOS
       const q = query(
         collection(db, "tomos"),
         where("mangaId", "==", mangaId),
@@ -77,17 +75,14 @@
 
       querySnapshot.forEach((docItem) => {
         const tomo = docItem.data();
-
-        // --- CORRECCIÓN DE VISUALIZACIÓN ---
-        // Usamos parseFloat para quitar los ceros a la izquierda (001 -> 1, 000.5 -> 0.5)
-        const numeroParaMostrar = parseFloat(tomo.number);
+        const numeroLimpio = parseFloat(tomo.number);
 
         chaptersGrid.innerHTML += `
           <a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}">
-            <img src="${tomo.cover}" alt="Capítulo ${numeroParaMostrar}">
+            <img src="${tomo.cover}" alt="Capítulo ${numeroLimpio}">
             <div class="chapter-info">
-              <h3>Capítulo ${numeroParaMostrar}</h3>
-              <span class="btn">Leer</span>
+              <h3>Capítulo ${numeroLimpio}</h3>
+              <span class="btn">Leer ahora</span>
             </div>
           </a>
         `;
@@ -96,6 +91,5 @@
 
     loadManga();
   </script>
-
 </body>
 </html>
