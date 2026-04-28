@@ -1,11 +1,17 @@
-import { db, collection, getDocs, query, limit } from "./firebase.js";
+import { db } from "./firebase.js";
+import { 
+    collection, 
+    getDocs, 
+    query, 
+    limit 
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-const mangaGrid = document.querySelector(".manga-grid");
+const mangaGrid = document.getElementById("manga-grid");
 const continueContainer = document.getElementById("continue-container");
 const continueCardPlace = document.getElementById("continue-card-place");
 const updatesList = document.getElementById("updates-list");
 
-// 1. REVISAR PROGRESO GUARDADO
+// 1. Lógica de Continuar Leyendo
 function checkLastRead() {
     const saved = localStorage.getItem('lastReadM4A');
     if (saved && continueContainer && continueCardPlace) {
@@ -33,70 +39,52 @@ function checkLastRead() {
     }
 }
 
-// 2. CARGAR ÚLTIMAS ACTUALIZACIONES (FILA HORIZONTAL)
+// 2. Lógica de Últimas Actualizaciones (Slider)
 async function loadUpdates() {
     if (!updatesList) return;
-    
     try {
-        // Consultamos la colección 'tomos' limitada a 10
-        // Si tienes un campo 'createdAt', podrías añadir: orderBy("createdAt", "desc")
         const q = query(collection(db, "tomos"), limit(10));
         const querySnapshot = await getDocs(q);
-        
         updatesList.innerHTML = "";
-
         querySnapshot.forEach((doc) => {
             const tomo = doc.data();
-            const num = parseFloat(tomo.number);
-
             updatesList.innerHTML += `
                 <a href="reader.html?manga=${tomo.mangaId}&number=${tomo.number}" class="update-item">
                     <div class="update-cover-wrapper">
-                        <img src="${tomo.cover}" alt="Capítulo ${num}" loading="lazy">
+                        <img src="${tomo.cover}" alt="Capítulo ${tomo.number}">
                     </div>
                     <div class="update-info">
-                        <span>Capítulo ${num}</span>
+                        <span>Capítulo ${parseFloat(tomo.number)}</span>
                     </div>
                 </a>
             `;
         });
-    } catch (error) {
-        console.error("Error cargando actualizaciones:", error);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// 3. CARGAR DESTACADOS (GRID)
+// 3. Lógica de Destacados
 async function loadMangas() {
-  if(!mangaGrid) return;
-  mangaGrid.innerHTML = "<div style='text-align:center; width:100%;'>Cargando catálogo...</div>";
-
-  try {
-    const querySnapshot = await getDocs(collection(db, "mangas"));
-    mangaGrid.innerHTML = "";
-
-    querySnapshot.forEach((doc) => {
-      const manga = doc.data();
-      const rawDesc = manga.description || "Sin descripción disponible.";
-      const cleanDesc = rawDesc.replace(/"/g, '&quot;');
-
-      mangaGrid.innerHTML += `
-        <div class="manga-card" data-description="${cleanDesc}">
-          <div class="cover-container">
-            <img class="cover" src="${manga.cover}" alt="${manga.title}">
-          </div>
-          <div class="manga-info">
-            <h3>${manga.title}</h3>
-            <a class="btn" href="manga.html?id=${doc.id}">Leer</a>
-          </div>
-        </div>
-      `;
-    });
-  } catch (error) {
-    console.error("Error cargando mangas:", error);
-  }
+    if (!mangaGrid) return;
+    try {
+        const querySnapshot = await getDocs(collection(db, "mangas"));
+        mangaGrid.innerHTML = "";
+        querySnapshot.forEach((doc) => {
+            const manga = doc.data();
+            const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "";
+            mangaGrid.innerHTML += `
+                <div class="manga-card" data-description="${cleanDesc}">
+                    <div class="cover-container">
+                        <img class="cover" src="${manga.cover}" alt="${manga.title}">
+                    </div>
+                    <div class="manga-info">
+                        <h3>${manga.title}</h3>
+                        <a class="btn" href="manga.html?id=${doc.id}">Leer</a>
+                    </div>
+                </div>`;
+        });
+    } catch (e) { console.error(e); }
 }
 
-// Ejecutar todo
 checkLastRead();
 loadUpdates();
 loadMangas();
