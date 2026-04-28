@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="tabTitle">Manga 4 All</title>
-  <link rel="stylesheet" href="css/style.css?v=20">
+  <link rel="stylesheet" href="css/style.css?v=21">
   <style>
     .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px; background: #111; position: sticky; top: 70px; z-index: 1000; }
     .btn-nav { background: #ff0055; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s; }
@@ -20,7 +20,10 @@
   <nav>
     <div class="nav-left">
         <a href="index.html" class="logo">Manga 4 All</a>
-        <div class="nav-links"><a href="index.html">Inicio</a><a href="directory.html">Directorio</a></div>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="directory.html">Directorio</a>
+        </div>
     </div>
   </nav>
 
@@ -52,72 +55,64 @@
     const mangaId = params.get("manga");
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
 
-    function limpiarNumero(num) {
-        if (!num) return "";
-        const n = parseFloat(num);
-        return isNaN(n) ? num : n.toString();
+    function limpiarNum(n) {
+        const parsed = parseFloat(n);
+        return isNaN(parsed) ? n : parsed.toString();
     }
 
-    const numeroLimpio = limpiarNumero(rawNumber);
+    const numLimpio = limpiarNum(rawNumber);
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
-      // Título y Etiquetas
-      document.title = `Cap. ${numeroLimpio} | M4A`;
-      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numeroLimpio}`;
-      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numeroLimpio}`;
+      // 1. UI INICIAL
+      document.title = `Cap. ${numLimpio} | M4A`;
+      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
+      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
       document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
 
       try {
-        // --- GUARDAR EN "ÚLTIMO VISTO" ---
-        // Obtenemos el nombre del manga para que el historial se vea bien
+        // 2. GUARDAR HISTORIAL INMEDIATAMENTE
         const mangaDoc = await getDoc(doc(db, "mangas", mangaId));
         if (mangaDoc.exists()) {
-            const mangaData = mangaDoc.exists() ? mangaDoc.data() : { title: "Manga" };
+            const d = mangaDoc.data();
             const historial = {
                 id: mangaId,
-                title: mangaData.title,
-                chapter: numeroLimpio,
-                image: mangaData.cover || mangaData.image,
+                title: d.title,
+                chapter: numLimpio,
+                image: d.cover || d.image,
                 time: Date.now()
             };
-            localStorage.setItem("lastSeen", JSON.stringify(historial));
+            localStorage.setItem("manga_last_seen", JSON.stringify(historial));
         }
 
-        // Cargar Capítulos
+        // 3. CARGAR IMÁGENES
         const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const snap = await getDocs(q);
-        let allChapters = [];
-        snap.forEach(d => {
-            let data = d.data();
+        let caps = [];
+        snap.forEach(doc => {
+            let data = doc.data();
             data.normNum = String(data.number).trim();
-            allChapters.push(data);
+            caps.push(data);
         });
 
-        allChapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-        const currentIndex = allChapters.findIndex(c => c.normNum === rawNumber);
-        const tomoActual = allChapters[currentIndex];
+        caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+        const idx = caps.findIndex(c => c.normNum === rawNumber);
+        const tomo = caps[idx];
 
-        if (tomoActual && tomoActual.images) {
-          const container = document.getElementById("mangaPages");
-          container.innerHTML = "";
-          tomoActual.images.forEach(url => {
+        if (tomo && tomo.images) {
+          const cont = document.getElementById("mangaPages");
+          cont.innerHTML = "";
+          tomo.images.forEach(url => {
             const img = document.createElement("img");
             img.src = url;
-            container.appendChild(img);
+            cont.appendChild(img);
           });
         }
 
-        // Navegación
-        setupNav(currentIndex, allChapters);
-
-      } catch (e) { console.error(e); }
-    }
-
-    function setupNav(index, list) {
-        if (index > 0) {
-            const p = list[index-1].number;
+        // 4. BOTONES NAVEGACIÓN
+        if (idx > 0) {
+            const p = caps[idx-1].number;
             document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${p}`;
             document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${p}`;
         } else {
@@ -125,18 +120,19 @@
             document.getElementById("prevBtnBottom").classList.add("disabled");
         }
 
-        if (index !== -1 && index < list.length - 1) {
-            const n = list[index+1].number;
+        if (idx !== -1 && idx < caps.length - 1) {
+            const n = caps[idx+1].number;
             document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${n}`;
             document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${n}`;
         } else {
-            const nT = document.getElementById("nextBtnTop");
-            const nB = document.getElementById("nextBtnBottom");
-            nT.classList.add("disabled"); nB.classList.add("disabled");
-            nT.textContent = nB.textContent = "FIN";
+            const nt = document.getElementById("nextBtnTop");
+            const nb = document.getElementById("nextBtnBottom");
+            nt.classList.add("disabled"); nb.classList.add("disabled");
+            nt.textContent = nb.textContent = "FIN";
         }
-    }
 
+      } catch (e) { console.error(e); }
+    }
     loadReader();
   </script>
 </body>
