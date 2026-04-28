@@ -61,26 +61,25 @@
 
       const listUrl = `manga.html?id=${mangaId}`;
       document.querySelectorAll(".list-btn").forEach(b => b.href = listUrl);
-      document.getElementById("chapterLabelTop").textContent = `Capítulo ${currentNumber}`;
-      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${currentNumber}`;
+
+      // --- ARREGLO VISUAL DEL NÚMERO ---
+      const numeroLimpio = parseFloat(currentNumber);
+      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numeroLimpio}`;
+      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numeroLimpio}`;
 
       try {
-        // 1. Traer todos los capítulos del manga
         const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const snap = await getDocs(q);
         
         let allChapters = [];
         snap.forEach(doc => {
             const data = doc.data();
-            // Normalizamos el número para evitar fallos de comparación
             data.normNum = String(data.number).trim();
             allChapters.push(data);
         });
 
-        // 2. Ordenar matemáticamente
         allChapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
 
-        // 3. Buscar el capítulo actual en la lista ordenada
         const currentIndex = allChapters.findIndex(c => c.normNum === currentNumber);
         const tomoActual = allChapters[currentIndex];
 
@@ -94,18 +93,15 @@
             container.appendChild(img);
           });
         } else {
-          container.innerHTML = `<p class="error-msg">No se encontraron imágenes para el capítulo ${currentNumber}.</p>`;
+          container.innerHTML = `<p class="error-msg">No se encontraron imágenes para el capítulo ${numeroLimpio}.</p>`;
         }
 
-        // 4. Configurar botones de navegación basándonos en el INDEX
-        // Botón Anterior
         if (currentIndex > 0) {
             updateNavButtons("prev", allChapters[currentIndex - 1].number);
         } else {
             disableButtons("prev");
         }
 
-        // Botón Siguiente
         if (currentIndex !== -1 && currentIndex < allChapters.length - 1) {
             updateNavButtons("next", allChapters[currentIndex + 1].number);
         } else {
@@ -114,7 +110,6 @@
 
       } catch (e) {
         console.error("Error crítico:", e);
-        document.getElementById("mangaPages").innerHTML = `<p class="error-msg">Error de conexión con la base de datos.</p>`;
       }
     }
 
