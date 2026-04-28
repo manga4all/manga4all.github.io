@@ -1,44 +1,41 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <link rel="stylesheet" href="css/style.css">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga 4 All</title>
+  <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
 
   <nav>
-    <div class="logo">Manga 4 All</div>
-    <div class="nav-links">
-      <a href="index.html">Inicio</a>
-      <a href="#">Directorio</a>
+    <div class="nav-left">
+        <a href="index.html" class="logo">Manga 4 All</a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="directory.html">Directorio</a>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" placeholder="Buscar manga...">
     </div>
   </nav>
 
   <header>
-    <img src="assets/banners/1299859.jpg" alt="Banner">
+    <img src="assets/banners/1299859.jpg" alt="Banner" class="banner-img">
     <div class="overlay"></div>
-
     <div class="header-content">
       <h1>Manga 4 All</h1>
-      <p>
-        Plataforma para leer mangas online.
-        Catálogo organizado y lectura rápida desde cualquier dispositivo.
-      </p>
+      <p>Plataforma para leer mangas online. Lectura rápida desde cualquier dispositivo.</p>
     </div>
   </header>
 
   <div class="container">
     <h2 class="section-title">Destacados</h2>
-    
     <div class="manga-grid"></div>
   </div>
 
-  <footer>
-    Manga 4 All © 2026
-  </footer>
-
+  <footer>Manga 4 All © 2026</footer>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
