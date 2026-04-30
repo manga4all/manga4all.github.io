@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageTitle">Cargando... | M4A</title>
-  <link rel="stylesheet" href="css/style.css?v=24">
+  <link rel="stylesheet" href="css/style.css?v=18">
 </head>
 <body>
 
@@ -30,12 +30,15 @@
 
       <div class="manga-content-side">
         <h1 id="mangaTitle">Cargando...</h1>
+        
         <div id="mangaGenres" style="margin-bottom: 15px; color: #ff0055; font-weight: bold; font-size: 0.9rem;"></div>
+        
         <p id="mangaDescription">Esperando datos ...</p>
         
         <h2 class="section-title">Capítulos Disponibles</h2>
         
-        <div class="chapters-grid" id="chaptersGrid"></div>
+        <div class="chapters-grid" id="chaptersGrid">
+           </div>
       </div>
 
     </div>
@@ -48,7 +51,7 @@
   <script type="module">
     import { db } from "./js/firebase.js";
     import {
-      doc, getDoc, collection, query, where, getDocs
+      doc, getDoc, collection, query, where, getDocs, orderBy
     } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
@@ -64,21 +67,25 @@
       if(!mangaId) return;
 
       try {
+        // 1. OBTENER INFORMACIÓN DEL MANGA
         const mangaRef = doc(db, "mangas", mangaId);
         const mangaSnap = await getDoc(mangaRef);
 
         if (mangaSnap.exists()) {
           const manga = mangaSnap.data();
+          
           document.title = manga.title + " | Manga 4 All";
           mangaTitle.textContent = manga.title;
           mangaDescription.textContent = manga.description;
           mangaCover.src = manga.cover;
 
+          // Mostrar Géneros (Si existen)
           if (manga.genres && manga.genres.length > 0) {
             mangaGenres.textContent = manga.genres.join(" • ");
           }
         }
 
+        // 2. OBTENER CAPÍTULOS ORDENADOS
         const q = query(
           collection(db, "tomos"),
           where("mangaId", "==", mangaId)
@@ -91,23 +98,22 @@
           chapters.push(docItem.data());
         });
 
-        // ORDENAR: Del más nuevo al más viejo (Descendente)
-        chapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
+        // Ordenar matemáticamente para evitar errores de 001, 1, 1.5
+        chapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
 
         chaptersGrid.innerHTML = "";
         chapters.forEach((tomo) => {
-          // INYECTAMOS LA FILA HÍBRIDA (La que el CSS v22 reconoce)
+          const numeroLimpio = parseFloat(tomo.number);
+
+          // Estructura de tarjeta idéntica al index para mantener coherencia
           chaptersGrid.innerHTML += `
-            <a class="chapter-row" href="reader.html?manga=${mangaId}&number=${tomo.number}">
-              <div class="row-left">
-                <img src="${tomo.cover}" class="cap-thumb" alt="Cap ${tomo.number}">
-                <div class="cap-text">
-                  <span class="cap-label">CAPÍTULO</span>
-                  <span class="cap-number">${tomo.number}</span>
-                </div>
+            <a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+              <div class="cover-container">
+                <img src="${tomo.cover}" alt="Capítulo ${numeroLimpio}">
               </div>
-              <div class="row-right">
-                <span class="read-btn">LEER</span>
+              <div class="chapter-info">
+                <h3>Capítulo ${numeroLimpio}</h3>
+                <span class="btn">Leer ahora</span>
               </div>
             </a>
           `;
