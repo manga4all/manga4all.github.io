@@ -70,11 +70,14 @@ async function loadUpdates() {
     }
 }
 
-// 3. LÓGICA: DESTACADOS (Con Tooltip integrado)
+// 3. LÓGICA: DESTACADOS (LIMITADO A 12 PARA OPTIMIZAR)
 async function loadMangas() {
     if (!mangaGrid) return;
     try {
-        const querySnapshot = await getDocs(collection(db, "mangas"));
+        // Implementación de la query con límite
+        const q = query(collection(db, "mangas"), limit(10));
+        const querySnapshot = await getDocs(q);
+        
         mangaGrid.innerHTML = "";
         querySnapshot.forEach((doc) => {
             const manga = doc.data();
