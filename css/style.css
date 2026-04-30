@@ -1,21 +1,22 @@
 /* ============================================================
-   Manga 4 All - CSS v32 (FIX NAV + CARRUSEL + HISTORIAL)
+   Manga 4 All - CSS v33 (EL ÚLTIMO Y DEFINITIVO)
    ============================================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 body { background-color: #070707; color: white; line-height: 1.4; padding-top: 70px; }
 
-/* --- NAVBAR (Logo y Links alineados) --- */
+/* --- NAVBAR (LOGO Y LINKS A LA PAR) --- */
 nav { 
     background: #111; padding: 0 40px; display: flex; justify-content: space-between; 
     align-items: center; border-bottom: 2px solid #ff0055; position: fixed; 
     top: 0; left: 0; width: 100%; height: 70px; z-index: 3000; 
 }
-.nav-left { display: flex; align-items: center; gap: 40px; height: 100%; }
-.logo { color: #ff0055; font-weight: bold; font-size: 1.7rem; text-decoration: none; display: flex; align-items: center; }
-.nav-links { display: flex; gap: 25px; align-items: center; height: 100%; }
-.nav-links a { color: #ccc; text-decoration: none; font-size: 1rem; transition: 0.3s; font-weight: 500; display: flex; align-items: center; }
+.nav-left { display: flex; align-items: center; gap: 40px; } /* GAP controla el espacio entre logo y links */
+.logo { color: #ff0055; font-weight: bold; font-size: 1.7rem; text-decoration: none; }
+.nav-links { display: flex; gap: 25px; align-items: center; }
+.nav-links a { color: #ccc; text-decoration: none; font-size: 1rem; transition: 0.3s; font-weight: 500; }
 .nav-links a:hover { color: #ff0055; }
+
 .search-container input { background: #1a1a1a; border: 1px solid #333; padding: 10px 18px; border-radius: 25px; color: white; outline: none; width: 280px; }
 
 /* --- HEADER --- */
@@ -25,73 +26,57 @@ header { position: relative; height: 380px; display: flex; align-items: center; 
 .header-content { position: relative; z-index: 10; text-align: center; }
 .header-content h1 { font-size: 4rem; }
 
-/* --- SECCIÓN CONTINUAR LEYENDO --- */
-#continue-container { margin-bottom: 30px; }
+/* --- SECCIÓN CONTINUAR LEYENDO (FIX) --- */
+.container { max-width: 1250px; margin: 0 auto; padding: 20px; }
+.section-title { font-size: 1.7rem; margin: 20px 0; border-left: 6px solid #ff0055; padding-left: 18px; }
+
 #continue-card-place a {
     display: flex; align-items: center; gap: 25px; background: #111; 
     padding: 15px; border-radius: 12px; border: 1px solid #ff0055; 
     text-decoration: none; color: white; transition: 0.3s;
 }
-#continue-card-place a img { width: 80px; height: 110px; object-fit: cover; border-radius: 8px; }
+#continue-card-place img { width: 80px; height: 115px; object-fit: cover; border-radius: 8px; }
 
-/* --- CARRUSEL (IMÁGENES BLOQUEADAS) --- */
+/* --- CARRUSEL (IMÁGENES BLOQUEADAS 160x240) --- */
 .updates-wrapper { width: 100%; overflow: hidden; padding: 10px 0; }
 .updates-track { display: flex; gap: 20px; width: max-content; animation: scroll-loop 40s linear infinite; }
 .updates-wrapper:hover .updates-track { animation-play-state: paused; }
 @keyframes scroll-loop { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
 .update-item { 
-    flex: 0 0 170px; /* Ancho fijo para todos */
-    background: #111; border-radius: 12px; border: 1px solid #222; 
-    padding: 10px; text-decoration: none; color: white; 
-    display: flex; flex-direction: column; gap: 10px;
+    flex: 0 0 160px; /* Ancho total de la tarjeta */
+    text-decoration: none; color: white; display: flex; flex-direction: column; gap: 8px; 
 }
 .update-cover-wrapper { 
-    width: 100%; height: 240px; /* Altura fija obligatoria */
-    overflow: hidden; border-radius: 8px; 
+    width: 160px; height: 240px; /* DIMENSIONES EXACTAS */
+    overflow: hidden; border-radius: 10px; border: 1px solid #222; 
 }
 .update-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
 .update-info { text-align: center; }
-.update-info h3 { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.update-info h3 { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .update-info span { font-size: 0.8rem; color: #ff0055; font-weight: bold; }
 
-/* --- BOTONES ROSADOS --- */
-.btn, .read-btn, .btn-update, .btn-card { 
-    background: #ff0055 !important; color: white !important; 
-    padding: 10px !important; border-radius: 8px !important; 
-    font-weight: bold !important; text-decoration: none !important; 
-    display: block !important; text-align: center !important; 
-    font-size: 0.9rem !important; border: none !important; cursor: pointer;
+/* --- BOTÓN ROSA --- */
+.btn-update, .btn-card { 
+    background: #ff0055; color: white; padding: 8px; border-radius: 6px; 
+    font-weight: bold; text-decoration: none; display: block; text-align: center; font-size: 0.8rem; 
 }
 
-/* --- GRID Y CARDS --- */
-.container { max-width: 1250px; margin: 0 auto; padding: 20px; }
-.section-title { font-size: 1.7rem; margin: 20px 0; border-left: 6px solid #ff0055; padding-left: 18px; }
+/* --- GRID Y TOOLTIP --- */
 .manga-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 35px; }
-.manga-card { position: relative; background: #111; border-radius: 12px; border: 1px solid #222; text-decoration: none; color: white; transition: 0.4s; display: flex; flex-direction: column; }
+.manga-card { position: relative; background: #111; border-radius: 12px; border: 1px solid #222; text-decoration: none; color: white; transition: 0.4s; overflow: visible; display: flex; flex-direction: column; }
 .manga-card:hover { transform: translateY(-10px); border-color: #ff0055; }
 .cover-container { width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px 12px 0 0; }
 .cover-container img { width: 100%; height: 100%; object-fit: cover; }
 .manga-info { padding: 15px; text-align: center; }
 
-/* --- TOOLTIP (PARA EL DIRECTORIO) --- */
 .tooltip { 
     position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%) translateY(10px); 
-    width: 260px; background: #1a1a1a; border: 1px solid #ff0055; color: #eee; 
-    padding: 15px; border-radius: 10px; font-size: 0.85rem; z-index: 5000; 
-    opacity: 0; visibility: hidden; transition: 0.3s ease; pointer-events: none; 
+    width: 260px; background: #1a1a1a; border: 1px solid #ff0055; color: #eee; padding: 15px; 
+    border-radius: 10px; font-size: 0.85rem; z-index: 5000; opacity: 0; visibility: hidden; transition: 0.3s ease; pointer-events: none; 
 }
 .manga-card:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 .tooltip p { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
-
-/* --- MANGA PAGE --- */
-.manga-page { display: flex; gap: 50px; margin-top: 30px; align-items: flex-start; }
-.manga-cover-side { flex: 0 0 320px; }
-.manga-cover-side img { width: 100%; border-radius: 15px; border: 1px solid #222; }
-.manga-content-side { flex: 1; min-width: 0; }
-.chapters-grid { display: flex; flex-direction: column; gap: 10px; max-height: 550px; overflow-y: auto; padding: 15px; background: #0a0a0a; border-radius: 12px; border: 1px solid #1a1a1a; margin-top: 20px; }
-.chapter-row { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 12px 20px; border-radius: 10px; border: 1px solid #1f1f1f; text-decoration: none; color: white; transition: 0.2s; }
-.cap-thumb { width: 50px; height: 75px; object-fit: cover; border-radius: 6px; }
-.row-left { display: flex; align-items: center; gap: 20px; }
 
 footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #111; margin-top: 50px; }
