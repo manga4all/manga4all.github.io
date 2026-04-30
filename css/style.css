@@ -137,3 +137,43 @@ footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
+/* --- FIX ESPECÍFICO PARA LISTA DE CAPÍTULOS (No toca el resto) --- */
+.chapters-grid-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.chapter-row-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: #161616 !important;
+    padding: 12px 25px !important;
+    border-radius: 10px !important;
+    text-decoration: none !important;
+    color: white !important;
+    border: 1px solid #222 !important;
+    transition: 0.3s;
+}
+
+.chapter-row-item:hover {
+    border-color: #ff0055 !important;
+    background: #1c1c1c !important;
+}
+
+.chapter-row-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.chapter-row-img {
+    width: 45px !important;
+    height: 65px !important;
+    object-fit: cover;
+    border-radius: 4px;
+}
