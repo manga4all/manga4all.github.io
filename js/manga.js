@@ -14,6 +14,7 @@ const chaptersGrid = document.querySelector(".chapters-grid");
 async function loadManga() {
   if (!mangaId) return;
 
+  // 1. CARGAR INFORMACIÓN DEL MANGA
   const mangaRef = doc(db, "mangas", mangaId);
   const mangaSnap = await getDoc(mangaRef);
 
@@ -24,20 +25,22 @@ async function loadManga() {
     mangaCover.src = manga.cover;
   }
 
+  // 2. CARGAR CAPÍTULOS
   const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
   const querySnapshot = await getDocs(q);
   
   let chapters = [];
-  querySnapshot.forEach((doc) => {
-    chapters.push(doc.data());
+  querySnapshot.forEach((docItem) => {
+    chapters.push(docItem.data());
   });
 
-  // ORDEN INVERSO: El más nuevo arriba
+  // 3. ORDEN INVERSO (Nuevo arriba)
+  // Usamos parseFloat para que números como 1.1 o 105 se ordenen correctamente
   chapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
 
-  // LIMPIAR Y CAMBIAR CLASE PARA EVITAR CONFLICTOS
-  chaptersGrid.innerHTML = "";
-  chaptersGrid.className = "chapters-grid-list"; // Cambiamos la clase aquí
+  // 4. APLICAR DISEÑO DE LISTA (Usando las clases de tu CSS v18)
+  chaptersGrid.innerHTML = ""; // Limpiamos el "Cargando..."
+  chaptersGrid.className = "chapters-grid-list"; // Cambiamos la cuadrícula por la lista
 
   chapters.forEach((tomo) => {
     chaptersGrid.innerHTML += `
@@ -45,8 +48,8 @@ async function loadManga() {
         <div class="chapter-row-left">
           <img src="${tomo.cover}" class="chapter-row-img">
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 0.7rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
-            <span style="font-size: 1.2rem; font-weight: bold;">${tomo.number}</span>
+            <span style="font-size: 0.75rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
+            <span style="font-size: 1.2rem; font-weight: bold; color: white;">${tomo.number}</span>
           </div>
         </div>
         <div style="background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
