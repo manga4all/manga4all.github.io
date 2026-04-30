@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga 4 All | Inicio</title>
-  <link rel="stylesheet" href="css/style.css?v=33">
+  <link rel="stylesheet" href="css/style.css?v=34">
 </head>
 <body>
 
@@ -35,12 +35,10 @@
       <div class="updates-wrapper">
           <div id="updatesTrack" class="updates-track"></div>
       </div>
-  </div>
 
-  <main class="container">
-    <h2 class="section-title">Destacados</h2>
-    <div id="mangaGrid" class="manga-grid"></div>
-  </main>
+      <h2 class="section-title">Destacados</h2>
+      <div id="mangaGrid" class="manga-grid"></div>
+  </div>
 
   <footer>Manga 4 All © 2026</footer>
 
@@ -60,9 +58,10 @@
           const m = docItem.data();
           const id = docItem.id;
 
+          // Item Carrusel
           track.innerHTML += `
             <div class="update-item">
-              <a href="manga.html?id=${id}" class="update-cover-wrapper"><img src="${m.cover}"></a>
+              <div class="update-cover-wrapper"><img src="${m.cover}"></div>
               <div class="update-info">
                 <h3>${m.title}</h3>
                 <span>Cap. Nuevo</span>
@@ -70,14 +69,20 @@
               </div>
             </div>`;
 
+          // Item Grid
           grid.innerHTML += `
             <a href="manga.html?id=${id}" class="manga-card">
-              <div class="tooltip"><p>${m.description || 'Sin descripción'}</p></div>
               <div class="cover-container"><img src="${m.cover}"></div>
-              <div class="manga-info"><h3>${m.title}</h3><div class="btn-card">Leer ahora</div></div>
+              <div class="manga-info">
+                <h3>${m.title}</h3>
+                <div class="btn-card">Leer ahora</div>
+              </div>
             </a>`;
         });
-        if(snap.size > 4) track.innerHTML += track.innerHTML;
+        
+        // Duplicar para el bucle infinito sin huecos
+        if(snap.size > 0) track.innerHTML += track.innerHTML;
+
       } catch (e) { console.error(e); }
     }
     load();
@@ -86,20 +91,16 @@
     const storage = localStorage.getItem("manga_last_seen");
     if (storage) {
       const m = JSON.parse(storage);
-      const container = document.getElementById("continue-container");
-      const place = document.getElementById("continue-card-place");
-      if(container && place) {
-          container.style.display = "block";
-          place.innerHTML = `
-            <a href="reader.html?manga=${m.id}&number=${m.chapter}">
-              <img src="${m.image}">
-              <div>
-                <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem;">REANUDAR LECTURA</span>
-                <h3 style="font-size: 1.4rem;">${m.title}</h3>
-                <p style="color: #bbb;">Capítulo ${m.chapter}</p>
-              </div>
-            </a>`;
-      }
+      document.getElementById("continue-container").style.display = "block";
+      document.getElementById("continue-card-place").innerHTML = `
+        <a href="reader.html?manga=${m.id}&number=${m.chapter}">
+          <img src="${m.image}">
+          <div>
+            <span style="color: #ff0055; font-weight: bold; font-size: 0.7rem;">REANUDAR LECTURA</span>
+            <h3 style="font-size: 1.3rem;">${m.title}</h3>
+            <p style="color: #bbb;">Capítulo ${m.chapter}</p>
+          </div>
+        </a>`;
     }
   </script>
 </body>
