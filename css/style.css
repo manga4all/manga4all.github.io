@@ -1,59 +1,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
 body { background-color: #070707; color: white; line-height: 1.4; padding-top: 70px; }
 
-/* LISTA DE CAPITULOS - PRIORIDAD ALTA */
-.chapters-grid { 
-    display: flex !important; 
-    flex-direction: column !important;
-    gap: 12px !important; 
-    margin-top: 30px !important; 
-    max-height: 600px !important; 
-    overflow-y: auto !important;
-    background: #0a0a0a !important;
-    padding: 15px !important;
-    border-radius: 12px !important;
-    border: 1px solid #1a1a1a !important;
-}
-
-.chapter-row { 
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    background: #111 !important; 
-    border-radius: 10px !important; 
-    padding: 10px 20px !important;
-    text-decoration: none !important; 
-    color: white !important; 
-    border: 1px solid #1f1f1f !important; 
-    transition: 0.3s !important;
-    margin-bottom: 5px !important;
-}
-
-.chapter-row:hover { border-color: #ff0055 !important; background: #161616 !important; transform: translateX(5px); }
-
-.row-left { display: flex; align-items: center; gap: 20px; }
-
-.chapter-row img.cap-thumb { 
-    width: 55px !important; 
-    height: 80px !important; 
-    min-width: 55px !important; 
-    object-fit: cover !important; 
-    border-radius: 6px !important; 
-    display: block !important;
-    margin: 0 !important;
-}
-
-.cap-text { display: flex; flex-direction: column; }
-.cap-label { font-size: 0.75rem !important; color: #ff0055 !important; font-weight: bold !important; letter-spacing: 1px; }
-.cap-number { font-size: 1.2rem !important; font-weight: bold !important; color: white !important; }
-
-.read-btn { 
-    background: #ff0055 !important; color: white !important; padding: 8px 20px !important; 
-    border-radius: 6px !important; font-size: 0.8rem !important; font-weight: bold !important; 
-    border: none !important;
-}
-
-/* NAVBAR Y BASE */
 nav { background: #111; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff0055; position: fixed; top: 0; left: 0; width: 100%; height: 70px; z-index: 3000; }
 .nav-left { display: flex; align-items: center; gap: 45px; }
 .logo { color: #ff0055; font-weight: bold; font-size: 1.7rem; text-decoration: none; }
@@ -86,6 +33,7 @@ header { position: relative; height: 380px; display: flex; align-items: center; 
 .cover-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .manga-info { padding: 18px; text-align: center; }
 .manga-info h3 { font-size: 1.1rem; margin-bottom: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn { background: #ff0055; color: white; padding: 10px; border-radius: 8px; font-weight: bold; text-decoration: none; display: block; text-align: center; }
 
 .manga-page { display: flex; gap: 50px; margin-top: 30px; align-items: flex-start; }
 .manga-cover-side { flex: 0 0 320px; }
@@ -93,15 +41,20 @@ header { position: relative; height: 380px; display: flex; align-items: center; 
 .manga-content-side { flex: 1; min-width: 0; }
 .manga-content-side h1 { font-size: 2.5rem; margin-bottom: 10px; }
 
+.chapters-grid { display: flex !important; flex-direction: column !important; gap: 12px !important; margin-top: 30px !important; max-height: 600px !important; overflow-y: auto !important; background: #0a0a0a !important; padding: 15px !important; border-radius: 12px !important; border: 1px solid #1a1a1a !important; }
+.chapter-row { display: flex !important; justify-content: space-between !important; align-items: center !important; background: #111 !important; border-radius: 10px !important; padding: 10px 20px !important; text-decoration: none !important; color: white !important; border: 1px solid #1f1f1f !important; transition: 0.3s !important; margin-bottom: 5px !important; }
+.chapter-row:hover { border-color: #ff0055 !important; background: #161616 !important; transform: translateX(5px); }
+.row-left { display: flex; align-items: center; gap: 20px; }
+.chapter-row img.cap-thumb { width: 55px !important; height: 80px !important; min-width: 55px !important; object-fit: cover !important; border-radius: 6px !important; display: block !important; margin: 0 !important; }
+.cap-text { display: flex; flex-direction: column; }
+.cap-label { font-size: 0.75rem !important; color: #ff0055 !important; font-weight: bold !important; }
+.cap-number { font-size: 1.2rem !important; font-weight: bold !important; color: white !important; }
+.read-btn { background: #ff0055 !important; color: white !important; padding: 8px 20px !important; border-radius: 6px !important; font-size: 0.8rem !important; font-weight: bold !important; border: none !important; }
+
 .manga-container { max-width: 900px; margin: 30px auto; display: flex; flex-direction: column; align-items: center; }
 .manga-container img { width: 100%; height: auto; display: block; }
 .nav-controls { display: flex; justify-content: center; align-items: center; gap: 25px; padding: 35px; background: #070707; }
-
 footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #111; margin-top: 50px; }
 
-.manga-card .tooltip {
-    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(-10px);
-    width: 240px; background: #1a1a1a; border: 1px solid #ff0055; color: #eee; padding: 12px;
-    border-radius: 8px; font-size: 0.85rem; z-index: 5000; opacity: 0; visibility: hidden; transition: 0.3s ease;
-}
+.manga-card .tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(-10px); width: 240px; background: #1a1a1a; border: 1px solid #ff0055; color: #eee; padding: 12px; border-radius: 8px; font-size: 0.85rem; z-index: 5000; opacity: 0; visibility: hidden; transition: 0.3s ease; }
 .manga-card:hover .tooltip { opacity: 1; visibility: visible; }
