@@ -37,8 +37,7 @@
         
         <h2 class="section-title">Capítulos Disponibles</h2>
         
-        <div class="chapters-grid" id="chaptersGrid">
-           </div>
+        <div class="chapters-grid-list" id="chaptersGrid"></div>
       </div>
 
     </div>
@@ -51,7 +50,7 @@
   <script type="module">
     import { db } from "./js/firebase.js";
     import {
-      doc, getDoc, collection, query, where, getDocs, orderBy
+      doc, getDoc, collection, query, where, getDocs
     } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
@@ -73,19 +72,17 @@
 
         if (mangaSnap.exists()) {
           const manga = mangaSnap.data();
-          
           document.title = manga.title + " | Manga 4 All";
           mangaTitle.textContent = manga.title;
           mangaDescription.textContent = manga.description;
           mangaCover.src = manga.cover;
 
-          // Mostrar Géneros (Si existen)
           if (manga.genres && manga.genres.length > 0) {
             mangaGenres.textContent = manga.genres.join(" • ");
           }
         }
 
-        // 2. OBTENER CAPÍTULOS ORDENADOS
+        // 2. OBTENER CAPÍTULOS
         const q = query(
           collection(db, "tomos"),
           where("mangaId", "==", mangaId)
@@ -98,22 +95,26 @@
           chapters.push(docItem.data());
         });
 
-        // Ordenar matemáticamente para evitar errores de 001, 1, 1.5
-        chapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+        // 3. ORDEN INVERSO (Nuevo arriba)
+        chapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
 
         chaptersGrid.innerHTML = "";
+        
+        // 4. RENDERIZAR COMO FILAS (Usando las clases de tu CSS v18)
         chapters.forEach((tomo) => {
           const numeroLimpio = parseFloat(tomo.number);
 
-          // Estructura de tarjeta idéntica al index para mantener coherencia
           chaptersGrid.innerHTML += `
-            <a class="chapter-card" href="reader.html?manga=${mangaId}&number=${tomo.number}">
-              <div class="cover-container">
-                <img src="${tomo.cover}" alt="Capítulo ${numeroLimpio}">
+            <a class="chapter-row-item" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+              <div class="chapter-row-left">
+                <img src="${tomo.cover}" class="chapter-row-img" alt="Cap ${numeroLimpio}">
+                <div style="display: flex; flex-direction: column;">
+                   <span style="font-size: 0.7rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
+                   <span style="font-size: 1.2rem; font-weight: bold;">${numeroLimpio}</span>
+                </div>
               </div>
-              <div class="chapter-info">
-                <h3>Capítulo ${numeroLimpio}</h3>
-                <span class="btn">Leer ahora</span>
+              <div style="background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
+                LEER
               </div>
             </a>
           `;
