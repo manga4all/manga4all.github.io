@@ -14,7 +14,6 @@ const chaptersGrid = document.querySelector(".chapters-grid");
 async function loadManga() {
   if (!mangaId) return;
 
-  // 1. CARGAR DATOS DEL MANGA
   const mangaRef = doc(db, "mangas", mangaId);
   const mangaSnap = await getDoc(mangaRef);
 
@@ -25,45 +24,32 @@ async function loadManga() {
     mangaCover.src = manga.cover;
   }
 
-  // 2. CARGAR CAPÍTULOS
-  const q = query(
-    collection(db, "tomos"),
-    where("mangaId", "==", mangaId)
-  );
-
+  const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
   const querySnapshot = await getDocs(q);
+  
   let chapters = [];
-
   querySnapshot.forEach((doc) => {
     chapters.push(doc.data());
   });
 
-  // 3. ORDEN INVERSO (EL MÁS NUEVO ARRIBA)
-  // Usamos parseFloat para que 1.5 sea mayor que 1.1
+  // ORDEN INVERSO: El más nuevo arriba
   chapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
 
-  // 4. FORZAR DISEÑO DE LISTA (Anulando el CSS de la cuadrícula)
-  chaptersGrid.innerHTML = ""; // Limpiamos todo
-  chaptersGrid.style.display = "flex";
-  chaptersGrid.style.flexDirection = "column";
-  chaptersGrid.style.gap = "12px";
-  chaptersGrid.style.width = "100%";
+  // LIMPIAR Y CAMBIAR CLASE PARA EVITAR CONFLICTOS
+  chaptersGrid.innerHTML = "";
+  chaptersGrid.className = "chapters-grid-list"; // Cambiamos la clase aquí
 
   chapters.forEach((tomo) => {
-    // Usamos una clase nueva "chapter-list-item" para que no herede lo de "chapter-card"
     chaptersGrid.innerHTML += `
-      <a href="reader.html?manga=${mangaId}&tomo=${tomo.number}" 
-         style="display: flex; align-items: center; justify-content: space-between; background: #161616; padding: 15px 25px; border-radius: 12px; text-decoration: none; color: white; border: 1px solid #222; transition: 0.3s; width: 100%;">
-        
-        <div style="display: flex; align-items: center; gap: 20px;">
-          <img src="${tomo.cover}" style="width: 50px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid #333;">
+      <a href="reader.html?manga=${mangaId}&tomo=${tomo.number}" class="chapter-row-item">
+        <div class="chapter-row-left">
+          <img src="${tomo.cover}" class="chapter-row-img">
           <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 0.8rem; color: #ff0055; font-weight: bold; letter-spacing: 1px;">CAPÍTULO</span>
-            <span style="font-size: 1.3rem; font-weight: bold;">${tomo.number}</span>
+            <span style="font-size: 0.7rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
+            <span style="font-size: 1.2rem; font-weight: bold;">${tomo.number}</span>
           </div>
         </div>
-
-        <div style="background: #ff0055; color: white; padding: 10px 25px; border-radius: 8px; font-weight: bold; font-size: 0.9rem; letter-spacing: 0.5px;">
+        <div style="background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
           LEER
         </div>
       </a>
