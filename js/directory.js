@@ -44,7 +44,7 @@ function renderGenreButtons(genres) {
     });
 }
 
-// Función global para filtrar (disponible para los botones)
+// Función global para filtrar
 window.filterByGenre = (genre, btnElement) => {
     currentGenre = genre;
     
@@ -88,9 +88,14 @@ function displayMangas(mangaList) {
     }
 
     mangaList.forEach(manga => {
-        const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "";
+        // Limpiamos la descripción para que no rompa el HTML
+        const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "Sin descripción disponible.";
+        
         directoryGrid.innerHTML += `
-            <div class="manga-card" data-description="${cleanDesc}">
+            <div class="manga-card">
+                <div class="tooltip">
+                    <p>${cleanDesc}</p>
+                </div>
                 <div class="cover-container">
                     <img class="cover" src="${manga.cover}" alt="${manga.title}">
                 </div>
