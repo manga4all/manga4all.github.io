@@ -1,6 +1,6 @@
 /* ============================================================
-   Manga 4 All - CSS Completo Corregido (v19)
-   Cambio: Lista Híbrida de capítulos para series largas
+   Manga 4 All - CSS Completo Corregido (v20)
+   Corrección Definitiva: Lista Híbrida y Miniaturas Bloqueadas
    ============================================================ */
 
 /* --- RESET Y BASE --- */
@@ -66,51 +66,63 @@ header {
 .manga-page { display: flex; gap: 50px; margin-top: 30px; align-items: flex-start; }
 .manga-cover-side { flex: 0 0 320px; }
 .manga-cover-side img { width: 100%; border-radius: 15px; border: 1px solid #222; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
-.manga-content-side { flex: 1; }
+.manga-content-side { flex: 1; min-width: 0; }
 .manga-content-side h1 { font-size: 2.5rem; margin-bottom: 10px; }
 
-/* NUEVA LISTA HÍBRIDA DE CAPÍTULOS */
+/* LISTA DE CAPÍTULOS (ESTILOS FORZADOS) */
 .chapters-grid { 
-    display: flex !important; /* Cambiamos de Grid a Flex para la lista */
-    flex-direction: column;
-    gap: 10px; 
+    display: flex !important; 
+    flex-direction: column !important;
+    grid-template-columns: none !important; /* Anula el grid anterior */
+    gap: 12px !important; 
     margin-top: 30px; 
-    max-height: 600px; /* Scroll interno para series largas */
+    max-height: 550px; 
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.02);
+    background: #0a0a0a;
     padding: 15px;
     border-radius: 12px;
+    border: 1px solid #1a1a1a;
 }
 
 .chapter-row { 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #111; 
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: #111 !important; 
     border-radius: 10px; 
-    padding: 10px 20px;
-    text-decoration: none; 
-    color: white; 
-    border: 1px solid #1f1f1f; 
+    padding: 10px 20px !important;
+    text-decoration: none !important; 
+    color: white !important; 
+    border: 1px solid #1f1f1f !important; 
     transition: 0.3s;
 }
-.chapter-row:hover { border-color: #ff0055; transform: translateX(5px); background: #1a1a1a; }
+.chapter-row:hover { border-color: #ff0055 !important; background: #161616 !important; transform: translateX(5px); }
 
 .row-left { display: flex; align-items: center; gap: 20px; }
-.cap-thumb { width: 50px; height: 70px; object-fit: cover; border-radius: 6px; }
+
+/* FIX DEFINITIVO PARA LA IMAGEN */
+.chapter-row img.cap-thumb { 
+    width: 55px !important; 
+    height: 80px !important; 
+    min-width: 55px !important; 
+    object-fit: cover !important; 
+    border-radius: 6px; 
+    display: block !important;
+    margin: 0 !important;
+}
+
 .cap-text { display: flex; flex-direction: column; }
-.cap-label { font-size: 0.7rem; color: #ff0055; font-weight: bold; letter-spacing: 1px; }
-.cap-number { font-size: 1.1rem; font-weight: bold; }
+.cap-label { font-size: 0.75rem; color: #ff0055; font-weight: bold; letter-spacing: 1px; }
+.cap-number { font-size: 1.2rem; font-weight: bold; }
 
 .read-btn { 
-    background: #222; color: #ccc; padding: 8px 18px; border-radius: 6px; 
+    background: #222; color: #ccc; padding: 8px 20px; border-radius: 6px; 
     font-size: 0.8rem; font-weight: bold; border: 1px solid #333; transition: 0.3s;
 }
 .chapter-row:hover .read-btn { background: #ff0055; color: white; border-color: #ff0055; }
 
-/* Custom Scrollbar para la lista */
-.chapters-grid::-webkit-scrollbar { width: 6px; }
-.chapters-grid::-webkit-scrollbar-track { background: #070707; }
+/* Scrollbar */
+.chapters-grid::-webkit-scrollbar { width: 8px; }
 .chapters-grid::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 .chapters-grid::-webkit-scrollbar-thumb:hover { background: #ff0055; }
 
@@ -143,24 +155,8 @@ footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 .manga-card .tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 8px;
-    border-style: solid;
-    border-color: #ff0055 transparent transparent transparent;
+    content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border-width: 8px; border-style: solid; border-color: #ff0055 transparent transparent transparent;
 }
-.manga-card:hover .tooltip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(-20px);
-}
-.manga-card .tooltip p {
-    text-align: left;
-    display: -webkit-box;
-    -webkit-line-clamp: 5;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
+.manga-card:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-20px); }
+.manga-card .tooltip p { text-align: left; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
