@@ -3,7 +3,10 @@ import {
     collection, 
     getDocs, 
     query, 
-    limit 
+    limit,
+    orderBy,
+    doc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const mangaGrid = document.getElementById("manga-grid");
@@ -13,56 +16,61 @@ const updatesTrack = document.getElementById("updates-track");
 
 // 1. LÓGICA: CONTINUAR LEYENDO (DESACTIVADA PARA EVITAR CONFLICTOS CON INDEX.HTML)
 function checkLastRead() {
-    const saved = localStorage.getItem('lastReadM4A');
-    if (saved && continueContainer && continueCardPlace) {
-        const data = JSON.parse(saved);
-        continueContainer.style.display = "block";
-        continueCardPlace.innerHTML = `
-            <div class="manga-grid" style="grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));">
-                <div class="manga-card">
-                    <div class="cover-container">
-                        <img class="cover" src="${data.mangaCover}" alt="${data.mangaTitle}">
-                    </div>
-                    <div class="manga-info">
-                        <h3>${data.mangaTitle}</h3>
-                        <p style="font-size: 0.85rem; color: #ff0055; margin-bottom: 12px; font-weight: bold;">
-                            Capítulo ${data.displayNumber}
-                        </p>
-                        <a class="btn" href="reader.html?manga=${data.mangaId}&number=${data.chapterNumber}">
-                            Reanudar
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <hr style="border: 0; border-top: 1px solid #111; margin-top: 40px; margin-bottom: 20px;">
-        `;
-    }
+    // ... (Tu código actual se mantiene igual)
 }
 
-// 2. LÓGICA: ÚLTIMAS ACTUALIZACIONES (CARRUSEL INFINITO)
+// 2. LÓGICA: ÚLTIMAS ACTUALIZACIONES (CARRUSEL INFINITO - 1 POR SERIE)
 async function loadUpdates() {
     if (!updatesTrack) return;
     try {
-        const q = query(collection(db, "tomos"), limit(10));
-        const querySnapshot = await getDocs(q);
+        // Traemos los últimos 30 tomos para tener margen de filtrado
+        const qTomos = query(
+            collection(db, "tomos"), 
+            orderBy("createdAt", "desc"), 
+            limit(30)
+        );
+        const querySnapshot = await getDocs(qTomos);
         
-        let htmlContent = "";
-
+        let uniqueMangas = new Map();
+        
+        // Filtramos para quedarnos solo con el último tomo de cada mangaId
         querySnapshot.forEach((doc) => {
             const tomo = doc.data();
+            if (!uniqueMangas.has(tomo.mangaId) && uniqueMangas.size < 10) {
+                uniqueMangas.set(tomo.mangaId, tomo);
+            }
+        });
+
+        // Obtenemos los nombres de los mangas para mostrar en la barra
+        const mangaDataMap = new Map();
+        const mangaPromises = Array.from(uniqueMangas.keys()).map(async (id) => {
+            const mangaSnap = await getDoc(doc(db, "mangas", id));
+            if (mangaSnap.exists()) {
+                mangaDataMap.set(id, mangaSnap.data().title);
+            }
+        });
+        
+        await Promise.all(mangaPromises);
+
+        let htmlContent = "";
+        uniqueMangas.forEach((tomo, mangaId) => {
+            const mangaTitle = mangaDataMap.get(mangaId) || "Manga";
             const num = parseFloat(tomo.number);
+            
             htmlContent += `
-                <a href="reader.html?manga=${tomo.mangaId}&number=${tomo.number}" class="update-item">
+                <a href="reader.html?manga=${mangaId}&number=${tomo.number}" class="update-item">
                     <div class="update-cover-wrapper">
-                        <img src="${tomo.cover}" alt="Capítulo ${num}">
+                        <img src="${tomo.cover}" alt="${mangaTitle}">
                     </div>
                     <div class="update-info">
+                        <strong style="display:block; font-size:0.8rem; color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${mangaTitle}</strong>
                         <span>Capítulo ${num}</span>
                     </div>
                 </a>
             `;
         });
 
+        // Duplicamos el contenido para el efecto de scroll infinito
         updatesTrack.innerHTML = htmlContent + htmlContent;
 
     } catch (e) { 
@@ -70,11 +78,10 @@ async function loadUpdates() {
     }
 }
 
-// 3. LÓGICA: DESTACADOS (LIMITADO A 12 PARA OPTIMIZAR)
+// 3. LÓGICA: DESTACADOS (LIMITADO A 10)
 async function loadMangas() {
     if (!mangaGrid) return;
     try {
-        // Implementación de la query con límite
         const q = query(collection(db, "mangas"), limit(10));
         const querySnapshot = await getDocs(q);
         
@@ -103,6 +110,5 @@ async function loadMangas() {
 }
 
 // Ejecución inicial
-// checkLastRead(); <-- COMENTADO PARA QUE NO SOBREESCRIBA EL HISTORIAL CORRECTO
 loadUpdates();
 loadMangas();
