@@ -54,6 +54,7 @@
     const params = new URLSearchParams(window.location.search);
     const mangaId = params.get("manga");
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
+    const shouldScroll = params.get("scroll") === "true"; // Detecta si viene de "Reanudar"
 
     function limpiarNum(n) {
         const parsed = parseFloat(n);
@@ -62,31 +63,50 @@
 
     const numLimpio = limpiarNum(rawNumber);
 
+    // GUARDAR POSICIÓN DE SCROLL MIENTRAS LEES
+    window.addEventListener('scroll', () => {
+        const storage = localStorage.getItem("manga_last_seen");
+        if (storage) {
+            const data = JSON.parse(storage);
+            if (data.id === mangaId && data.chapter === numLimpio) {
+                data.scrollPos = window.scrollY;
+                localStorage.setItem("manga_last_seen", JSON.stringify(data));
+            }
+        }
+    });
+
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
-      // 1. UI INICIAL
       document.title = `Cap. ${numLimpio} | M4A`;
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
       document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
 
       try {
-        // 2. GUARDAR HISTORIAL INMEDIATAMENTE
         const mangaDoc = await getDoc(doc(db, "mangas", mangaId));
         if (mangaDoc.exists()) {
             const d = mangaDoc.data();
+            const storage = localStorage.getItem("manga_last_seen");
+            let savedScroll = 0;
+
+            // Si ya estamos en este capítulo, mantenemos el scroll que ya teníamos guardado
+            if (storage) {
+                const old = JSON.parse(storage);
+                if (old.id === mangaId && old.chapter === numLimpio) savedScroll = old.scrollPos || 0;
+            }
+
             const historial = {
                 id: mangaId,
                 title: d.title,
                 chapter: numLimpio,
                 image: d.cover || d.image,
+                scrollPos: savedScroll,
                 time: Date.now()
             };
             localStorage.setItem("manga_last_seen", JSON.stringify(historial));
         }
 
-        // 3. CARGAR IMÁGENES
         const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const snap = await getDocs(q);
         let caps = [];
@@ -103,14 +123,26 @@
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
           cont.innerHTML = "";
-          tomo.images.forEach(url => {
+          
+          let imagesLoaded = 0;
+          tomo.images.forEach((url, i) => {
             const img = document.createElement("img");
             img.src = url;
+            
+            // Cuando la última imagen carga, si venimos de "Reanudar", saltamos a la posición
+            img.onload = () => {
+                imagesLoaded++;
+                if (imagesLoaded === tomo.images.length && shouldScroll) {
+                    const data = JSON.parse(localStorage.getItem("manga_last_seen"));
+                    if (data && data.scrollPos) {
+                        window.scrollTo({ top: data.scrollPos, behavior: 'smooth' });
+                    }
+                }
+            };
             cont.appendChild(img);
           });
         }
 
-        // 4. BOTONES NAVEGACIÓN
         if (idx > 0) {
             const p = caps[idx-1].number;
             document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${p}`;
