@@ -35,9 +35,20 @@
         
         <p id="mangaDescription">Esperando datos ...</p>
         
-        <h2 class="section-title">Capítulos Disponibles</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 20px;">
+            <h2 class="section-title" style="margin: 0;">Capítulos Disponibles</h2>
+            <button id="toggleOrderBtn" style="background: transparent; border: 1px solid #ff0055; color: #ff0055; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+                Invertir Orden
+            </button>
+        </div>
         
         <div class="chapters-grid-list" id="chaptersGrid"></div>
+
+        <div id="loadMoreContainer" style="text-align: center; margin-top: 30px; display: none;">
+            <button id="loadMoreBtn" style="background: #111; border: 1px solid #333; color: white; padding: 12px 40px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+                Ver más capítulos
+            </button>
+        </div>
       </div>
 
     </div>
@@ -61,12 +72,16 @@
     const mangaCover = document.getElementById("mangaCover");
     const mangaGenres = document.getElementById("mangaGenres");
     const chaptersGrid = document.getElementById("chaptersGrid");
+    
+    // Variables de control de estado
+    let allChapters = [];
+    let itemsToShow = 20;
+    let isDescending = true;
 
     async function loadMangaData() {
       if(!mangaId) return;
 
       try {
-        // 1. OBTENER INFORMACIÓN DEL MANGA
         const mangaRef = doc(db, "mangas", mangaId);
         const mangaSnap = await getDoc(mangaRef);
 
@@ -82,48 +97,72 @@
           }
         }
 
-        // 2. OBTENER CAPÍTULOS
-        const q = query(
-          collection(db, "tomos"),
-          where("mangaId", "==", mangaId)
-        );
-
+        const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const querySnapshot = await getDocs(q);
-        let chapters = [];
         
+        allChapters = [];
         querySnapshot.forEach((docItem) => {
-          chapters.push(docItem.data());
+          allChapters.push(docItem.data());
         });
 
-        // 3. ORDEN INVERSO (Nuevo arriba)
-        chapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
-
-        chaptersGrid.innerHTML = "";
-        
-        // 4. RENDERIZAR COMO FILAS (Usando las clases de tu CSS v18)
-        chapters.forEach((tomo) => {
-          const numeroLimpio = parseFloat(tomo.number);
-
-          chaptersGrid.innerHTML += `
-            <a class="chapter-row-item" href="reader.html?manga=${mangaId}&number=${tomo.number}">
-              <div class="chapter-row-left">
-                <img src="${tomo.cover}" class="chapter-row-img" alt="Cap ${numeroLimpio}">
-                <div style="display: flex; flex-direction: column;">
-                   <span style="font-size: 0.7rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
-                   <span style="font-size: 1.2rem; font-weight: bold;">${numeroLimpio}</span>
-                </div>
-              </div>
-              <div style="background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
-                LEER
-              </div>
-            </a>
-          `;
-        });
+        renderChapters();
 
       } catch (error) {
         console.error("Error cargando manga.html:", error);
       }
     }
+
+    function renderChapters() {
+      // 1. Ordenar
+      if (isDescending) {
+        allChapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
+      } else {
+        allChapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+      }
+
+      // 2. Seleccionar solo los que vamos a mostrar
+      const visibleChapters = allChapters.slice(0, itemsToShow);
+
+      chaptersGrid.innerHTML = "";
+      visibleChapters.forEach((tomo) => {
+        const numeroLimpio = parseFloat(tomo.number);
+        chaptersGrid.innerHTML += `
+          <a class="chapter-row-item" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+            <div class="chapter-row-left">
+              <img src="${tomo.cover}" class="chapter-row-img" alt="Cap ${numeroLimpio}">
+              <div style="display: flex; flex-direction: column;">
+                 <span style="font-size: 0.7rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
+                 <span style="font-size: 1.2rem; font-weight: bold;">${numeroLimpio}</span>
+              </div>
+            </div>
+            <div style="background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
+              LEER
+            </div>
+          </a>
+        `;
+      });
+
+      // 3. Mostrar/Ocultar botón "Ver más"
+      const loadMoreContainer = document.getElementById("loadMoreContainer");
+      if (itemsToShow < allChapters.length) {
+        loadMoreContainer.style.display = "block";
+      } else {
+        loadMoreContainer.style.display = "none";
+      }
+    }
+
+    // Evento Botón Ver Más
+    document.getElementById("loadMoreBtn").addEventListener("click", () => {
+      itemsToShow += 20;
+      renderChapters();
+    });
+
+    // Evento Botón Invertir Orden
+    document.getElementById("toggleOrderBtn").addEventListener("click", () => {
+      isDescending = !isDescending;
+      itemsToShow = 20; // Opcional: Reiniciar a 20 al invertir o dejar todos. Reiniciar es más limpio.
+      renderChapters();
+    });
 
     loadMangaData();
   </script>
