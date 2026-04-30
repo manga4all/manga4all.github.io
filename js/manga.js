@@ -19,53 +19,54 @@ const chaptersGrid = document.querySelector(".chapters-grid");
 async function loadManga() {
   if (!mangaId) return;
 
-  // 1. CARGAR DATOS DEL MANGA
-  const mangaRef = doc(db, "mangas", mangaId);
-  const mangaSnap = await getDoc(mangaRef);
+  try {
+    // 1. CARGAR DATOS DEL MANGA
+    const mangaRef = doc(db, "mangas", mangaId);
+    const mangaSnap = await getDoc(mangaRef);
 
-  if (mangaSnap.exists()) {
-    const manga = mangaSnap.data();
-    mangaTitle.textContent = manga.title;
-    mangaDescription.textContent = manga.description;
-    mangaCover.src = manga.cover;
-  }
+    if (mangaSnap.exists()) {
+      const manga = mangaSnap.data();
+      mangaTitle.textContent = manga.title;
+      mangaDescription.textContent = manga.description;
+      mangaCover.src = manga.cover;
+    }
 
-  // 2. CARGAR TOMOS (Del más nuevo al más viejo)
-  const q = query(
-    collection(db, "tomos"),
-    where("mangaId", "==", mangaId),
-    orderBy("number", "desc") 
-  );
+    // 2. CARGAR TOMOS
+    const q = query(
+      collection(db, "tomos"),
+      where("mangaId", "==", mangaId),
+      orderBy("number", "desc")
+    );
 
-  const querySnapshot = await getDocs(q);
-  
-  // Limpiamos antes de inyectar
-  chaptersGrid.innerHTML = ""; 
+    const querySnapshot = await getDocs(q);
+    chaptersGrid.innerHTML = ""; 
 
-  if (querySnapshot.empty) {
-    chaptersGrid.innerHTML = "<p style='text-align:center; color:#555; padding:20px;'>No hay capítulos disponibles aún.</p>";
-    return;
-  }
+    querySnapshot.forEach((docSnap) => {
+      const tomo = docSnap.data();
+      const num = tomo.number;
+      const portada = tomo.cover;
 
-  querySnapshot.forEach((doc) => {
-    const tomo = doc.data();
-    
-    // Inyectamos como FILA
-    chaptersGrid.innerHTML += `
-      <a class="chapter-row" href="reader.html?manga=${mangaId}&number=${tomo.number}">
-        <div class="row-left">
-          <img src="${tomo.cover}" class="cap-thumb" alt="Cap ${tomo.number}">
-          <div class="cap-text">
-            <span class="cap-label">CAPÍTULO</span>
-            <span class="cap-number">${tomo.number}</span>
+      // Creamos la fila compacta
+      const filaHtml = `
+        <a class="chapter-row" href="reader.html?manga=${mangaId}&number=${num}">
+          <div class="row-left">
+            <img src="${portada}" class="cap-thumb" alt="Cap ${num}">
+            <div class="cap-text">
+              <span class="cap-label">CAPÍTULO</span>
+              <span class="cap-number">${num}</span>
+            </div>
           </div>
-        </div>
-        <div class="row-right">
-          <span class="read-btn">LEER</span>
-        </div>
-      </a>
-    `;
-  });
+          <div class="row-right">
+            <span class="read-btn">LEER</span>
+          </div>
+        </a>`;
+      
+      chaptersGrid.innerHTML += filaHtml;
+    });
+
+  } catch (error) {
+    console.error("Error cargando manga:", error);
+  }
 }
 
 loadManga();
