@@ -4,27 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga 4 All | Inicio</title>
-  <link rel="stylesheet" href="css/style.css?v=24">
   <style>
-    /* Ajustes de espacio específicos para esta página */
-    .container { padding-top: 5px; padding-bottom: 5px; }
-    .section-title { margin-top: 15px !important; margin-bottom: 15px !important; }
-    header { margin-bottom: 10px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #070707; color: white; line-height: 1.4; padding-top: 70px; }
+    nav { background: #111; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff0055; position: fixed; top: 0; left: 0; width: 100%; height: 70px; z-index: 3000; }
+    .logo { color: #ff0055; font-weight: bold; font-size: 1.7rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 35px; }
+    .nav-links a { color: #ccc; text-decoration: none; transition: 0.3s; }
+    .nav-links a:hover { color: #ff0055; }
+    .search-container input { background: #1a1a1a; border: 1px solid #333; padding: 10px 18px; border-radius: 25px; color: white; outline: none; width: 280px; }
+    header { position: relative; height: 380px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+    .banner-img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+    .overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #070707); z-index: 0; }
+    .header-content { position: relative; z-index: 10; text-align: center; max-width: 850px; padding: 20px; }
+    .header-content h1 { font-size: 4rem; margin-bottom: 15px; }
+    .container { max-width: 1250px; margin: 0 auto; padding: 20px; }
+    .section-title { font-size: 1.7rem; margin: 20px 0; border-left: 6px solid #ff0055; padding-left: 18px; }
+    .updates-wrapper { width: 100%; overflow: hidden; padding: 20px 0; }
+    .updates-track { display: flex; gap: 20px; width: max-content; animation: scroll-loop 40s linear infinite; }
+    @keyframes scroll-loop { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .update-item { flex: 0 0 160px; text-decoration: none; color: white; }
+    .update-cover-wrapper { width: 100%; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; border: 1px solid #222; margin-bottom: 8px; }
+    .update-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .update-info h3 { font-size: 0.85rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .update-info span { font-size: 0.8rem; color: #ff0055; display: block; text-align: center; font-weight: bold; }
+    .manga-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 35px; }
+    .manga-card { background: #111; border-radius: 12px; border: 1px solid #222; text-decoration: none; color: white; transition: 0.4s; overflow: hidden; display: flex; flex-direction: column; }
+    .manga-card:hover { transform: translateY(-10px); border-color: #ff0055; }
+    .cover-container { width: 100%; aspect-ratio: 2 / 3; overflow: hidden; }
+    .cover-container img { width: 100%; height: 100%; object-fit: cover; }
+    .manga-info { padding: 15px; text-align: center; }
+    .manga-info h3 { font-size: 1.1rem; margin-bottom: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn { background: #ff0055; color: white; padding: 10px; border-radius: 8px; font-weight: bold; text-decoration: none; display: block; text-align: center; font-size: 0.9rem; }
+    footer { text-align: center; padding: 50px; color: #444; margin-top: 40px; }
   </style>
 </head>
 <body>
 
   <nav>
     <div class="nav-left">
-        <a href="index.html" class="logo">Manga 4 All</a>
-        <div class="nav-links">
-            <a href="index.html">Inicio</a>
-            <a href="directory.html">Directorio</a>
-        </div>
+      <a href="index.html" class="logo">Manga 4 All</a>
+      <div class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="directory.html">Directorio</a>
+      </div>
     </div>
-    <div class="search-container">
-        <input type="text" placeholder="Buscar manga...">
-    </div>
+    <div class="search-container"><input type="text" placeholder="Buscar manga..."></div>
   </nav>
 
   <header>
@@ -36,103 +61,72 @@
     </div>
   </header>
 
-  <div id="continue-container" class="container" style="display: none; margin-top: 0; margin-bottom: 10px;">
-      <h2 class="section-title">Continuar Leyendo</h2>
-      <div id="continue-card-place"></div>
+  <div id="continue-container" class="container" style="display: none;">
+    <h2 class="section-title">Continuar Leyendo</h2>
+    <div id="continue-card-place"></div>
   </div>
 
-  <div class="container" style="margin-top: 0; margin-bottom: 10px;">
-      <h2 class="section-title">Últimas Actualizaciones</h2>
-      <div class="updates-wrapper" style="padding-top: 0;">
-          <div id="updates-track" class="updates-track"></div>
-      </div>
+  <div class="container">
+    <h2 class="section-title">Últimas Actualizaciones</h2>
+    <div class="updates-wrapper">
+      <div id="updates-track" class="updates-track"></div>
+    </div>
   </div>
 
-  <main class="container" style="margin-top: 0;">
+  <main class="container">
     <h2 class="section-title">Destacados</h2>
     <div id="manga-grid" class="manga-grid"></div>
   </main>
 
   <footer>Manga 4 All © 2026</footer>
 
-  <script src="js/navbar.js"></script>
-
   <script type="module">
     import { db } from "./js/firebase.js";
-    import { collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    async function loadHomePage() {
-        const updatesTrack = document.getElementById("updates-track");
-        const mangaGrid = document.getElementById("manga-grid");
+    async function loadData() {
+      const updatesTrack = document.getElementById("updates-track");
+      const mangaGrid = document.getElementById("manga-grid");
 
-        try {
-            const querySnapshot = await getDocs(collection(db, "mangas"));
-            
-            updatesTrack.innerHTML = "";
-            mangaGrid.innerHTML = "";
+      try {
+        const snap = await getDocs(collection(db, "mangas"));
+        updatesTrack.innerHTML = "";
+        mangaGrid.innerHTML = "";
 
-            querySnapshot.forEach((docItem) => {
-                const manga = docItem.data();
-                const id = docItem.id;
+        snap.forEach(docItem => {
+          const m = docItem.data();
+          const id = docItem.id;
 
-                // 1. RENDERIZAR EN ÚLTIMAS ACTUALIZACIONES (CARRUSEL)
-                updatesTrack.innerHTML += `
-                    <a href="manga.html?id=${id}" class="update-item">
-                        <div class="update-cover-wrapper">
-                            <img src="${manga.cover}" alt="${manga.title}">
-                        </div>
-                        <div class="update-info">
-                            <h3>${manga.title}</h3>
-                            <span>Cap. ${manga.lastChapter || 'Nuevo'}</span>
-                        </div>
-                    </a>
-                `;
+          const cardHtml = `
+            <a href="manga.html?id=${id}" class="manga-card">
+              <div class="cover-container"><img src="${m.cover}"></div>
+              <div class="manga-info"><h3>${m.title}</h3><div class="btn">Leer ahora</div></div>
+            </a>`;
+          
+          const updateHtml = `
+            <a href="manga.html?id=${id}" class="update-item">
+              <div class="update-cover-wrapper"><img src="${m.cover}"></div>
+              <div class="update-info"><h3>${m.title}</h3><span>Cap. ${m.lastChapter || 'Nuevo'}</span></div>
+            </a>`;
 
-                // 2. RENDERIZAR EN DESTACADOS (GRID DE TARJETAS)
-                mangaGrid.innerHTML += `
-                    <a href="manga.html?id=${id}" class="manga-card">
-                        <div class="cover-container">
-                            <img src="${manga.cover}" alt="${manga.title}">
-                        </div>
-                        <div class="manga-info">
-                            <h3>${manga.title}</h3>
-                            <div class="btn">Leer ahora</div>
-                        </div>
-                    </a>
-                `;
-            });
-        } catch (error) {
-            console.error("Error cargando el inicio:", error);
-        }
+          updatesTrack.innerHTML += updateHtml;
+          mangaGrid.innerHTML += cardHtml;
+        });
+      } catch (e) { console.error(e); }
     }
+    loadData();
 
-    // Ejecutar carga
-    loadHomePage();
-  </script>
-
-  <script>
-    function renderHistorial() {
-        const contenedor = document.getElementById("continue-container");
-        const lugarCard = document.getElementById("continue-card-place");
-        const storage = localStorage.getItem("manga_last_seen");
-
-        if (storage && contenedor && lugarCard) {
-            const m = JSON.parse(storage);
-            contenedor.style.display = "block";
-            
-            lugarCard.innerHTML = `
-                <a href="reader.html?manga=${m.id}&number=${m.chapter}" style="display: flex; align-items: center; gap: 25px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white; transition: 0.3s;">
-                    <img src="${m.image}" style="width: 85px; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                    <div style="flex: 1; text-align: left;">
-                        <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem; letter-spacing: 0.5px; display: block;">REANUDAR LECTURA</span>
-                        <h3 style="margin: 3px 0; font-size: 1.4rem; line-height: 1.2;">${m.title}</h3>
-                        <p style="color: #bbb; font-size: 1rem;">Capítulo ${m.chapter}</p>
-                    </div>
-                </a>
-            `;
-        }
+    // Historial
+    const storage = localStorage.getItem("manga_last_seen");
+    if (storage) {
+      const m = JSON.parse(storage);
+      document.getElementById("continue-container").style.display = "block";
+      document.getElementById("continue-card-place").innerHTML = `
+        <a href="reader.html?manga=${m.id}&number=${m.chapter}" style="display: flex; align-items: center; gap: 20px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white;">
+          <img src="${m.image}" style="width: 70px; height: 100px; object-fit: cover; border-radius: 8px;">
+          <div><span style="color: #ff0055; font-weight: bold; font-size: 0.7rem;">REANUDAR</span><h3>${m.title}</h3><p>Capítulo ${m.chapter}</p></div>
+        </a>`;
     }
-    window.addEventListener('load', renderHistorial);
   </script>
 </body>
 </html>
