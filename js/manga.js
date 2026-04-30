@@ -1,7 +1,4 @@
-import {
-  db
-} from "./firebase.js";
-
+import { db } from "./firebase.js";
 import {
   doc,
   getDoc,
@@ -13,73 +10,53 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const params = new URLSearchParams(window.location.search);
-
 const mangaId = params.get("id");
-
 const mangaTitle = document.getElementById("mangaTitle");
-
 const mangaDescription = document.getElementById("mangaDescription");
-
 const mangaCover = document.getElementById("mangaCover");
+const chaptersGrid = document.querySelector(".chapters-grid"); // Seguiremos usando este contenedor
 
-const chaptersGrid = document.querySelector(".chapters-grid");
-
-async function loadManga(){
-
-  // MANGA
-
+async function loadManga() {
+  // 1. CARGAR DATOS DEL MANGA
   const mangaRef = doc(db, "mangas", mangaId);
-
   const mangaSnap = await getDoc(mangaRef);
 
-  if(mangaSnap.exists()){
-
+  if (mangaSnap.exists()) {
     const manga = mangaSnap.data();
-
     mangaTitle.textContent = manga.title;
-
     mangaDescription.textContent = manga.description;
-
     mangaCover.src = manga.cover;
-
   }
 
-  // TOMOS
-
+  // 2. CARGAR TOMOS (Orden descendente: del más nuevo al más viejo)
   const q = query(
     collection(db, "tomos"),
     where("mangaId", "==", mangaId),
-    orderBy("number")
+    orderBy("number", "desc") // <--- CAMBIO CLAVE: "desc" para ver lo nuevo primero
   );
 
   const querySnapshot = await getDocs(q);
+  
+  // Limpiamos el contenedor antes de inyectar la lista
+  chaptersGrid.innerHTML = ""; 
 
   querySnapshot.forEach((doc) => {
-
     const tomo = doc.data();
-
+    
+    // Inyectamos el formato de FILA HÍBRIDA
     chaptersGrid.innerHTML += `
-
-      <a
-        class="chapter-card"
-        href="reader.html?manga=${mangaId}&tomo=${tomo.number}"
-      >
-
-        <img
-          src="${tomo.cover}"
-          alt="Tomo ${tomo.number}"
-        >
-
-        <div class="chapter-info">
-
-          <h3>
-            Tomo ${tomo.number}
-          </h3>
-
+      <a class="chapter-row" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+        <div class="row-left">
+          <img src="${tomo.cover}" class="cap-thumb" alt="Cap ${tomo.number}">
+          <div class="cap-text">
+            <span class="cap-label">CAPÍTULO</span>
+            <span class="cap-number">${tomo.number}</span>
+          </div>
         </div>
-
+        <div class="row-right">
+          <span class="read-btn">LEER</span>
+        </div>
       </a>
-
     `;
   });
 }
