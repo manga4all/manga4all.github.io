@@ -1,6 +1,6 @@
 /* ============================================================
-   Manga 4 All - CSS Completo Corregido (v18)
-   Corrección: Fix portadas aplastadas en manga.html
+   Manga 4 All - CSS Completo Corregido (v19)
+   Corrección: Centrado de nombres y estabilidad en carrusel
    ============================================================ */
 
 /* --- RESET Y BASE --- */
@@ -44,10 +44,40 @@ header {
 .updates-track { display: flex; gap: 30px; width: max-content; animation: scroll-loop 40s linear infinite; }
 .updates-wrapper:hover .updates-track { animation-play-state: paused; }
 @keyframes scroll-loop { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-.update-item { flex: 0 0 160px; text-decoration: none; transition: 0.3s; }
-.update-cover-wrapper { width: 100%; aspect-ratio: 2 / 3; border-radius: 12px; overflow: hidden; border: 1px solid #222; margin-bottom: 10px; }
+
+.update-item { 
+    flex: 0 0 160px; 
+    width: 160px; 
+    text-decoration: none; 
+    transition: 0.3s; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; /* Asegura el centrado de los hijos */
+}
+
+.update-cover-wrapper { 
+    width: 160px; /* Ancho fijo para que no salte */
+    height: 230px; /* Alto fijo para simetría total */
+    border-radius: 12px; 
+    overflow: hidden; 
+    border: 1px solid #222; 
+    margin-bottom: 10px; 
+}
 .update-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-.update-info span { font-size: 0.85rem; color: #ff0055; font-weight: bold; display: block; text-align: center; }
+
+.update-info { width: 100%; text-align: center; }
+.update-info strong { 
+    display: block; 
+    text-align: center; 
+    width: 100%; 
+}
+.update-info span { 
+    font-size: 0.85rem; 
+    color: #ff0055; 
+    font-weight: bold; 
+    display: block; 
+    text-align: center; 
+}
 
 /* --- GRID GENERAL / CARDS COMUNES --- */
 .cover-container { width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px 12px 0 0; }
@@ -137,7 +167,8 @@ footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
-/* --- FIX ESPECÍFICO PARA LISTA DE CAPÍTULOS (No toca el resto) --- */
+
+/* --- FIX ESPECÍFICO PARA LISTA DE CAPÍTULOS --- */
 .chapters-grid-list {
     display: flex !important;
     flex-direction: column !important;
