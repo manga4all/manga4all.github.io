@@ -51,7 +51,6 @@ header {
 
 /* --- GRID GENERAL / CARDS COMUNES --- */
 .cover-container { width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px 12px 0 0; }
-/* FIX IMPORTANTE: Apuntamos directamente a 'img' dentro del contenedor, no a una clase .cover que no existe */
 .cover-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .manga-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 35px; }
@@ -72,7 +71,7 @@ header {
 .manga-content-side { flex: 1; }
 .manga-content-side h1 { font-size: 2.5rem; margin-bottom: 10px; }
 
-/* Grid de capítulos - Ajustamos minmax a 180px para tarjetas un poco más anchas */
+/* Grid de capítulos */
 .chapters-grid { 
     display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
     gap: 20px; margin-top: 30px; 
@@ -91,3 +90,50 @@ header {
 .nav-controls { display: flex; justify-content: center; align-items: center; gap: 25px; padding: 35px; background: #070707; }
 
 footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #111; margin-top: 50px; }
+
+/* --- TOOLTIP DE INFORMACIÓN (NUEVO) --- */
+.manga-card .tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    width: 240px;
+    background: #1a1a1a;
+    border: 1px solid #ff0055;
+    color: #eee;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    z-index: 5000;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.manga-card .tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: #ff0055 transparent transparent transparent;
+}
+
+.manga-card:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-20px);
+}
+
+.manga-card .tooltip p {
+    text-align: left;
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
