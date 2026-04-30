@@ -11,7 +11,7 @@ const continueContainer = document.getElementById("continue-container");
 const continueCardPlace = document.getElementById("continue-card-place");
 const updatesTrack = document.getElementById("updates-track");
 
-// 1. LÓGICA: CONTINUAR LEYENDO
+// 1. LÓGICA: CONTINUAR LEYENDO (DESACTIVADA PARA EVITAR CONFLICTOS CON INDEX.HTML)
 function checkLastRead() {
     const saved = localStorage.getItem('lastReadM4A');
     if (saved && continueContainer && continueCardPlace) {
@@ -100,6 +100,6 @@ async function loadMangas() {
 }
 
 // Ejecución inicial
-checkLastRead();
+// checkLastRead(); <-- COMENTADO PARA QUE NO SOBREESCRIBA EL HISTORIAL CORRECTO
 loadUpdates();
 loadMangas();
