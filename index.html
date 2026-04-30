@@ -4,7 +4,72 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga 4 All | Inicio</title>
-  <link rel="stylesheet" href="css/style.css?v=28">
+  <style>
+    /* RESET Y BASE */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: #070707; color: white; line-height: 1.4; padding-top: 70px; }
+
+    /* NAVBAR */
+    nav { background: #111; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff0055; position: fixed; top: 0; left: 0; width: 100%; height: 70px; z-index: 3000; }
+    .logo { color: #ff0055; font-weight: bold; font-size: 1.7rem; text-decoration: none; }
+    .nav-links { display: flex; gap: 35px; }
+    .nav-links a { color: #ccc; text-decoration: none; transition: 0.3s; }
+    .nav-links a:hover { color: #ff0055; }
+    .search-container input { background: #1a1a1a; border: 1px solid #333; padding: 10px 18px; border-radius: 25px; color: white; outline: none; width: 280px; }
+
+    /* HEADER */
+    header { position: relative; height: 380px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 10px; }
+    .banner-img { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+    .overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #070707); z-index: 0; }
+    .header-content { position: relative; z-index: 10; text-align: center; }
+    .header-content h1 { font-size: 4rem; margin-bottom: 10px; }
+
+    /* --- BARRA DE ACTUALIZACIONES (CARRUSEL) --- */
+    .container { max-width: 1250px; margin: 0 auto; padding: 20px; }
+    .section-title { font-size: 1.7rem; margin: 20px 0; border-left: 6px solid #ff0055; padding-left: 18px; }
+    
+    .updates-wrapper { width: 100%; overflow: hidden; padding: 10px 0; min-height: 350px; }
+    .updates-track { display: flex; gap: 20px; width: max-content; animation: scroll-loop 40s linear infinite; }
+    .updates-wrapper:hover .updates-track { animation-play-state: paused; }
+    @keyframes scroll-loop { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+    .update-item { 
+        flex: 0 0 180px; 
+        background: #111; 
+        border-radius: 12px; 
+        border: 1px solid #222; 
+        padding: 10px; 
+        text-decoration: none; 
+        color: white; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 10px;
+    }
+    .update-cover-wrapper { width: 100%; height: 250px; overflow: hidden; border-radius: 8px; }
+    .update-cover-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .update-info { text-align: center; }
+    .update-info h3 { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+    .update-info span { color: #ff0055; font-weight: bold; font-size: 0.8rem; }
+
+    /* BOTÓN ROSADO */
+    .btn { background: #ff0055; color: white; padding: 8px; border-radius: 6px; font-weight: bold; text-align: center; font-size: 0.8rem; border: none; display: block; text-decoration: none; }
+
+    /* GRID DESTACADOS */
+    .manga-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 35px; }
+    .manga-card { position: relative; background: #111; border-radius: 12px; border: 1px solid #222; text-decoration: none; color: white; transition: 0.4s; overflow: visible; display: flex; flex-direction: column; }
+    .manga-card:hover { transform: translateY(-10px); border-color: #ff0055; }
+    .cover-container { width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 12px 12px 0 0; }
+    .cover-container img { width: 100%; height: 100%; object-fit: cover; }
+    .manga-info { padding: 15px; text-align: center; }
+    .manga-info h3 { font-size: 1.1rem; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* TOOLTIP (DIRECTORIO) */
+    .tooltip { position: absolute; bottom: 105%; left: 50%; transform: translateX(-50%) translateY(10px); width: 260px; background: #1a1a1a; border: 1px solid #ff0055; color: #eee; padding: 15px; border-radius: 10px; font-size: 0.85rem; z-index: 5000; opacity: 0; visibility: hidden; transition: 0.3s ease; pointer-events: none; }
+    .manga-card:hover .tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+    .tooltip p { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
+
+    footer { text-align: center; padding: 50px; color: #444; border-top: 1px solid #111; margin-top: 40px; }
+  </style>
 </head>
 <body>
 
@@ -22,7 +87,7 @@
   </nav>
 
   <header>
-    <img src="https://images.alphacoders.com/605/605592.jpg" alt="Banner" class="banner-img">
+    <img src="assets/banners/1299859.jpg" alt="Banner" class="banner-img">
     <div class="overlay"></div>
     <div class="header-content">
       <h1>Manga 4 All</h1>
@@ -30,90 +95,75 @@
     </div>
   </header>
 
-  <div id="continue-container" class="container" style="display: none;">
-      <h2 class="section-title">Continuar Leyendo</h2>
-      <div id="continue-card-place"></div>
-  </div>
-
   <div class="container">
       <h2 class="section-title">Últimas Actualizaciones</h2>
       <div class="updates-wrapper">
           <div id="updatesTrack" class="updates-track"></div>
       </div>
-  </div>
 
-  <main class="container">
-    <h2 class="section-title">Destacados</h2>
-    <div id="mangaGrid" class="manga-grid"></div>
-  </main>
+      <h2 class="section-title">Destacados</h2>
+      <div id="mangaGrid" class="manga-grid"></div>
+  </div>
 
   <footer>Manga 4 All © 2026</footer>
 
-  <script src="js/navbar.js"></script>
-
   <script type="module">
     import { db } from "./js/firebase.js";
-    import { collection, getDocs, query, limit, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { collection, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    async function load() {
+    async function loadData() {
       const updatesTrack = document.getElementById("updatesTrack");
       const mangaGrid = document.getElementById("mangaGrid");
 
       try {
-        // 1. CARGAR ÚLTIMAS ACTUALIZACIONES
-        const qUpdates = query(collection(db, "mangas"), orderBy("lastChapterDate", "desc"), limit(10));
-        const snapUpdates = await getDocs(qUpdates);
-        updatesTrack.innerHTML = "";
+        // Query ultra-simple para evitar errores de Firebase
+        const snap = await getDocs(query(collection(db, "mangas"), limit(20)));
         
-        snapUpdates.forEach(docItem => {
-          const manga = docItem.data();
-          
+        updatesTrack.innerHTML = "";
+        mangaGrid.innerHTML = "";
+
+        snap.forEach(docItem => {
+          const m = docItem.data();
+          const id = docItem.id;
+
+          // 1. Barra de Actualizaciones (Carrusel)
           updatesTrack.innerHTML += `
             <div class="update-item">
               <div class="update-cover-wrapper">
-                <img src="${manga.cover}" alt="${manga.title}">
+                <img src="${m.cover}" alt="${m.title}">
               </div>
               <div class="update-info">
-                <h3>${manga.title}</h3>
-                <span>Cap. ${manga.lastChapter || 'Nuevo'}</span>
-                <a href="manga.html?id=${docItem.id}" class="btn">Leer</a>
+                <h3>${m.title}</h3>
+                <span>Cap. ${m.lastChapter || 'Nuevo'}</span>
               </div>
+              <a href="manga.html?id=${id}" class="btn">Leer</a>
             </div>`;
-        });
 
-        // 2. CARGAR DESTACADOS
-        const qManga = query(collection(db, "mangas"), limit(20));
-        const querySnapshot = await getDocs(qManga);
-        mangaGrid.innerHTML = "";
-
-        querySnapshot.forEach((docItem) => {
-          const manga = docItem.data();
+          // 2. Grid de Destacados
           mangaGrid.innerHTML += `
-            <a href="manga.html?id=${docItem.id}" class="manga-card">
+            <a href="manga.html?id=${id}" class="manga-card">
+              <div class="tooltip"><p>${m.description || 'Sin descripción'}</p></div>
               <div class="cover-container">
-                <img src="${manga.cover}" alt="${manga.title}">
+                <img src="${m.cover}" alt="${m.title}">
               </div>
               <div class="manga-info">
-                <h3>${manga.title}</h3>
+                <h3>${m.title}</h3>
                 <div class="btn">Leer ahora</div>
               </div>
             </a>`;
         });
-      } catch (e) { console.error(e); }
-    }
-    load();
 
-    // Historial
-    const storage = localStorage.getItem("manga_last_seen");
-    if (storage) {
-      const m = JSON.parse(storage);
-      document.getElementById("continue-container").style.display = "block";
-      document.getElementById("continue-card-place").innerHTML = `
-        <a href="reader.html?manga=${m.id}&number=${m.chapter}" style="display: flex; align-items: center; gap: 20px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white;">
-          <img src="${m.image}" style="width: 70px; height: 100px; object-fit: cover; border-radius: 8px;">
-          <div><span style="color: #ff0055; font-weight: bold; font-size: 0.7rem;">REANUDAR</span><h3>${m.title}</h3><p>Capítulo ${m.chapter}</p></div>
-        </a>`;
+        // Duplicar items para el efecto de scroll infinito si hay suficientes
+        if(snap.size > 4) {
+            updatesTrack.innerHTML += updatesTrack.innerHTML;
+        }
+
+      } catch (e) {
+        console.error("Error cargando datos:", e);
+      }
     }
+
+    loadData();
   </script>
 </body>
 </html>
