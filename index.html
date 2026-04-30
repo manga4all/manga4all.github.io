@@ -59,38 +59,29 @@
   <script src="js/navbar.js"></script>
 
   <script>
-    // Usamos una función autoejecutable para que corra APENAS llegue aquí
+    // Función autoejecutable para carga instantánea
     (function renderHistorial() {
         const contenedor = document.getElementById("continue-container");
         const lugarCard = document.getElementById("continue-card-place");
         const storage = localStorage.getItem("manga_last_seen");
 
         if (storage && contenedor && lugarCard) {
-            try {
-                const m = JSON.parse(storage);
-                
-                // Limpiamos CUALQUIER cosa que haya podido meter app.js por error
-                lugarCard.innerHTML = ""; 
+            const m = JSON.parse(storage);
+            contenedor.style.display = "block";
 
-                // Construimos la tarjeta
-                const tarjetaHTML = `
-                    <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true" style="display: flex; align-items: center; gap: 25px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white; transition: 0.3s;">
-                        <img src="${m.image}" style="width: 85px; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                        <div style="flex: 1; text-align: left;">
-                            <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem; letter-spacing: 0.5px; display: block;">REANUDAR LECTURA</span>
-                            <h3 style="margin: 3px 0; font-size: 1.4rem; line-height: 1.2;">${m.title}</h3>
-                            <p style="color: #bbb; font-size: 1rem;">Capítulo ${m.chapter}</p>
-                        </div>
-                    </a>
-                `;
-
-                lugarCard.innerHTML = tarjetaHTML;
-                contenedor.style.display = "block";
-            } catch (e) {
-                console.error("Error en el historial:", e);
-            }
+            // Renderizado limpio con el parámetro scroll=true
+            lugarCard.innerHTML = `
+                <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true" style="display: flex; align-items: center; gap: 25px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white; transition: 0.3s;">
+                    <img src="${m.image}" style="width: 85px; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+                    <div style="flex: 1; text-align: left;">
+                        <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem; letter-spacing: 0.5px; display: block;">REANUDAR LECTURA</span>
+                        <h3 style="margin: 3px 0; font-size: 1.4rem; line-height: 1.2;">${m.title}</h3>
+                        <p style="color: #bbb; font-size: 1rem;">Capítulo ${m.chapter}</p>
+                    </div>
+                </a>
+            `;
         }
-    })(); // Los paréntesis finales () hacen que la función corra YA
+    })();
   </script>
 </body>
 </html>
