@@ -14,9 +14,11 @@ const mangaId = params.get("id");
 const mangaTitle = document.getElementById("mangaTitle");
 const mangaDescription = document.getElementById("mangaDescription");
 const mangaCover = document.getElementById("mangaCover");
-const chaptersGrid = document.querySelector(".chapters-grid"); // Seguiremos usando este contenedor
+const chaptersGrid = document.querySelector(".chapters-grid");
 
 async function loadManga() {
+  if (!mangaId) return;
+
   // 1. CARGAR DATOS DEL MANGA
   const mangaRef = doc(db, "mangas", mangaId);
   const mangaSnap = await getDoc(mangaRef);
@@ -28,22 +30,27 @@ async function loadManga() {
     mangaCover.src = manga.cover;
   }
 
-  // 2. CARGAR TOMOS (Orden descendente: del más nuevo al más viejo)
+  // 2. CARGAR TOMOS (Del más nuevo al más viejo)
   const q = query(
     collection(db, "tomos"),
     where("mangaId", "==", mangaId),
-    orderBy("number", "desc") // <--- CAMBIO CLAVE: "desc" para ver lo nuevo primero
+    orderBy("number", "desc") 
   );
 
   const querySnapshot = await getDocs(q);
   
-  // Limpiamos el contenedor antes de inyectar la lista
+  // Limpiamos antes de inyectar
   chaptersGrid.innerHTML = ""; 
+
+  if (querySnapshot.empty) {
+    chaptersGrid.innerHTML = "<p style='text-align:center; color:#555; padding:20px;'>No hay capítulos disponibles aún.</p>";
+    return;
+  }
 
   querySnapshot.forEach((doc) => {
     const tomo = doc.data();
     
-    // Inyectamos el formato de FILA HÍBRIDA
+    // Inyectamos como FILA
     chaptersGrid.innerHTML += `
       <a class="chapter-row" href="reader.html?manga=${mangaId}&number=${tomo.number}">
         <div class="row-left">
