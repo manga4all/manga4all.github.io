@@ -63,7 +63,6 @@ async function loadUpdates() {
             `;
         });
 
-        // Duplicamos el contenido para que el bucle sea infinito y fluido
         updatesTrack.innerHTML = htmlContent + htmlContent;
 
     } catch (e) { 
@@ -71,7 +70,7 @@ async function loadUpdates() {
     }
 }
 
-// 3. LÓGICA: DESTACADOS
+// 3. LÓGICA: DESTACADOS (Con Tooltip integrado)
 async function loadMangas() {
     if (!mangaGrid) return;
     try {
@@ -79,9 +78,13 @@ async function loadMangas() {
         mangaGrid.innerHTML = "";
         querySnapshot.forEach((doc) => {
             const manga = doc.data();
-            const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "Sin descripción.";
+            const cleanDesc = manga.description ? manga.description.replace(/"/g, '&quot;') : "Sin descripción disponible.";
+            
             mangaGrid.innerHTML += `
-                <div class="manga-card" data-description="${cleanDesc}">
+                <div class="manga-card">
+                    <div class="tooltip">
+                        <p>${cleanDesc}</p>
+                    </div>
                     <div class="cover-container">
                         <img class="cover" src="${manga.cover}" alt="${manga.title}">
                     </div>
