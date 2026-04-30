@@ -5,72 +5,65 @@ import {
     query, 
     limit,
     orderBy,
-    doc,
-    getDoc
+    where
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const mangaGrid = document.getElementById("manga-grid");
-const continueContainer = document.getElementById("continue-container");
-const continueCardPlace = document.getElementById("continue-card-place");
 const updatesTrack = document.getElementById("updates-track");
 
-// 1. LÓGICA: CONTINUAR LEYENDO (DESACTIVADA PARA EVITAR CONFLICTOS CON INDEX.HTML)
-function checkLastRead() {
-    // ... (Tu código actual se mantiene igual)
-}
-
-// 2. LÓGICA: ÚLTIMAS ACTUALIZACIONES (CARRUSEL INFINITO - 1 POR SERIE)
+// 1. LÓGICA: ÚLTIMAS ACTUALIZACIONES (1 POR SERIE - MÁXIMA VELOCIDAD)
 async function loadUpdates() {
     if (!updatesTrack) return;
     try {
-        // Traemos los últimos 30 tomos para tener margen de filtrado
-        const qTomos = query(
-            collection(db, "tomos"), 
-            orderBy("createdAt", "desc"), 
-            limit(30)
-        );
-        const querySnapshot = await getDocs(qTomos);
+        // PASO 1: Obtenemos los 10 mangas (las series, no los capítulos)
+        // Nota: Idealmente deberías tener un campo 'lastUpdate' en la colección mangas
+        // Si no lo tienes, usaremos la colección base por ahora.
+        const qMangas = query(collection(db, "mangas"), limit(10));
+        const mangasSnap = await getDocs(qMangas);
         
-        let uniqueMangas = new Map();
-        
-        // Filtramos para quedarnos solo con el último tomo de cada mangaId
-        querySnapshot.forEach((doc) => {
-            const tomo = doc.data();
-            if (!uniqueMangas.has(tomo.mangaId) && uniqueMangas.size < 10) {
-                uniqueMangas.set(tomo.mangaId, tomo);
-            }
-        });
-
-        // Obtenemos los nombres de los mangas para mostrar en la barra
-        const mangaDataMap = new Map();
-        const mangaPromises = Array.from(uniqueMangas.keys()).map(async (id) => {
-            const mangaSnap = await getDoc(doc(db, "mangas", id));
-            if (mangaSnap.exists()) {
-                mangaDataMap.set(id, mangaSnap.data().title);
-            }
-        });
-        
-        await Promise.all(mangaPromises);
-
         let htmlContent = "";
-        uniqueMangas.forEach((tomo, mangaId) => {
-            const mangaTitle = mangaDataMap.get(mangaId) || "Manga";
-            const num = parseFloat(tomo.number);
+        
+        // Creamos una lista de promesas para pedir el ÚLTIMO capítulo de cada uno en paralelo
+        const updatePromises = mangasSnap.docs.map(async (mangaDoc) => {
+            const mangaData = mangaDoc.data();
+            const mangaId = mangaDoc.id;
+
+            // PASO 2: Para este manga específico, pedimos solo SU último capítulo subido
+            const qUltimoTomo = query(
+                collection(db, "tomos"),
+                where("mangaId", "==", mangaId),
+                orderBy("number", "desc"), // El número más alto es el último
+                limit(1)
+            );
             
-            htmlContent += `
-                <a href="reader.html?manga=${mangaId}&number=${tomo.number}" class="update-item">
-                    <div class="update-cover-wrapper">
-                        <img src="${tomo.cover}" alt="${mangaTitle}">
-                    </div>
-                    <div class="update-info">
-                        <strong style="display:block; font-size:0.8rem; color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${mangaTitle}</strong>
-                        <span>Capítulo ${num}</span>
-                    </div>
-                </a>
-            `;
+            const tomoSnap = await getDocs(qUltimoTomo);
+            
+            if (!tomoSnap.empty) {
+                const tomo = tomoSnap.docs[0].data();
+                const num = parseFloat(tomo.number);
+                
+                return `
+                    <a href="reader.html?manga=${mangaId}&number=${tomo.number}" class="update-item">
+                        <div class="update-cover-wrapper">
+                            <img src="${tomo.cover}" alt="${mangaData.title}">
+                        </div>
+                        <div class="update-info">
+                            <strong style="display:block; font-size:0.8rem; color:white; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:2px;">${mangaData.title}</strong>
+                            <span>Capítulo ${num}</span>
+                        </div>
+                    </a>
+                `;
+            }
+            return ""; // Si el manga no tiene capítulos aún
         });
 
-        // Duplicamos el contenido para el efecto de scroll infinito
+        // Resolvemos todas las peticiones al mismo tiempo
+        const results = await Promise.all(updatePromises);
+        htmlContent = results.join("");
+
+        if (htmlContent === "") return;
+
+        // Repetimos el contenido para el efecto de carrusel infinito
         updatesTrack.innerHTML = htmlContent + htmlContent;
 
     } catch (e) { 
@@ -78,7 +71,7 @@ async function loadUpdates() {
     }
 }
 
-// 3. LÓGICA: DESTACADOS (LIMITADO A 10)
+// 2. LÓGICA: DESTACADOS (LIMITADO A 10)
 async function loadMangas() {
     if (!mangaGrid) return;
     try {
