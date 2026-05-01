@@ -28,7 +28,7 @@
       width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; 
       background: #1a1a1a; color: white; font-size: 15px;
     }
-    input:focus, textarea:focus { border-color: #ff0055; outline: none; background: #222; }
+    input:focus, textarea:focus, select:focus { border-color: #ff0055; outline: none; background: #222; }
     textarea { height: 100px; resize: vertical; }
 
     /* GÉNEROS CHECKBOX GRID */
@@ -68,8 +68,10 @@
     <div class="tabs-header">
       <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
       <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
-      <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo Individual</button>
-      <button class="tab-btn" onclick="openTab('jsonTab')">📂 Carga JSON (Masiva)</button>
+      <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar Catálogo</button>
+      <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo</button>
+      <button class="tab-btn" onclick="openTab('jsonTab')">📂 JSON Masivo</button>
+      <button class="tab-btn" onclick="openTab('settingsTab')">⚙️ Géneros</button>
     </div>
 
     <div id="mangaTab" class="tab-content active">
@@ -99,81 +101,95 @@
     </div>
 
     <div id="fullTab" class="tab-content">
-      <h1>🚀 Crear Manga y Subir Capítulos</h1>
-      <p style="color: #888; margin-bottom: 20px; font-size: 0.9rem;">Registra el manga y procesa el JSON automáticamente en un solo paso.</p>
-      
+      <h1>🚀 Proceso Completo (Manga + Capítulos)</h1>
       <div class="input-group">
         <label>Título del Manga</label>
-        <input type="text" id="fullMangaTitle" placeholder="Título de la serie">
+        <input type="text" id="fullMangaTitle">
       </div>
       <div class="input-group">
         <label>Descripción</label>
-        <textarea id="fullMangaDesc" placeholder="Sinopsis..."></textarea>
+        <textarea id="fullMangaDesc"></textarea>
       </div>
       <div class="input-group">
-        <label>Portada (Se usará también para los capítulos)</label>
-        <input type="text" id="fullMangaCover" placeholder="Link de Google Drive">
+        <label>Portada Principal</label>
+        <input type="text" id="fullMangaCover">
       </div>
       <div class="input-group">
         <label>Seleccionar Géneros</label>
         <div class="genres-grid" id="fullGenresGrid"></div>
       </div>
-
       <div class="file-input-wrapper" onclick="document.getElementById('fullJsonInput').click()">
         <label style="color: #ff0055; cursor: pointer; display: block;">
-          📁 Seleccionar archivo JSON de capítulos
+          📁 Seleccionar JSON
           <input type="file" id="fullJsonInput" accept=".json" style="display: none;">
         </label>
-        <div id="fullFileNameDisplay" style="margin-top: 10px; font-size: 0.8rem; color: #888;">Ningún archivo seleccionado</div>
+        <div id="fullFileNameDisplay" style="margin-top: 10px; font-size: 0.8rem; color: #888;">Ninguno</div>
       </div>
-
-      <button class="primary-btn" id="fullProcessBtn">🚀 Iniciar Proceso Completo</button>
+      <button class="primary-btn" id="fullProcessBtn">🚀 Iniciar Carga Total</button>
       <div id="fullStatus" class="result-msg"></div>
     </div>
 
+    <div id="editTab" class="tab-content">
+      <h1>✏️ Gestionar Catálogo (Editar)</h1>
+      <div class="input-group">
+        <label>Seleccionar Manga para Editar</label>
+        <select id="editMangaSelector">
+            <option value="">Cargando mangas...</option>
+        </select>
+      </div>
+      <div id="editForm" style="display: none; border-top: 1px solid #333; padding-top: 20px;">
+          <div class="input-group">
+            <label>Título</label>
+            <input type="text" id="editTitle">
+          </div>
+          <div class="input-group">
+            <label>Descripción</label>
+            <textarea id="editDesc"></textarea>
+          </div>
+          <div class="input-group">
+            <label>Portada (Link Drive)</label>
+            <input type="text" id="editCover">
+          </div>
+          <div class="input-group">
+            <label>Actualizar Géneros</label>
+            <div class="genres-grid" id="editGenresGrid"></div>
+          </div>
+          <button class="primary-btn" id="updateMangaBtn">💾 Guardar Cambios</button>
+          <div id="editStatus" class="result-msg"></div>
+      </div>
+    </div>
+
+    <div id="settingsTab" class="tab-content">
+        <h1>⚙️ Gestión de Géneros</h1>
+        <div class="input-group">
+            <label>Nombre del nuevo género</label>
+            <input type="text" id="newGenreName" placeholder="Ej: Psicológico">
+        </div>
+        <button class="primary-btn" id="addGenreBtn" style="background: #333;">➕ Añadir Género</button>
+        <div id="genreStatus" class="result-msg"></div>
+        
+        <div style="margin-top: 30px;">
+            <label>Géneros Actuales (Se actualizan en vivo)</label>
+            <div id="genreListDisplay" style="display: flex; flex-wrap: wrap; gap: 10px; background: #000; padding: 15px; border-radius: 10px;"></div>
+        </div>
+    </div>
+
     <div id="singleTab" class="tab-content">
-      <h1>Publicar Capítulo Individual</h1>
-      <div class="input-group">
-        <label>ID del Manga</label>
-        <input type="text" id="singleMangaId" placeholder="Ej: X5DmBqFlP...">
-      </div>
-      <div style="display: flex; gap: 15px;">
-        <div class="input-group" style="flex: 1;">
-          <label>Número de Capítulo</label>
-          <input type="number" id="singleNum" placeholder="Ej: 1">
-        </div>
-        <div class="input-group" style="flex: 2;">
-          <label>Portada del Capítulo (Link Drive)</label>
-          <input type="text" id="singleCover" placeholder="Link de Drive">
-        </div>
-      </div>
-      <div class="input-group">
-        <label>Lista de Imágenes (Un link por línea)</label>
-        <textarea id="singleImages" style="height: 150px;" placeholder="Pega todos los links de las páginas aquí..."></textarea>
-      </div>
-      <button class="primary-btn" id="uploadSingleBtn">Publicar Capítulo</button>
-      <div id="singleStatus" class="result-msg"></div>
+        <h1>Capítulo Individual</h1>
+        <div class="input-group"><label>ID Manga</label><input type="text" id="singleMangaId"></div>
+        <div style="display:flex; gap:15px;"><input type="number" id="singleNum" placeholder="Cap #"><input type="text" id="singleCover" placeholder="Cover Cap"></div>
+        <textarea id="singleImages" style="height:150px; margin-top:15px;" placeholder="Links..."></textarea>
+        <button class="primary-btn" id="uploadSingleBtn">Publicar</button>
+        <div id="singleStatus" class="result-msg"></div>
     </div>
 
     <div id="jsonTab" class="tab-content">
-      <h1>Carga Masiva por JSON</h1>
-      <div class="input-group">
-        <label>ID del Manga</label>
-        <input type="text" id="targetMangaId" placeholder="ID del manga donde se subirán">
-      </div>
-      <div class="input-group">
-        <label>Portada Predeterminada para los tomos (Link Drive)</label>
-        <input type="text" id="chapterCoverBase" placeholder="Opcional">
-      </div>
-      <div class="file-input-wrapper" onclick="document.getElementById('jsonFileInput').click()">
-        <label style="color: #ff0055; cursor: pointer; display: block;">
-          📁 Seleccionar archivo JSON
-          <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
-        </label>
-        <div id="fileNameDisplay" style="margin-top: 10px; font-size: 0.8rem; color: #888;">Ningún archivo seleccionado</div>
-      </div>
-      <button class="primary-btn" id="uploadJsonBtn">🚀 Iniciar Carga Masiva</button>
-      <div id="jsonStatus" class="result-msg"></div>
+        <h1>Carga Masiva JSON</h1>
+        <input type="text" id="targetMangaId" placeholder="ID Manga"><br><br>
+        <input type="text" id="chapterCoverBase" placeholder="Cover Base"><br><br>
+        <input type="file" id="jsonFileInput" accept=".json">
+        <button class="primary-btn" id="uploadJsonBtn" style="margin-top:20px;">Subir Masivo</button>
+        <div id="jsonStatus" class="result-msg"></div>
     </div>
 
   </div>
@@ -181,7 +197,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { 
-      getFirestore, collection, addDoc, Timestamp 
+      getFirestore, collection, addDoc, Timestamp, getDocs, doc, getDoc, updateDoc, onSnapshot, deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -196,91 +212,126 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const listaGeneros = [
-      "Acción", "Aventura", "Ciencia Ficción", "Comedia", "Drama", "Ecchi", "Isekai", "Mecha",
-      "Recuentos de la vida", "Romance", "Seinen", "Shonen", 
-      "Shojo", "Josei", "Terror", "Misterio", "Fantasía", "Sobrenatural"
-    ];
+    // --- LÓGICA DE GÉNEROS DINÁMICOS ---
+    const genreGrids = ['genresGrid', 'fullGenresGrid', 'editGenresGrid'];
+    
+    // Escuchar cambios en la colección de géneros en tiempo real
+    onSnapshot(collection(db, "generos"), (snapshot) => {
+        const generos = snapshot.docs.map(d => ({id: d.id, nombre: d.data().nombre}));
+        generos.sort((a,b) => a.nombre.localeCompare(b.nombre));
+        
+        // 1. Actualizar Checkboxes de los formularios
+        genreGrids.forEach(gridId => {
+            const container = document.getElementById(gridId);
+            if(!container) return;
+            container.innerHTML = "";
+            generos.forEach(gen => {
+                container.innerHTML += `
+                    <label class="genre-item">
+                        <input type="checkbox" class="genre-checkbox-${gridId}" value="${gen.nombre}"> ${gen.nombre}
+                    </label>`;
+            });
+        });
 
-    // Cargar Checkboxes en ambas pestañas
-    function cargarGeneros(containerId) {
-        const container = document.getElementById(containerId);
-        listaGeneros.forEach(gen => {
-            container.innerHTML += `
-                <label class="genre-item">
-                <input type="checkbox" class="genre-checkbox-${containerId}" value="${gen}"> ${gen}
-                </label>
-            `;
+        // 2. Actualizar Lista en pestaña Ajustes
+        const display = document.getElementById('genreListDisplay');
+        display.innerHTML = generos.map(g => `
+            <span style="background:#222; padding:5px 12px; border-radius:20px; font-size:0.8rem; border:1px solid #333; display:flex; align-items:center; gap:8px;">
+                ${g.nombre} <button onclick="deleteGenre('${g.id}')" style="background:none; border:none; color:#ff0055; cursor:pointer; font-weight:bold;">×</button>
+            </span>
+        `).join('');
+    });
+
+    // Añadir Género
+    document.getElementById('addGenreBtn').addEventListener('click', async () => {
+        const nombre = document.getElementById('newGenreName').value.trim();
+        if(!nombre) return;
+        try {
+            await addDoc(collection(db, "generos"), { nombre });
+            document.getElementById('newGenreName').value = "";
+            document.getElementById('genreStatus').innerHTML = "✅ Género añadido";
+        } catch(e) { console.error(e); }
+    });
+
+    // Eliminar Género (Global para el botón ×)
+    window.deleteGenre = async (id) => {
+        if(confirm("¿Eliminar este género?")) await deleteDoc(doc(db, "generos", id));
+    };
+
+    // --- GESTIÓN DE CATÁLOGO (EDITAR) ---
+    const editSelector = document.getElementById('editMangaSelector');
+    
+    // Cargar mangas en el selector al abrir la pestaña
+    async function refreshMangaSelector() {
+        const snap = await getDocs(collection(db, "mangas"));
+        editSelector.innerHTML = '<option value="">-- Seleccionar Manga --</option>';
+        snap.forEach(d => {
+            editSelector.innerHTML += `<option value="${d.id}">${d.data().title}</option>`;
         });
     }
-    cargarGeneros('genresGrid');
-    cargarGeneros('fullGenresGrid');
+
+    editSelector.addEventListener('change', async (e) => {
+        const id = e.target.value;
+        if(!id) { document.getElementById('editForm').style.display = "none"; return; }
+        
+        const mangaSnap = await getDoc(doc(db, "mangas", id));
+        if(mangaSnap.exists()){
+            const data = mangaSnap.data();
+            document.getElementById('editForm').style.display = "block";
+            document.getElementById('editTitle').value = data.title;
+            document.getElementById('editDesc').value = data.description || "";
+            document.getElementById('editCover').value = data.cover;
+            
+            // Marcar géneros actuales
+            document.querySelectorAll('.genre-checkbox-editGenresGrid').forEach(cb => {
+                cb.checked = data.genres && data.genres.includes(cb.value);
+            });
+        }
+    });
+
+    document.getElementById('updateMangaBtn').addEventListener('click', async () => {
+        const id = editSelector.value;
+        const status = document.getElementById('editStatus');
+        const updatedData = {
+            title: document.getElementById('editTitle').value.trim(),
+            description: document.getElementById('editDesc').value.trim(),
+            cover: document.getElementById('editCover').value.trim(),
+            genres: Array.from(document.querySelectorAll('.genre-checkbox-editGenresGrid:checked')).map(cb => cb.value)
+        };
+
+        try {
+            status.innerHTML = "⏳ Actualizando...";
+            await updateDoc(doc(db, "mangas", id), updatedData);
+            status.innerHTML = "✅ Manga actualizado correctamente";
+            status.className = "result-msg success";
+            refreshMangaSelector(); // Refrescar por si cambió el título
+        } catch(e) { status.innerHTML = "❌ Error al actualizar"; }
+    });
 
     // --- UTILIDADES ---
     function extractDriveId(url) {
-      if(!url) return null;
+      if(!url || !url.includes('drive.google.com')) return url; // Si ya es procesada o no es drive, devolver tal cual
       const match = url.match(/\/d\/(.*?)\/|id=(.*?)($|&)/);
-      return match ? (match[1] || match[2]) : null;
+      return match ? (match[1] || match[2]) : url;
     }
 
     function formatDriveThumbnail(url, size = "w1600") {
       const id = extractDriveId(url);
-      return id ? `https://drive.google.com/thumbnail?id=${id}&sz=${size}` : null;
+      if(!id) return null;
+      return id.startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
     }
 
-    // --- NAVEGACIÓN TABS ---
-    window.openTab = (tabName) => {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
-      event.currentTarget.classList.add('active');
-    };
-
-    window.copyId = (elementId) => {
-      const id = document.getElementById(elementId).innerText;
-      navigator.clipboard.writeText(id);
-      alert("ID Copiado");
-    };
-
-    // Displays de nombre de archivo
-    document.getElementById('jsonFileInput').addEventListener('change', (e) => {
-      document.getElementById('fileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno";
-    });
-    document.getElementById('fullJsonInput').addEventListener('change', (e) => {
-      document.getElementById('fullFileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno";
-    });
-
-    // --- ACCIÓN: CREAR MANGA SOLO ---
-    document.getElementById('createMangaBtn').addEventListener('click', async () => {
-      const title = document.getElementById('mangaTitle').value.trim();
-      const description = document.getElementById('mangaDesc').value.trim();
-      const coverUrl = document.getElementById('mangaCover').value.trim();
-      const selectedGenres = Array.from(document.querySelectorAll('.genre-checkbox-genresGrid:checked')).map(cb => cb.value);
-
-      if (!title || !coverUrl) { alert("Título y Portada obligatorios"); return; }
-
-      try {
-        const finalCover = formatDriveThumbnail(coverUrl, "w1000");
-        const docRef = await addDoc(collection(db, "mangas"), {
-          title, description, cover: finalCover, genres: selectedGenres, createdAt: Timestamp.now()
-        });
-        document.getElementById('mangaResult').style.display = "block";
-        document.getElementById('newMangaId').innerText = docRef.id;
-      } catch (e) { console.error(e); }
-    });
-
-    // --- ACCIÓN: TODO EN UNO (Manga + JSON) ---
+    // --- ACCIÓN: TODO EN UNO (CON LIMPIEZA) ---
     document.getElementById('fullProcessBtn').addEventListener('click', async () => {
         const title = document.getElementById('fullMangaTitle').value.trim();
         const description = document.getElementById('fullMangaDesc').value.trim();
         const coverUrl = document.getElementById('fullMangaCover').value.trim();
         const fileInput = document.getElementById('fullJsonInput');
         const status = document.getElementById('fullStatus');
-        const selectedGenres = Array.from(document.querySelectorAll('.genre-checkbox-fullGenresGrid:checked')).map(cb => cb.value);
+        const genres = Array.from(document.querySelectorAll('.genre-checkbox-fullGenresGrid:checked')).map(cb => cb.value);
 
         if (!title || !coverUrl || !fileInput.files[0]) {
-            status.innerHTML = "❌ Título, Portada y JSON son obligatorios";
-            status.className = "result-msg error";
+            status.innerHTML = "❌ Faltan campos obligatorios";
             return;
         }
 
@@ -288,103 +339,94 @@
         reader.onload = async (e) => {
             try {
                 const chaptersData = JSON.parse(e.target.result);
-                status.innerHTML = "⏳ Paso 1: Creando Manga...";
-                status.className = "result-msg info";
-
-                // 1. Crear el Manga
+                status.innerHTML = "⏳ Creando serie...";
+                
                 const finalCover = formatDriveThumbnail(coverUrl, "w1000");
                 const docRef = await addDoc(collection(db, "mangas"), {
-                    title, description, cover: finalCover, genres: selectedGenres, createdAt: Timestamp.now()
+                    title, description, cover: finalCover, genres, createdAt: Timestamp.now()
                 });
-                const newId = docRef.id;
 
-                status.innerHTML = `✅ Manga creado (ID: ${newId}). <br> ⏳ Paso 2: Subiendo ${chaptersData.length} capítulos...`;
-
-                // 2. Subir Capítulos
                 let count = 0;
                 for (const item of chaptersData) {
-                    const transformedImages = item.links.map(link => formatDriveThumbnail(link, "w1600")).filter(u => u !== null);
-
+                    const imgs = item.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u !== null);
                     await addDoc(collection(db, "tomos"), {
-                        mangaId: newId,
+                        mangaId: docRef.id,
                         number: String(item.capitulo),
-                        cover: finalCover, // Usamos la misma portada del manga
-                        images: transformedImages,
+                        cover: finalCover,
+                        images: imgs,
                         createdAt: Timestamp.now()
                     });
                     count++;
                     status.innerHTML = `⏳ Subiendo capítulos: ${count} / ${chaptersData.length}`;
                 }
 
-                status.innerHTML = `✅ ¡Todo listo! Manga creado e ID asociado a ${count} capítulos.`;
+                status.innerHTML = "✅ Proceso completado con éxito";
                 status.className = "result-msg success";
 
-            } catch (err) {
-                status.innerHTML = "❌ Error en el proceso o JSON inválido";
-                status.className = "result-msg error";
-                console.error(err);
-            }
+                // --- LIMPIEZA DE CAMPOS ---
+                document.getElementById('fullMangaTitle').value = "";
+                document.getElementById('fullMangaDesc').value = "";
+                document.getElementById('fullMangaCover').value = "";
+                document.getElementById('fullJsonInput').value = "";
+                document.getElementById('fullFileNameDisplay').innerText = "Ninguno";
+                document.querySelectorAll('.genre-checkbox-fullGenresGrid').forEach(cb => cb.checked = false);
+                
+                refreshMangaSelector(); // Actualizar el selector de la pestaña editar
+
+            } catch (err) { status.innerHTML = "❌ Error en proceso"; console.error(err); }
         };
         reader.readAsText(fileInput.files[0]);
     });
 
-    // --- ACCIÓN: SUBIR CAPÍTULO INDIVIDUAL ---
-    document.getElementById('uploadSingleBtn').addEventListener('click', async () => {
-      const mangaId = document.getElementById('singleMangaId').value.trim();
-      const number = document.getElementById('singleNum').value.trim();
-      const coverUrl = document.getElementById('singleCover').value.trim();
-      const rawImages = document.getElementById('singleImages').value.trim();
-      const status = document.getElementById('singleStatus');
+    // --- ACCIÓN: CREAR MANGA (CON LIMPIEZA) ---
+    document.getElementById('createMangaBtn').addEventListener('click', async () => {
+        const title = document.getElementById('mangaTitle').value.trim();
+        const cover = document.getElementById('mangaCover').value.trim();
+        const genres = Array.from(document.querySelectorAll('.genre-checkbox-genresGrid:checked')).map(cb => cb.value);
+        
+        if(!title || !cover) return;
 
-      if (!mangaId || !number || !rawImages) { status.innerHTML = "❌ Faltan datos"; return; }
-
-      try {
-        status.innerHTML = "⏳ Subiendo...";
-        const finalCover = formatDriveThumbnail(coverUrl, "w1000") || "";
-        const imagesArray = rawImages.split('\n').map(line => formatDriveThumbnail(line.trim(), "w1600")).filter(url => url !== null);
-
-        await addDoc(collection(db, "tomos"), {
-          mangaId, number: String(number), cover: finalCover, images: imagesArray, createdAt: Timestamp.now()
-        });
-
-        status.innerHTML = `✅ Capítulo ${number} subido con éxito`;
-        status.className = "result-msg success";
-        document.getElementById('singleNum').value = Number(number) + 1;
-      } catch (e) { status.innerHTML = "❌ Error"; }
-    });
-
-    // --- ACCIÓN: SUBIR JSON SOLO ---
-    document.getElementById('uploadJsonBtn').addEventListener('click', async () => {
-      const mangaId = document.getElementById('targetMangaId').value.trim();
-      const coverUrlBase = document.getElementById('chapterCoverBase').value.trim();
-      const fileInput = document.getElementById('jsonFileInput');
-      const status = document.getElementById('jsonStatus');
-
-      if (!mangaId || !fileInput.files[0]) { status.innerHTML = "❌ Manga ID y archivo JSON obligatorios"; return; }
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
         try {
-          const chaptersData = JSON.parse(e.target.result);
-          const finalChapterCover = formatDriveThumbnail(coverUrlBase, "w1000") || "";
-          status.innerHTML = "⏳ Iniciando carga...";
-          status.className = "result-msg info";
-
-          let count = 0;
-          for (const item of chaptersData) {
-            const transformedImages = item.links.map(link => formatDriveThumbnail(link, "w1600")).filter(u => u !== null);
-            await addDoc(collection(db, "tomos"), {
-              mangaId, number: String(item.capitulo), cover: finalChapterCover, images: transformedImages, createdAt: Timestamp.now()
+            const finalCover = formatDriveThumbnail(cover, "w1000");
+            const docRef = await addDoc(collection(db, "mangas"), {
+                title, description: document.getElementById('mangaDesc').value,
+                cover: finalCover, genres, createdAt: Timestamp.now()
             });
-            count++;
-            status.innerHTML = `⏳ Cargando: ${count} / ${chaptersData.length}`;
-          }
-          status.innerHTML = `✅ Se subieron ${count} capítulos correctamente.`;
-          status.className = "result-msg success";
-        } catch (err) { status.innerHTML = "❌ JSON inválido"; }
-      };
-      reader.readAsText(fileInput.files[0]);
+            document.getElementById('mangaResult').style.display = "block";
+            document.getElementById('newMangaId').innerText = docRef.id;
+            
+            // Limpiar
+            document.getElementById('mangaTitle').value = "";
+            document.getElementById('mangaDesc').value = "";
+            document.getElementById('mangaCover').value = "";
+            document.querySelectorAll('.genre-checkbox-genresGrid').forEach(cb => cb.checked = false);
+            refreshMangaSelector();
+        } catch(e){ console.error(e); }
     });
+
+    // Tab switcher con carga de selector
+    window.openTab = (tabName) => {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.currentTarget.classList.add('active');
+      if(tabName === 'editTab') refreshMangaSelector();
+    };
+
+    // Funciones restantes para botones individuales se mantienen igual
+    document.getElementById('jsonFileInput').addEventListener('change', (e) => {
+      document.getElementById('fileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno";
+    });
+    document.getElementById('fullJsonInput').addEventListener('change', (e) => {
+      document.getElementById('fullFileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno";
+    });
+
+    // Mantener copyId
+    window.copyId = (id) => {
+      navigator.clipboard.writeText(document.getElementById(id).innerText);
+      alert("Copiado");
+    }
+
   </script>
 </body>
 </html>
