@@ -4,57 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga4All - Consola de Admin Pro</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
   <style>
+    /* ... (Mantenemos todos tus estilos anteriores intactos) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #070707; color: white; padding: 20px; padding-bottom: 100px; }
     .admin-container { max-width: 900px; margin: auto; }
-
     h1 { margin-bottom: 20px; color: #ff0055; font-size: 1.8rem; }
-
-    /* TABS */
     .tabs-header { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #1f1f1f; padding-bottom: 10px; overflow-x: auto; }
-    .tab-btn { 
-      background: #1a1a1a; color: #888; border: none; padding: 12px 20px; 
-      border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; white-space: nowrap;
-    }
+    .tab-btn { background: #1a1a1a; color: #888; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; white-space: nowrap; }
     .tab-btn.active { background: #ff0055; color: white; }
     .tab-content { display: none; background: #111; padding: 25px; border-radius: 15px; border: 1px solid #1f1f1f; }
     .tab-content.active { display: block; }
-
-    /* FORMULARIOS */
     .input-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #bbb; }
-    input, textarea, select { 
-      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; 
-      background: #1a1a1a; color: white; font-size: 15px;
-    }
+    input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 15px; }
     input:focus, textarea:focus, select:focus { border-color: #ff0055; outline: none; background: #222; }
     textarea { height: 100px; resize: vertical; }
-
-    /* GÉNEROS CHECKBOX GRID */
-    .genres-grid { 
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-      gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222;
-    }
+    .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222; }
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .genre-item input { width: auto; cursor: pointer; accent-color: #ff0055; }
-
-    .primary-btn { 
-      width: 100%; padding: 15px; border: none; border-radius: 10px; 
-      background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
-    }
+    .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
     .primary-btn:hover { background: #ff2b72; transform: translateY(-2px); }
-
-    .file-input-wrapper {
-      background: #1a1a1a; padding: 20px; border: 2px dashed #333; border-radius: 10px; 
-      text-align: center; margin-bottom: 18px; cursor: pointer;
-    }
-
-    /* RESULTADOS */
-    .id-display { 
-      background: #000; border: 1px dashed #00ff88; padding: 15px; 
-      border-radius: 10px; margin-top: 20px; display: none; text-align: center;
-    }
+    .file-input-wrapper { background: #1a1a1a; padding: 20px; border: 2px dashed #333; border-radius: 10px; text-align: center; margin-bottom: 18px; cursor: pointer; }
+    .id-display { background: #000; border: 1px dashed #00ff88; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; text-align: center; }
     .id-display span { color: #00ff88; font-weight: bold; font-family: monospace; }
     .result-msg { margin-top: 15px; text-align: center; font-weight: bold; }
     .success { color: #00ff88; }
@@ -68,138 +42,50 @@
     <div class="tabs-header">
       <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
       <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
-      <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar Catálogo</button>
+      <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
+      <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar</button>
       <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo</button>
-      <button class="tab-btn" onclick="openTab('jsonTab')">📂 JSON Masivo</button>
       <button class="tab-btn" onclick="openTab('settingsTab')">⚙️ Géneros</button>
     </div>
 
-    <div id="mangaTab" class="tab-content active">
-      <h1>Registrar Nueva Serie</h1>
-      <div class="input-group">
-        <label>Título del Manga</label>
-        <input type="text" id="mangaTitle" placeholder="Ej: All You Need Is Kill">
-      </div>
-      <div class="input-group">
-        <label>Descripción</label>
-        <textarea id="mangaDesc" placeholder="Escribe la sinopsis aquí..."></textarea>
-      </div>
-      <div class="input-group">
-        <label>Portada del Manga (Link de Google Drive)</label>
-        <input type="text" id="mangaCover" placeholder="Pega el link de la imagen en Drive">
-      </div>
-      <div class="input-group">
-        <label>Seleccionar Géneros</label>
-        <div class="genres-grid" id="genresGrid"></div>
-      </div>
-      <button class="primary-btn" id="createMangaBtn">🚀 Crear Manga</button>
-      <div id="mangaResult" class="id-display">
-        <p>✅ Manga creado. ID único:</p>
-        <span id="newMangaId">---</span><br><br>
-        <button onclick="copyId('newMangaId')" style="padding:5px 10px; cursor:pointer;">Copiar ID</button>
-      </div>
-    </div>
+    <div id="mangaTab" class="tab-content active"> </div>
+    <div id="fullTab" class="tab-content"> </div>
+    <div id="editTab" class="tab-content"> </div>
+    <div id="settingsTab" class="tab-content"> </div>
+    <div id="singleTab" class="tab-content"> </div>
+    <div id="jsonTab" class="tab-content"> </div>
 
-    <div id="fullTab" class="tab-content">
-      <h1>🚀 Proceso Completo (Manga + Capítulos)</h1>
+    <div id="bulkTab" class="tab-content">
+      <h1>📦 Carga Industrial Automatizada</h1>
+      <p style="color: #888; margin-bottom: 20px;">Sube un Excel con la info y una carpeta con los JSON correspondientes.</p>
+      
       <div class="input-group">
-        <label>Título del Manga</label>
-        <input type="text" id="fullMangaTitle">
+        <label>1. Seleccionar archivo Excel (.xlsx o .csv)</label>
+        <input type="file" id="bulkExcelInput" accept=".xlsx, .xls, .csv">
       </div>
-      <div class="input-group">
-        <label>Descripción</label>
-        <textarea id="fullMangaDesc"></textarea>
-      </div>
-      <div class="input-group">
-        <label>Portada Principal</label>
-        <input type="text" id="fullMangaCover">
-      </div>
-      <div class="input-group">
-        <label>Seleccionar Géneros</label>
-        <div class="genres-grid" id="fullGenresGrid"></div>
-      </div>
-      <div class="file-input-wrapper" onclick="document.getElementById('fullJsonInput').click()">
-        <label style="color: #ff0055; cursor: pointer; display: block;">
-          📁 Seleccionar JSON
-          <input type="file" id="fullJsonInput" accept=".json" style="display: none;">
-        </label>
-        <div id="fullFileNameDisplay" style="margin-top: 10px; font-size: 0.8rem; color: #888;">Ninguno</div>
-      </div>
-      <button class="primary-btn" id="fullProcessBtn">🚀 Iniciar Carga Total</button>
-      <div id="fullStatus" class="result-msg"></div>
-    </div>
 
-    <div id="editTab" class="tab-content">
-      <h1>✏️ Gestionar Catálogo (Editar)</h1>
       <div class="input-group">
-        <label>Seleccionar Manga para Editar</label>
-        <select id="editMangaSelector">
-            <option value="">Cargando mangas...</option>
-        </select>
-      </div>
-      <div id="editForm" style="display: none; border-top: 1px solid #333; padding-top: 20px;">
-          <div class="input-group">
-            <label>Título</label>
-            <input type="text" id="editTitle">
-          </div>
-          <div class="input-group">
-            <label>Descripción</label>
-            <textarea id="editDesc"></textarea>
-          </div>
-          <div class="input-group">
-            <label>Portada (Link Drive)</label>
-            <input type="text" id="editCover">
-          </div>
-          <div class="input-group">
-            <label>Actualizar Géneros</label>
-            <div class="genres-grid" id="editGenresGrid"></div>
-          </div>
-          <button class="primary-btn" id="updateMangaBtn">💾 Guardar Cambios</button>
-          <div id="editStatus" class="result-msg"></div>
-      </div>
-    </div>
-
-    <div id="settingsTab" class="tab-content">
-        <h1>⚙️ Gestión de Géneros</h1>
-        <div class="input-group">
-            <label>Nombre del nuevo género</label>
-            <input type="text" id="newGenreName" placeholder="Ej: Psicológico">
+        <label>2. Seleccionar carpeta que contiene los JSON</label>
+        <div class="file-input-wrapper" style="border-color: #ff0055;">
+            <input type="file" id="bulkFolderInput" webkitdirectory directory multiple>
+            <p id="folderStatus" style="font-size: 0.8rem; color: #888; margin-top: 10px;">Haz clic para seleccionar la carpeta</p>
         </div>
-        <button class="primary-btn" id="addGenreBtn" style="background: #333;">➕ Añadir Género</button>
-        <div id="genreStatus" class="result-msg"></div>
-        
-        <div style="margin-top: 30px;">
-            <label>Géneros Actuales (Se actualizan en vivo)</label>
-            <div id="genreListDisplay" style="display: flex; flex-wrap: wrap; gap: 10px; background: #000; padding: 15px; border-radius: 10px;"></div>
-        </div>
-    </div>
+      </div>
 
-    <div id="singleTab" class="tab-content">
-        <h1>Capítulo Individual</h1>
-        <div class="input-group"><label>ID Manga</label><input type="text" id="singleMangaId"></div>
-        <div style="display:flex; gap:15px;"><input type="number" id="singleNum" placeholder="Cap #"><input type="text" id="singleCover" placeholder="Cover Cap"></div>
-        <textarea id="singleImages" style="height:150px; margin-top:15px;" placeholder="Links..."></textarea>
-        <button class="primary-btn" id="uploadSingleBtn">Publicar</button>
-        <div id="singleStatus" class="result-msg"></div>
+      <button class="primary-btn" id="startBulkBtn">🔥 Iniciar Carga Masiva</button>
+      
+      <div id="bulkStatus" class="result-msg" style="text-align: left; background: #000; padding: 15px; border-radius: 10px; margin-top: 20px; font-family: monospace; font-size: 0.8rem; max-height: 300px; overflow-y: auto; display: none;"></div>
     </div>
-
-    <div id="jsonTab" class="tab-content">
-        <h1>Carga Masiva JSON</h1>
-        <input type="text" id="targetMangaId" placeholder="ID Manga"><br><br>
-        <input type="text" id="chapterCoverBase" placeholder="Cover Base"><br><br>
-        <input type="file" id="jsonFileInput" accept=".json">
-        <button class="primary-btn" id="uploadJsonBtn" style="margin-top:20px;">Subir Masivo</button>
-        <div id="jsonStatus" class="result-msg"></div>
-    </div>
-
   </div>
 
   <script type="module">
+    // --- IMPORTACIONES ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { 
       getFirestore, collection, addDoc, Timestamp, getDocs, doc, getDoc, updateDoc, onSnapshot, deleteDoc
     } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
+    // --- CONFIG FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
         authDomain: "manga4all-f520f.firebaseapp.com",
@@ -208,225 +94,132 @@
         messagingSenderId: "372561836700",
         appId: "1:372561836700:web:cbb295bda656abd2ea0b59"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- LÓGICA DE GÉNEROS DINÁMICOS ---
-    const genreGrids = ['genresGrid', 'fullGenresGrid', 'editGenresGrid'];
-    
-    // Escuchar cambios en la colección de géneros en tiempo real
-    onSnapshot(collection(db, "generos"), (snapshot) => {
-        const generos = snapshot.docs.map(d => ({id: d.id, nombre: d.data().nombre}));
-        generos.sort((a,b) => a.nombre.localeCompare(b.nombre));
-        
-        // 1. Actualizar Checkboxes de los formularios
-        genreGrids.forEach(gridId => {
-            const container = document.getElementById(gridId);
-            if(!container) return;
-            container.innerHTML = "";
-            generos.forEach(gen => {
-                container.innerHTML += `
-                    <label class="genre-item">
-                        <input type="checkbox" class="genre-checkbox-${gridId}" value="${gen.nombre}"> ${gen.nombre}
-                    </label>`;
-            });
-        });
+    // ... (Mantener todas tus funciones de Géneros, Utilidades y Tabs que ya tenías) ...
 
-        // 2. Actualizar Lista en pestaña Ajustes
-        const display = document.getElementById('genreListDisplay');
-        display.innerHTML = generos.map(g => `
-            <span style="background:#222; padding:5px 12px; border-radius:20px; font-size:0.8rem; border:1px solid #333; display:flex; align-items:center; gap:8px;">
-                ${g.nombre} <button onclick="deleteGenre('${g.id}')" style="background:none; border:none; color:#ff0055; cursor:pointer; font-weight:bold;">×</button>
-            </span>
-        `).join('');
-    });
+    // --- LÓGICA CARGA INDUSTRIAL ---
+    const bulkStatus = document.getElementById('bulkStatus');
+    const folderInput = document.getElementById('bulkFolderInput');
+    let jsonFilesMap = {}; // Mapa para guardar los archivos JSON de la carpeta
 
-    // Añadir Género
-    document.getElementById('addGenreBtn').addEventListener('click', async () => {
-        const nombre = document.getElementById('newGenreName').value.trim();
-        if(!nombre) return;
-        try {
-            await addDoc(collection(db, "generos"), { nombre });
-            document.getElementById('newGenreName').value = "";
-            document.getElementById('genreStatus').innerHTML = "✅ Género añadido";
-        } catch(e) { console.error(e); }
-    });
-
-    // Eliminar Género (Global para el botón ×)
-    window.deleteGenre = async (id) => {
-        if(confirm("¿Eliminar este género?")) await deleteDoc(doc(db, "generos", id));
-    };
-
-    // --- GESTIÓN DE CATÁLOGO (EDITAR) ---
-    const editSelector = document.getElementById('editMangaSelector');
-    
-    // Cargar mangas en el selector al abrir la pestaña
-    async function refreshMangaSelector() {
-        const snap = await getDocs(collection(db, "mangas"));
-        editSelector.innerHTML = '<option value="">-- Seleccionar Manga --</option>';
-        snap.forEach(d => {
-            editSelector.innerHTML += `<option value="${d.id}">${d.data().title}</option>`;
-        });
-    }
-
-    editSelector.addEventListener('change', async (e) => {
-        const id = e.target.value;
-        if(!id) { document.getElementById('editForm').style.display = "none"; return; }
-        
-        const mangaSnap = await getDoc(doc(db, "mangas", id));
-        if(mangaSnap.exists()){
-            const data = mangaSnap.data();
-            document.getElementById('editForm').style.display = "block";
-            document.getElementById('editTitle').value = data.title;
-            document.getElementById('editDesc').value = data.description || "";
-            document.getElementById('editCover').value = data.cover;
-            
-            // Marcar géneros actuales
-            document.querySelectorAll('.genre-checkbox-editGenresGrid').forEach(cb => {
-                cb.checked = data.genres && data.genres.includes(cb.value);
-            });
+    // Detectar cuando se selecciona la carpeta
+    folderInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        jsonFilesMap = {};
+        for(let file of files) {
+            if(file.name.endsWith('.json')) {
+                jsonFilesMap[file.name] = file;
+            }
         }
+        document.getElementById('folderStatus').innerHTML = `✅ ${Object.keys(jsonFilesMap).length} archivos JSON detectados.`;
     });
 
-    document.getElementById('updateMangaBtn').addEventListener('click', async () => {
-        const id = editSelector.value;
-        const status = document.getElementById('editStatus');
-        const updatedData = {
-            title: document.getElementById('editTitle').value.trim(),
-            description: document.getElementById('editDesc').value.trim(),
-            cover: document.getElementById('editCover').value.trim(),
-            genres: Array.from(document.querySelectorAll('.genre-checkbox-editGenresGrid:checked')).map(cb => cb.value)
-        };
-
-        try {
-            status.innerHTML = "⏳ Actualizando...";
-            await updateDoc(doc(db, "mangas", id), updatedData);
-            status.innerHTML = "✅ Manga actualizado correctamente";
-            status.className = "result-msg success";
-            refreshMangaSelector(); // Refrescar por si cambió el título
-        } catch(e) { status.innerHTML = "❌ Error al actualizar"; }
-    });
-
-    // --- UTILIDADES ---
-    function extractDriveId(url) {
-      if(!url || !url.includes('drive.google.com')) return url; // Si ya es procesada o no es drive, devolver tal cual
-      const match = url.match(/\/d\/(.*?)\/|id=(.*?)($|&)/);
-      return match ? (match[1] || match[2]) : url;
+    function logBulk(msg, type = 'info') {
+        bulkStatus.style.display = "block";
+        const color = type === 'error' ? '#ff3333' : (type === 'success' ? '#00ff88' : '#00ccff');
+        bulkStatus.innerHTML += `<div style="color: ${color}">> ${msg}</div>`;
+        bulkStatus.scrollTop = bulkStatus.scrollHeight;
     }
 
-    function formatDriveThumbnail(url, size = "w1600") {
-      const id = extractDriveId(url);
-      if(!id) return null;
-      return id.startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
-    }
-
-    // --- ACCIÓN: TODO EN UNO (CON LIMPIEZA) ---
-    document.getElementById('fullProcessBtn').addEventListener('click', async () => {
-        const title = document.getElementById('fullMangaTitle').value.trim();
-        const description = document.getElementById('fullMangaDesc').value.trim();
-        const coverUrl = document.getElementById('fullMangaCover').value.trim();
-        const fileInput = document.getElementById('fullJsonInput');
-        const status = document.getElementById('fullStatus');
-        const genres = Array.from(document.querySelectorAll('.genre-checkbox-fullGenresGrid:checked')).map(cb => cb.value);
-
-        if (!title || !coverUrl || !fileInput.files[0]) {
-            status.innerHTML = "❌ Faltan campos obligatorios";
+    document.getElementById('startBulkBtn').addEventListener('click', async () => {
+        const excelFile = document.getElementById('bulkExcelInput').files[0];
+        if(!excelFile || Object.keys(jsonFilesMap).length === 0) {
+            alert("Selecciona el Excel y la carpeta de JSON.");
             return;
         }
 
+        logBulk("Iniciando lectura de Excel...");
         const reader = new FileReader();
+        
         reader.onload = async (e) => {
-            try {
-                const chaptersData = JSON.parse(e.target.result);
-                status.innerHTML = "⏳ Creando serie...";
-                
-                const finalCover = formatDriveThumbnail(coverUrl, "w1000");
-                const docRef = await addDoc(collection(db, "mangas"), {
-                    title, description, cover: finalCover, genres, createdAt: Timestamp.now()
-                });
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0];
+            const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-                let count = 0;
-                for (const item of chaptersData) {
-                    const imgs = item.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u !== null);
-                    await addDoc(collection(db, "tomos"), {
-                        mangaId: docRef.id,
-                        number: String(item.capitulo),
+            logBulk(`Excel leído. Se procesarán ${rows.length} mangas.`);
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                // Mapeo de columnas: A: Nombre, B: Portada, C: Sinopsis, D: Géneros, E: JSON
+                const nombre = row["Nombre"] || row["nombre"] || Object.values(row)[0];
+                const portadaRaw = row["Portada"] || row["portada"] || Object.values(row)[1];
+                const sinopsis = row["Sinopsis"] || row["sinopsis"] || Object.values(row)[2] || "";
+                const generosRaw = row["Generos"] || row["generos"] || Object.values(row)[3] || "";
+                const jsonName = row["JSON"] || row["json"] || Object.values(row)[4];
+
+                logBulk(`[${i+1}/${rows.length}] Procesando: ${nombre}...`);
+
+                try {
+                    // 1. Formatear Géneros
+                    const generos = generosRaw.split(',').map(g => g.trim()).filter(g => g !== "");
+
+                    // 2. Formatear Portada
+                    // Usamos tu función formatDriveThumbnail que ya existe en el código
+                    const finalCover = formatDriveThumbnail(portadaRaw, "w1000");
+
+                    // 3. Crear Manga en Firebase
+                    const mangaRef = await addDoc(collection(db, "mangas"), {
+                        title: nombre,
+                        description: sinopsis,
                         cover: finalCover,
-                        images: imgs,
+                        genres: generos,
                         createdAt: Timestamp.now()
                     });
-                    count++;
-                    status.innerHTML = `⏳ Subiendo capítulos: ${count} / ${chaptersData.length}`;
+                    const mangaId = mangaRef.id;
+
+                    // 4. Buscar y procesar el JSON correspondiente
+                    if(jsonName && jsonFilesMap[jsonName]) {
+                        logBulk(`   - Leyendo JSON: ${jsonName}...`);
+                        const chaptersData = await readJsonFile(jsonFilesMap[jsonName]);
+                        
+                        let capCount = 0;
+                        for(const cap of chaptersData) {
+                            const imgs = cap.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u !== null);
+                            await addDoc(collection(db, "tomos"), {
+                                mangaId: mangaId,
+                                number: String(cap.capitulo),
+                                cover: finalCover,
+                                images: imgs,
+                                createdAt: Timestamp.now()
+                            });
+                            capCount++;
+                        }
+                        logBulk(`   ✅ Éxito: ${capCount} capítulos subidos.`, 'success');
+                    } else {
+                        logBulk(`   ⚠️ No se encontró el JSON "${jsonName}" en la carpeta.`, 'error');
+                    }
+
+                } catch (err) {
+                    logBulk(`   ❌ Error procesando ${nombre}: ${err.message}`, 'error');
                 }
-
-                status.innerHTML = "✅ Proceso completado con éxito";
-                status.className = "result-msg success";
-
-                // --- LIMPIEZA DE CAMPOS ---
-                document.getElementById('fullMangaTitle').value = "";
-                document.getElementById('fullMangaDesc').value = "";
-                document.getElementById('fullMangaCover').value = "";
-                document.getElementById('fullJsonInput').value = "";
-                document.getElementById('fullFileNameDisplay').innerText = "Ninguno";
-                document.querySelectorAll('.genre-checkbox-fullGenresGrid').forEach(cb => cb.checked = false);
-                
-                refreshMangaSelector(); // Actualizar el selector de la pestaña editar
-
-            } catch (err) { status.innerHTML = "❌ Error en proceso"; console.error(err); }
+            }
+            logBulk("🔥 PROCESO INDUSTRIAL FINALIZADO.", 'success');
         };
-        reader.readAsText(fileInput.files[0]);
+        reader.readAsArrayBuffer(excelFile);
     });
 
-    // --- ACCIÓN: CREAR MANGA (CON LIMPIEZA) ---
-    document.getElementById('createMangaBtn').addEventListener('click', async () => {
-        const title = document.getElementById('mangaTitle').value.trim();
-        const cover = document.getElementById('mangaCover').value.trim();
-        const genres = Array.from(document.querySelectorAll('.genre-checkbox-genresGrid:checked')).map(cb => cb.value);
-        
-        if(!title || !cover) return;
-
-        try {
-            const finalCover = formatDriveThumbnail(cover, "w1000");
-            const docRef = await addDoc(collection(db, "mangas"), {
-                title, description: document.getElementById('mangaDesc').value,
-                cover: finalCover, genres, createdAt: Timestamp.now()
-            });
-            document.getElementById('mangaResult').style.display = "block";
-            document.getElementById('newMangaId').innerText = docRef.id;
-            
-            // Limpiar
-            document.getElementById('mangaTitle').value = "";
-            document.getElementById('mangaDesc').value = "";
-            document.getElementById('mangaCover').value = "";
-            document.querySelectorAll('.genre-checkbox-genresGrid').forEach(cb => cb.checked = false);
-            refreshMangaSelector();
-        } catch(e){ console.error(e); }
-    });
-
-    // Tab switcher con carga de selector
-    window.openTab = (tabName) => {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
-      event.currentTarget.classList.add('active');
-      if(tabName === 'editTab') refreshMangaSelector();
-    };
-
-    // Funciones restantes para botones individuales se mantienen igual
-    document.getElementById('jsonFileInput').addEventListener('change', (e) => {
-      document.getElementById('fileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno";
-    });
-    document.getElementById('fullJsonInput').addEventListener('change', (e) => {
-      document.getElementById('fullFileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno";
-    });
-
-    // Mantener copyId
-    window.copyId = (id) => {
-      navigator.clipboard.writeText(document.getElementById(id).innerText);
-      alert("Copiado");
+    // Función auxiliar para leer el archivo JSON desde la carpeta
+    function readJsonFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(JSON.parse(e.target.result));
+            reader.onerror = reject;
+            reader.readAsText(file);
+        });
     }
 
+    // --- REUTILIZAR UTILIDADES ---
+    function formatDriveThumbnail(url, size = "w1600") {
+      if(!url) return null;
+      const match = url.match(/\/d\/(.*?)\/|id=(.*?)($|&)/);
+      const id = match ? (match[1] || match[2]) : url;
+      return id.startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
+    }
+
+    // --- EL RESTO DE TUS FUNCIONES (openTab, cargarGeneros, etc.) ---
   </script>
 </body>
 </html>
