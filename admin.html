@@ -7,27 +7,246 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background: #070707; color: white; padding: 20px; padding-bottom: 100px; }
-    .admin-container { max-width: 900px; margin: auto; }
-    h1 { margin-bottom: 20px; color: #ff0055; font-size: 1.8rem; }
-    .tabs-header { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 1px solid #1f1f1f; padding-bottom: 10px; overflow-x: auto; }
-    .tab-btn { background: #1a1a1a; color: #888; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; white-space: nowrap; }
-    .tab-btn.active { background: #ff0055; color: white; }
-    .tab-content { display: none; background: #111; padding: 25px; border-radius: 15px; border: 1px solid #1f1f1f; }
+    
+    body { 
+      background: #070707; 
+      color: white; 
+      display: flex; /* Layout en paralelo */
+      min-height: 100vh;
+    }
+
+    /* --- SIDEBAR (MENU LATERAL) --- */
+    .sidebar {
+      width: 260px;
+      background: #111;
+      border-right: 1px solid #1f1f1f;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+    }
+
+    .sidebar h2 {
+      color: #ff0055;
+      font-size: 1.4rem;
+      margin-bottom: 30px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .tabs-header {
+      display: flex;
+      flex-direction: column; /* Botones uno abajo de otro */
+      gap: 12px;
+    }
+
+    .tab-btn { 
+      background: #1a1a1a; 
+      color: #aaa; 
+      border: none; 
+      padding: 14px 18px; 
+      border-radius: 10px; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      font-weight: bold; 
+      text-align: left;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tab-btn:hover {
+      background: #252525;
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .tab-btn.active { 
+      background: #ff0055; 
+      color: white; 
+      box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+    }
+
+    /* --- CONTENIDO PRINCIPAL --- */
+    .main-content {
+      flex: 1;
+      margin-left: 260px; /* Espacio para el sidebar */
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .admin-container { 
+      width: 100%;
+      max-width: 900px; 
+    }
+
+    h1 { margin-bottom: 25px; color: #ff0055; font-size: 2rem; }
+
+    .tab-content { 
+      display: none; 
+      background: #111; 
+      padding: 30px; 
+      border-radius: 20px; 
+      border: 1px solid #1f1f1f; 
+      animation: fadeIn 0.4s ease;
+    }
+
     .tab-content.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* --- FORMULARIOS --- */
     .input-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #bbb; }
-    input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 15px; }
-    .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    input, textarea, select { 
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; 
+      background: #1a1a1a; color: white; font-size: 15px;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #ff0055; outline: none; background: #222; }
+    textarea { height: 120px; resize: vertical; }
+
+    .primary-btn { 
+      width: 100%; padding: 15px; border: none; border-radius: 10px; 
+      background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; 
+    }
     .primary-btn:hover { background: #ff2b72; transform: translateY(-2px); }
-    .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222; }
+
+    .genres-grid { 
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+      gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222; 
+    }
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .genre-item input { width: auto; cursor: pointer; accent-color: #ff0055; }
-    .file-input-wrapper { background: #1a1a1a; padding: 20px; border: 2px dashed #333; border-radius: 10px; text-align: center; margin-bottom: 18px; cursor: pointer; }
-    .id-display { background: #000; border: 1px dashed #00ff88; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; text-align: center; }
+    
+    .file-input-wrapper { 
+      background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; 
+      text-align: center; margin-bottom: 18px; cursor: pointer; transition: 0.3s;
+    }
+    .file-input-wrapper:hover { border-color: #ff0055; background: #1e1e1e; }
+
+    .id-display { 
+      background: #000; border: 1px dashed #00ff88; padding: 15px; 
+      border-radius: 10px; margin-top: 20px; display: none; text-align: center; 
+    }
   </style>
 </head>
 <body>
+
+  <aside class="sidebar">
+    <h2>Manga 4 All</h2>
+    <div class="tabs-header">
+      <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
+      <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
+      <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
+      <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar</button>
+      <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo</button>
+      <button class="tab-btn" onclick="openTab('jsonTab')">📂 JSON Solo</button>
+      <button class="tab-btn" onclick="openTab('settingsTab')">⚙️ Géneros</button>
+      <button class="tab-btn" onclick="openTab('nukeTab')" style="color:#ff3333; margin-top: 20px; border: 1px solid #300;">🧨 Limpieza</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="admin-container">
+
+      <div id="mangaTab" class="tab-content active">
+        <h1>Registrar Nueva Serie</h1>
+        <div class="input-group"><label>Título</label><input type="text" id="mangaTitle"></div>
+        <div class="input-group"><label>Descripción</label><textarea id="mangaDesc"></textarea></div>
+        <div class="input-group"><label>Portada (Drive)</label><input type="text" id="mangaCover"></div>
+        <div class="input-group"><label>Géneros</label><div class="genres-grid" id="genresGrid"></div></div>
+        <button class="primary-btn" id="createMangaBtn">🚀 Crear Manga</button>
+        <div id="mangaResult" class="id-display">ID: <span id="newMangaId"></span> <button onclick="window.copyId('newMangaId')" style="padding:4px 8px; cursor:pointer;">Copiar</button></div>
+      </div>
+
+      <div id="fullTab" class="tab-content">
+          <h1>🚀 Todo en Uno</h1>
+          <div class="input-group"><label>Título</label><input type="text" id="fullMangaTitle"></div>
+          <div class="input-group"><label>Descripción</label><textarea id="fullMangaDesc"></textarea></div>
+          <div class="input-group"><label>Portada Principal</label><input type="text" id="fullMangaCover"></div>
+          <div class="input-group"><label>Géneros</label><div class="genres-grid" id="fullGenresGrid"></div></div>
+          <div class="input-group">
+            <label>Subir JSON de capítulos</label>
+            <div class="file-input-wrapper" onclick="document.getElementById('fullJsonInput').click()">
+              📁 Seleccionar Archivo
+              <input type="file" id="fullJsonInput" accept=".json" style="display: none;">
+              <div id="fullFileNameDisplay" style="font-size: 0.8rem; color: #888; margin-top: 10px;">Ninguno seleccionado</div>
+            </div>
+          </div>
+          <button class="primary-btn" id="fullProcessBtn">🚀 Subir Todo</button>
+          <div id="fullStatus" style="margin-top:15px; text-align:center;"></div>
+      </div>
+
+      <div id="bulkTab" class="tab-content">
+        <h1>📦 Carga Industrial (Excel + Carpeta)</h1>
+        <div class="input-group"><label>1. Archivo Excel</label><input type="file" id="bulkExcelInput" accept=".xlsx, .xls, .csv"></div>
+        <div class="input-group">
+          <label>2. Carpeta de JSONs</label>
+          <div class="file-input-wrapper" style="border-color: #ff0055;" onclick="document.getElementById('bulkFolderInput').click()">
+              <input type="file" id="bulkFolderInput" webkitdirectory directory multiple style="display:none;">
+              <p id="folderStatus">Haz clic para seleccionar la carpeta</p>
+          </div>
+        </div>
+        <button class="primary-btn" id="startBulkBtn">🔥 Iniciar Carga Masiva</button>
+        <div id="bulkStatus" style="background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:250px; overflow-y:auto; border: 1px solid #333;"></div>
+      </div>
+
+      <div id="editTab" class="tab-content">
+          <h1>✏️ Editar Manga</h1>
+          <div class="input-group">
+              <label>Seleccionar Manga (Orden Alfabético)</label>
+              <select id="editMangaSelector"><option value="">Cargando catálogo...</option></select>
+          </div>
+          <div id="editForm" style="display:none; margin-top:20px; border-top: 1px solid #333; padding-top: 20px;">
+              <div class="input-group"><label>Título</label><input type="text" id="editTitle"></div>
+              <div class="input-group"><label>Descripción</label><textarea id="editDesc"></textarea></div>
+              <div class="input-group"><label>Portada (Link Drive)</label><input type="text" id="editCover"></div>
+              <div class="input-group"><label>Actualizar Géneros</label><div class="genres-grid" id="editGenresGrid"></div></div>
+              <button class="primary-btn" id="updateMangaBtn">💾 Guardar Cambios</button>
+              <div id="editStatus" style="margin-top:15px; text-align:center; font-weight:bold;"></div>
+          </div>
+      </div>
+
+      <div id="singleTab" class="tab-content">
+          <h1>📄 Capítulo Individual</h1>
+          <div class="input-group"><label>ID Manga</label><input type="text" id="singleMangaId" placeholder="ID del manga"></div>
+          <div class="input-group"><label>Capítulo #</label><input type="number" id="singleNum"></div>
+          <div class="input-group"><label>Portada Capítulo</label><input type="text" id="singleCover"></div>
+          <div class="input-group"><label>Links de imágenes (uno por línea)</label><textarea id="singleImages" style="height:150px;"></textarea></div>
+          <button class="primary-btn" id="uploadSingleBtn">🚀 Publicar Capítulo</button>
+      </div>
+
+      <div id="jsonTab" class="tab-content">
+          <h1>📂 Cargar JSON a Manga Existente</h1>
+          <div class="input-group"><label>ID Manga</label><input type="text" id="targetMangaId" placeholder="ID del manga"></div>
+          <div class="input-group"><label>Archivo JSON</label><input type="file" id="jsonFileInput" accept=".json"></div>
+          <button class="primary-btn" id="uploadJsonBtn">🚀 Subir Capítulos</button>
+      </div>
+
+      <div id="settingsTab" class="tab-content">
+          <h1>⚙️ Gestión de Géneros</h1>
+          <div class="input-group"><label>Nuevo Género</label><input type="text" id="newGenreName" placeholder="Nombre del género"></div>
+          <button class="primary-btn" id="addGenreBtn">➕ Añadir Género</button>
+          <div id="genreListDisplay" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:20px;"></div>
+      </div>
+
+      <div id="nukeTab" class="tab-content">
+          <h1 style="color:#ff3333;">🧨 Limpieza de Emergencia</h1>
+          <p style="margin-bottom:20px; color:#bbb;">Esto borrará <b>exactamente los últimos 30 mangas</b> y todos sus capítulos asociados.</p>
+          <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR ÚLTIMOS 30 REGISTROS</button>
+          <div id="nukeStatus" style="margin-top:20px; text-align:center;"></div>
+      </div>
+
+    </div>
+  </main>
 
   <script>
     function openTab(tabName) {
@@ -38,100 +257,6 @@
       if(tabName === 'editTab') window.dispatchEvent(new CustomEvent('refreshSelector'));
     }
   </script>
-
-  <div class="admin-container">
-    <div class="tabs-header">
-      <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
-      <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
-      <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
-      <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar</button>
-      <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo</button>
-      <button class="tab-btn" onclick="openTab('jsonTab')">📂 JSON Solo</button>
-      <button class="tab-btn" onclick="openTab('settingsTab')">⚙️ Géneros</button>
-      <button class="tab-btn" onclick="openTab('nukeTab')" style="color:#ff3333;">🧨 Limpieza</button>
-    </div>
-
-    <div id="bulkTab" class="tab-content">
-      <h1>📦 Carga Industrial (Excel + Carpeta)</h1>
-      <div class="input-group"><label>1. Archivo Excel</label><input type="file" id="bulkExcelInput" accept=".xlsx, .xls, .csv"></div>
-      <div class="input-group">
-        <label>2. Carpeta de JSONs</label>
-        <div class="file-input-wrapper" style="border-color: #ff0055;" onclick="document.getElementById('bulkFolderInput').click()">
-            <input type="file" id="bulkFolderInput" webkitdirectory directory multiple style="display:none;">
-            <p id="folderStatus">Seleccionar Carpeta</p>
-        </div>
-      </div>
-      <button class="primary-btn" id="startBulkBtn">🔥 Iniciar Carga Masiva</button>
-      <div id="bulkStatus" style="background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:250px; overflow-y:auto; border: 1px solid #333;"></div>
-    </div>
-
-    <div id="nukeTab" class="tab-content">
-        <h1 style="color:#ff3333;">🧨 Limpieza de Emergencia</h1>
-        <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR ÚLTIMOS 30 REGISTROS</button>
-        <div id="nukeStatus" style="margin-top:20px; text-align:center;"></div>
-    </div>
-
-    <div id="mangaTab" class="tab-content active">
-      <h1>Registrar Nueva Serie</h1>
-      <div class="input-group"><label>Título</label><input type="text" id="mangaTitle"></div>
-      <div class="input-group"><label>Descripción</label><textarea id="mangaDesc"></textarea></div>
-      <div class="input-group"><label>Portada (Drive)</label><input type="text" id="mangaCover"></div>
-      <div class="input-group"><label>Géneros</label><div class="genres-grid" id="genresGrid"></div></div>
-      <button class="primary-btn" id="createMangaBtn">🚀 Crear Manga</button>
-      <div id="mangaResult" class="id-display">ID: <span id="newMangaId"></span> <button onclick="window.copyId('newMangaId')">Copiar</button></div>
-    </div>
-
-    <div id="fullTab" class="tab-content">
-        <h1>🚀 Todo en Uno</h1>
-        <div class="input-group"><label>Título</label><input type="text" id="fullMangaTitle"></div>
-        <div class="input-group"><label>Descripción</label><textarea id="fullMangaDesc"></textarea></div>
-        <div class="input-group"><label>Portada</label><input type="text" id="fullMangaCover"></div>
-        <div class="input-group"><label>Géneros</label><div class="genres-grid" id="fullGenresGrid"></div></div>
-        <input type="file" id="fullJsonInput" accept=".json">
-        <button class="primary-btn" id="fullProcessBtn" style="margin-top:20px;">Subir Todo</button>
-        <div id="fullStatus" style="margin-top:15px; text-align:center;"></div>
-    </div>
-
-    <div id="editTab" class="tab-content">
-        <h1>✏️ Editar Manga</h1>
-        <div class="input-group">
-            <label>Seleccionar Manga (Orden Alfabético)</label>
-            <select id="editMangaSelector"><option value="">Cargando catálogo...</option></select>
-        </div>
-        <div id="editForm" style="display:none; margin-top:20px; border-top: 1px solid #333; padding-top: 20px;">
-            <div class="input-group"><label>Título</label><input type="text" id="editTitle"></div>
-            <div class="input-group"><label>Descripción</label><textarea id="editDesc"></textarea></div>
-            <div class="input-group"><label>Portada (Link de Drive o Link Directo)</label><input type="text" id="editCover"></div>
-            <div class="input-group"><label>Actualizar Géneros</label><div class="genres-grid" id="editGenresGrid"></div></div>
-            <button class="primary-btn" id="updateMangaBtn">💾 Guardar Cambios</button>
-            <div id="editStatus" style="margin-top:15px; text-align:center; font-weight:bold;"></div>
-        </div>
-    </div>
-
-    <div id="singleTab" class="tab-content">
-        <h1>📄 Capítulo Individual</h1>
-        <input type="text" id="singleMangaId" placeholder="ID Manga"><br><br>
-        <input type="number" id="singleNum" placeholder="Capitulo #"><br><br>
-        <input type="text" id="singleCover" placeholder="Cover Capítulo"><br><br>
-        <textarea id="singleImages" placeholder="Links (uno por línea)" style="height:150px;"></textarea><br><br>
-        <button class="primary-btn" id="uploadSingleBtn">Publicar</button>
-    </div>
-
-    <div id="jsonTab" class="tab-content">
-        <h1>📂 JSON Solo</h1>
-        <input type="text" id="targetMangaId" placeholder="ID Manga"><br><br>
-        <input type="file" id="jsonFileInput" accept=".json"><br><br>
-        <button class="primary-btn" id="uploadJsonBtn">Subir Capítulos</button>
-    </div>
-
-    <div id="settingsTab" class="tab-content">
-        <h1>⚙️ Géneros</h1>
-        <input type="text" id="newGenreName" placeholder="Nuevo Género"><br><br>
-        <button class="primary-btn" id="addGenreBtn">Añadir</button>
-        <div id="genreListDisplay" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:20px;"></div>
-    </div>
-
-  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -151,7 +276,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // --- UTILIDADES DRIVE ORIGINALES ---
+    // --- UTILIDADES DRIVE ---
     function extractDriveId(url) {
       if(!url) return null;
       const match = String(url).match(/\/d\/(.*?)\/|id=(.*?)($|&)/);
@@ -160,7 +285,6 @@
     function formatDriveThumbnail(url, size = "w1600") {
       const id = extractDriveId(url);
       if(!id) return null;
-      // Si el id ya empieza por http, es que ya está convertido o es link directo
       return String(id).startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
     }
     window.copyId = (id) => { navigator.clipboard.writeText(document.getElementById(id).innerText); alert("Copiado"); };
@@ -174,7 +298,6 @@
         });
         document.getElementById('genreListDisplay').innerHTML = gens.map(g => `<span style="background:#222; padding:5px 12px; border-radius:20px; border:1px solid #ff0055;">${g.n} <b onclick="window.delGen('${g.id}')" style="cursor:pointer; color:red; margin-left:5px;">×</b></span>`).join('');
     });
-
     document.getElementById('addGenreBtn').onclick = async () => {
         const n = document.getElementById('newGenreName').value.trim();
         if(n) await addDoc(collection(db, "generos"), { nombre: n });
@@ -194,16 +317,13 @@
         const file = document.getElementById('bulkExcelInput').files[0];
         const status = document.getElementById('bulkStatus');
         if(!file) return alert("Sube el Excel");
-
         const reader = new FileReader();
         reader.onload = async (e) => {
             const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const data = XLSX.utils.sheet_to_json(sheet, {header: 1}); 
-
             status.style.display = "block";
             status.innerHTML = `<div style="color:#0cf;">> Procesando ${data.length - 1} filas...</div>`;
-
             for(let i = 1; i < data.length; i++) {
                 const row = data[i];
                 if (!row || row.length === 0) continue;
@@ -212,14 +332,11 @@
                 const sinopsis = String(row[2] || "").trim();
                 const generosRaw = String(row[3] || "").trim();
                 const jsonName = String(row[4] || "").toLowerCase().trim();
-
                 if(!nombre) continue;
-
                 try {
                     const finalCover = formatDriveThumbnail(portadaRaw, "w1000");
                     const gens = generosRaw ? generosRaw.split(',').map(g => g.trim()) : [];
                     const mRef = await addDoc(collection(db, "mangas"), { title: nombre, description: sinopsis, cover: finalCover, genres: gens, createdAt: Timestamp.now() });
-
                     if(jsonName && jsonFilesMap[jsonName]) {
                         const jContent = JSON.parse(await jsonFilesMap[jsonName].text());
                         for(let cap of jContent) {
@@ -251,7 +368,7 @@
         } catch(e) { s.innerHTML = "❌ Error: " + e.message; }
     };
 
-    // --- EDITAR (CON CONVERSIÓN DE LINK DE PORTADA) ---
+    // --- GESTIONAR / EDITAR ---
     async function refreshSel() {
         const snap = await getDocs(collection(db, "mangas"));
         const sel = document.getElementById('editMangaSelector');
@@ -260,50 +377,39 @@
         sel.innerHTML = '<option value="">-- Seleccionar Manga --</option>' + 
                         sortedMangas.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
     }
-    
     window.addEventListener('refreshSelector', refreshSel);
-
     document.getElementById('editMangaSelector').onchange = async (e) => {
         const id = e.target.value; 
         if(!id) { document.getElementById('editForm').style.display = "none"; return; }
-        
         const dSnap = await getDoc(doc(db, "mangas", id));
         if(dSnap.exists()) {
             const d = dSnap.data();
             document.getElementById('editForm').style.display = "block";
             document.getElementById('editTitle').value = d.title;
             document.getElementById('editDesc').value = d.description || "";
-            document.getElementById('editCover').value = d.cover; // Carga el link actual
-            
+            document.getElementById('editCover').value = d.cover;
             const currentGenres = d.genres || [];
             document.querySelectorAll('.genre-checkbox-editGenresGrid').forEach(cb => {
                 cb.checked = currentGenres.includes(cb.value);
             });
         }
     };
-
     document.getElementById('updateMangaBtn').onclick = async () => {
         const id = document.getElementById('editMangaSelector').value;
         const stat = document.getElementById('editStatus');
         const rawCover = document.getElementById('editCover').value;
-        
-        // CORRECCIÓN: Pasamos el link por el formateador de Drive antes de guardar
         const finalCover = formatDriveThumbnail(rawCover, "w1000");
-
         try {
             stat.innerHTML = "⏳ Guardando cambios...";
             await updateDoc(doc(db, "mangas", id), {
                 title: document.getElementById('editTitle').value,
                 description: document.getElementById('editDesc').value,
-                cover: finalCover, // Se guarda el link convertido
+                cover: finalCover,
                 genres: Array.from(document.querySelectorAll('.genre-checkbox-editGenresGrid:checked')).map(cb => cb.value)
             });
             stat.innerHTML = "✅ Cambios guardados correctamente";
             refreshSel();
-        } catch (e) {
-            stat.innerHTML = "❌ Error al guardar cambios";
-            console.error(e);
-        }
+        } catch (e) { stat.innerHTML = "❌ Error"; }
     };
 
     // --- OTROS ---
@@ -319,10 +425,38 @@
     document.getElementById('uploadSingleBtn').onclick = async () => {
         const id = document.getElementById('singleMangaId').value;
         const num = document.getElementById('singleNum').value;
-        const imgs = document.getElementById('singleImages').value.split('\n').map(l => formatDriveThumbnail(l.trim(), "w1600")).filter(u => u);
-        await addDoc(collection(db, "tomos"), { mangaId: id, number: String(num), cover: formatDriveThumbnail(document.getElementById('singleCover').value, "w1000"), images: imgs, createdAt: Timestamp.now() });
-        alert("Subido");
+        const cov = document.getElementById('singleCover').value;
+        const imgsStr = document.getElementById('singleImages').value;
+        const imgs = imgsStr.split('\n').map(l => formatDriveThumbnail(l.trim(), "w1600")).filter(u => u);
+        await addDoc(collection(db, "tomos"), { mangaId: id, number: String(num), cover: formatDriveThumbnail(cov, "w1000"), images: imgs, createdAt: Timestamp.now() });
+        alert("Publicado con éxito");
     };
+    document.getElementById('fullProcessBtn').onclick = async () => {
+        const t = document.getElementById('fullMangaTitle').value;
+        const d = document.getElementById('fullMangaDesc').value;
+        const c = document.getElementById('fullMangaCover').value;
+        const fInput = document.getElementById('fullJsonInput');
+        const g = Array.from(document.querySelectorAll('.genre-checkbox-fullGenresGrid:checked')).map(cb => cb.value);
+        const s = document.getElementById('fullStatus');
+        if(!t || !fInput.files[0]) return alert("Faltan datos");
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const json = JSON.parse(e.target.result);
+            s.innerHTML = "⏳ Subiendo...";
+            const mRef = await addDoc(collection(db, "mangas"), { title: t, description: d, cover: formatDriveThumbnail(c, "w1000"), genres: g, createdAt: Timestamp.now() });
+            for(const item of json) {
+                const imgs = item.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
+                await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(item.capitulo), cover: formatDriveThumbnail(c, "w1000"), images: imgs, createdAt: Timestamp.now() });
+            }
+            s.innerHTML = "✅ Éxito total";
+        };
+        reader.readAsText(fInput.files[0]);
+    };
+    
+    // Display de nombre de archivo para Todo en Uno
+    document.getElementById('fullJsonInput').addEventListener('change', function(e){
+      document.getElementById('fullFileNameDisplay').innerText = e.target.files[0] ? e.target.files[0].name : "Ninguno seleccionado";
+    });
   </script>
 </body>
 </html>
