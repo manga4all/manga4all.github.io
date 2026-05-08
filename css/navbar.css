@@ -1,10 +1,9 @@
-/* --- ESTILOS DE LA NAV BAR MODULAR --- */
 .main-navbar {
     background: #111;
-    height: 70px;
+    height: 75px;
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Logo a la izq, Auth a la der */
+    justify-content: space-between;
     padding: 0 40px;
     border-bottom: 2px solid #ff0055;
     position: fixed;
@@ -14,95 +13,147 @@
     z-index: 5000;
 }
 
-/* Logo Izquierda */
+/* --- PARTE IZQUIERDA --- */
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    flex: 1;
+}
+
 .nav-logo {
     color: #ff0055;
     font-weight: bold;
-    font-size: 1.7rem;
+    font-size: 1.6rem;
     text-decoration: none;
-    flex: 0 0 200px; /* Ancho fijo para no empujar el centro */
+    white-space: nowrap;
 }
 
-/* Buscador Centro (Posicionamiento Absoluto para simetría total) */
+.nav-main-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-main-links a {
+    color: #ccc;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+.nav-main-links a:hover {
+    color: white;
+}
+
+/* --- BUSCADOR (CENTRO) --- */
 .nav-search-container {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 450px;
-    display: flex;
+    max-width: 500px;
 }
 
 .nav-search-container input {
     width: 100%;
-    background: #1a1a1a;
+    background: #222;
     border: 1px solid #333;
-    padding: 10px 20px;
-    border-radius: 25px;
+    padding: 12px 25px;
+    border-radius: 30px;
     color: white;
     outline: none;
     transition: 0.3s;
+    font-size: 0.95rem;
 }
 
 .nav-search-container input:focus {
+    background: #2a2a2a;
     border-color: #ff0055;
-    background: #222;
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
 }
 
-/* Área Derecha (Auth / Perfil) */
+/* --- PARTE DERECHA (AUTH) --- */
 .nav-auth-area {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 15px;
-    flex: 0 0 250px; /* Ancho fijo igual que el logo para balancear */
+    gap: 12px;
+    flex: 1;
 }
 
+/* Botones No Logueado */
 .btn-login {
-    color: white;
-    text-decoration: none;
-    font-weight: bold;
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.btn-register {
     background: #ff0055;
     color: white;
-    padding: 8px 20px;
-    border-radius: 8px;
-    text-decoration: none;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 25px;
     font-weight: bold;
-    font-size: 0.9rem;
+    cursor: pointer;
     transition: 0.3s;
 }
 
-.btn-register:hover {
-    background: #ff2b72;
+.btn-register {
+    background: #e9e9e9;
+    color: black;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
 }
 
-/* Avatar de Usuario logueado */
+.btn-login:hover { background: #ff2b72; }
+.btn-register:hover { background: #d4d4d4; }
+
+/* Usuario Logueado */
+.user-nav-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #1a1a1a;
+    padding: 5px 5px 5px 15px;
+    border-radius: 30px;
+    border: 1px solid #333;
+}
+
 .user-profile-nav {
     display: flex;
     align-items: center;
     gap: 10px;
-    cursor: pointer;
 }
 
 .user-profile-nav img {
     width: 35px;
     height: 35px;
     border-radius: 50%;
-    border: 2px solid #ff0055;
     object-fit: cover;
+    border: 2px solid #ff0055;
 }
 
-.btn-logout-nav {
-    background: none;
-    border: 1px solid #333;
+.user-profile-nav span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+}
+
+.btn-logout-minimal {
+    background: #252525;
+    border: none;
     color: #888;
-    padding: 5px 10px;
-    border-radius: 5px;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 0.75rem;
+    transition: 0.3s;
+}
+
+.btn-logout-minimal:hover {
+    background: #333;
+    color: #ff0055;
 }
