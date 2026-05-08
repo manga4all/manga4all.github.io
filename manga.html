@@ -3,17 +3,131 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="pageTitle">Cargando... | M4A</title>
-  <link rel="stylesheet" href="css/style.css?v=18">
+  <title id="pageTitle">Cargando... | Manga 4 All</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/style.css?v=21">
+
+  <style>
+    /* APLICAR FUENTE GLOBAL */
+    * { 
+        font-family: 'Poppins', sans-serif !important; 
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #070707;
+        color: white;
+        margin: 0;
+        /* ESPACIO PARA QUE LA NAVBAR FIJA NO TAPE EL CONTENIDO */
+        padding-top: 100px; 
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .manga-page {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        gap: 40px;
+        margin-bottom: 50px;
+    }
+
+    #mangaCover {
+        width: 100%;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid #1f1f1f;
+    }
+
+    #mangaTitle {
+        font-size: 2.5rem;
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+
+    #mangaGenres {
+        margin-bottom: 20px;
+        color: #ff0055;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+    }
+
+    #mangaDescription {
+        line-height: 1.8;
+        color: #bbb;
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+
+    /* ESTILO DE LA LISTA DE CAPÍTULOS */
+    .chapter-row-item {
+        background: #111;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 25px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: white;
+        margin-bottom: 12px;
+        border: 1px solid #1a1a1a;
+        transition: 0.3s;
+    }
+
+    .chapter-row-item:hover {
+        background: #1a1a1a;
+        border-color: #ff0055;
+        transform: translateX(5px);
+    }
+
+    .chapter-row-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .chapter-row-img {
+        width: 50px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    .section-title {
+        border-left: 4px solid #ff0055;
+        padding-left: 15px;
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+
+    footer {
+        text-align: center;
+        padding: 50px;
+        color: #444;
+        border-top: 1px solid #111;
+        margin-top: 50px;
+    }
+
+    @media (max-width: 850px) {
+        .manga-page { grid-template-columns: 1fr; }
+        .manga-cover-side { text-align: center; }
+        #mangaCover { max-width: 280px; }
+    }
+  </style>
 </head>
 <body>
 
-<div id="main-navbar"></div>
-
-<script type="module" src="js/navbar.js"></script>
+  <div id="main-navbar"></div>
 
   <section class="container">
     <div class="manga-page">
@@ -24,14 +138,12 @@
 
       <div class="manga-content-side">
         <h1 id="mangaTitle">Cargando...</h1>
-        
-        <div id="mangaGenres" style="margin-bottom: 15px; color: #ff0055; font-weight: bold; font-size: 0.9rem;"></div>
-        
+        <div id="mangaGenres"></div>
         <p id="mangaDescription">Esperando datos ...</p>
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 25px;">
             <h2 class="section-title" style="margin: 0;">Capítulos Disponibles</h2>
-            <button id="toggleOrderBtn" style="background: transparent; border: 1px solid #ff0055; color: #ff0055; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+            <button id="toggleOrderBtn" style="background: transparent; border: 1px solid #ff0055; color: #ff0055; padding: 8px 18px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 0.8rem;">
                 Invertir Orden
             </button>
         </div>
@@ -39,7 +151,7 @@
         <div class="chapters-grid-list" id="chaptersGrid"></div>
 
         <div id="loadMoreContainer" style="text-align: center; margin-top: 30px; display: none;">
-            <button id="loadMoreBtn" style="background: #111; border: 1px solid #333; color: white; padding: 12px 40px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;">
+            <button id="loadMoreBtn" style="background: #111; border: 1px solid #333; color: white; padding: 12px 40px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.3s;">
                 Ver más capítulos
             </button>
         </div>
@@ -48,7 +160,9 @@
     </div>
   </section>
 
-  <footer>Manga 4 All © 2026</footer>
+  <footer>MANGA 4 ALL © 2026</footer>
+
+  <script type="module" src="js/navbar.js"></script>
 
   <script type="module">
     import { db } from "./js/firebase.js";
@@ -65,7 +179,6 @@
     const mangaGenres = document.getElementById("mangaGenres");
     const chaptersGrid = document.getElementById("chaptersGrid");
     
-    // Variables de control de estado
     let allChapters = [];
     let itemsToShow = 20;
     let isDescending = true;
@@ -105,14 +218,12 @@
     }
 
     function renderChapters() {
-      // 1. Ordenar
       if (isDescending) {
         allChapters.sort((a, b) => parseFloat(b.number) - parseFloat(a.number));
       } else {
         allChapters.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
       }
 
-      // 2. Seleccionar solo los que vamos a mostrar
       const visibleChapters = allChapters.slice(0, itemsToShow);
 
       chaptersGrid.innerHTML = "";
@@ -123,18 +234,17 @@
             <div class="chapter-row-left">
               <img src="${tomo.cover}" class="chapter-row-img" alt="Cap ${numeroLimpio}">
               <div style="display: flex; flex-direction: column;">
-                 <span style="font-size: 0.7rem; color: #ff0055; font-weight: bold;">CAPÍTULO</span>
-                 <span style="font-size: 1.2rem; font-weight: bold;">${numeroLimpio}</span>
+                 <span style="font-size: 0.65rem; color: #ff0055; font-weight: bold; letter-spacing: 1px;">CAPÍTULO</span>
+                 <span style="font-size: 1.1rem; font-weight: bold;">${numeroLimpio}</span>
               </div>
             </div>
-            <div style="background: #ff0055; color: white; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.8rem;">
+            <div style="background: #ff0055; color: white; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 0.75rem;">
               LEER
             </div>
           </a>
         `;
       });
 
-      // 3. Mostrar/Ocultar botón "Ver más"
       const loadMoreContainer = document.getElementById("loadMoreContainer");
       if (itemsToShow < allChapters.length) {
         loadMoreContainer.style.display = "block";
@@ -143,16 +253,14 @@
       }
     }
 
-    // Evento Botón Ver Más
     document.getElementById("loadMoreBtn").addEventListener("click", () => {
       itemsToShow += 20;
       renderChapters();
     });
 
-    // Evento Botón Invertir Orden
     document.getElementById("toggleOrderBtn").addEventListener("click", () => {
       isDescending = !isDescending;
-      itemsToShow = 20; // Opcional: Reiniciar a 20 al invertir o dejar todos. Reiniciar es más limpio.
+      itemsToShow = 20;
       renderChapters();
     });
 
