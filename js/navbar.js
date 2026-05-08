@@ -14,25 +14,28 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// 1. INYECTAR EL HTML (Modularización)
 const navbarContainer = document.getElementById('main-navbar');
 
 if (navbarContainer) {
     navbarContainer.innerHTML = `
         <nav class="main-navbar">
-            <a href="index.html" class="nav-logo">MANGA 4 ALL</a>
+            <div class="nav-left">
+                <a href="index.html" class="nav-logo">MANGA 4 ALL</a>
+                <div class="nav-main-links">
+                    <a href="index.html">Inicio</a>
+                    <a href="directorio.html">Directorio</a>
+                </div>
+            </div>
             
             <div class="nav-search-container">
                 <input type="text" id="globalSearch" placeholder="Buscar manga o autor...">
             </div>
 
             <div class="nav-auth-area" id="auth-content">
-                <span style="color:#333">...</span>
-            </div>
+                </div>
         </nav>
     `;
 
-    // --- INTEGRACIÓN DE TU LÓGICA DE BÚSQUEDA ---
     const searchInput = document.getElementById('globalSearch');
     if (searchInput) {
         searchInput.addEventListener('keypress', (e) => {
@@ -46,29 +49,28 @@ if (navbarContainer) {
     }
 }
 
-// 2. LÓGICA DE ESTADO DE USUARIO (Firebase)
 onAuthStateChanged(auth, (user) => {
     const authContent = document.getElementById('auth-content');
     if (!authContent) return;
 
     if (user) {
-        // Usuario Logueado
         authContent.innerHTML = `
-            <div class="user-profile-nav">
-                <span style="font-size: 0.85rem; font-weight: bold;">${user.displayName || 'Usuario'}</span>
-                <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="perfil">
-                <button class="btn-logout-nav" id="navLogout">Salir</button>
+            <div class="user-nav-wrapper">
+                <div class="user-profile-nav">
+                    <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="perfil">
+                    <span>${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
+                </div>
+                <button class="btn-logout-minimal" id="navLogout" title="Cerrar Sesión">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
             </div>
         `;
         document.getElementById('navLogout').onclick = () => signOut(auth);
     } else {
-        // Usuario No Logueado
         authContent.innerHTML = `
-            <a href="#" class="btn-login" id="navLogin">Entrar</a>
-            <a href="#" class="btn-register" id="navRegister">Registrarse</a>
+            <button class="btn-login" id="navLogin">Iniciar sesión</button>
+            <button class="btn-register" id="navRegister">Regístrate</button>
         `;
-        
-        // Atajos para login con Google (por ahora)
         document.getElementById('navLogin').onclick = (e) => { e.preventDefault(); signInWithPopup(auth, provider); };
         document.getElementById('navRegister').onclick = (e) => { e.preventDefault(); signInWithPopup(auth, provider); };
     }
