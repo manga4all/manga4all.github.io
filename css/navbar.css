@@ -1,0 +1,108 @@
+/* --- ESTILOS DE LA NAV BAR MODULAR --- */
+.main-navbar {
+    background: #111;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Logo a la izq, Auth a la der */
+    padding: 0 40px;
+    border-bottom: 2px solid #ff0055;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 5000;
+}
+
+/* Logo Izquierda */
+.nav-logo {
+    color: #ff0055;
+    font-weight: bold;
+    font-size: 1.7rem;
+    text-decoration: none;
+    flex: 0 0 200px; /* Ancho fijo para no empujar el centro */
+}
+
+/* Buscador Centro (Posicionamiento Absoluto para simetría total) */
+.nav-search-container {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+}
+
+.nav-search-container input {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 10px 20px;
+    border-radius: 25px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+
+.nav-search-container input:focus {
+    border-color: #ff0055;
+    background: #222;
+}
+
+/* Área Derecha (Auth / Perfil) */
+.nav-auth-area {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+    flex: 0 0 250px; /* Ancho fijo igual que el logo para balancear */
+}
+
+.btn-login {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.btn-register {
+    background: #ff0055;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: 0.3s;
+}
+
+.btn-register:hover {
+    background: #ff2b72;
+}
+
+/* Avatar de Usuario logueado */
+.user-profile-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.user-profile-nav img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #ff0055;
+    object-fit: cover;
+}
+
+.btn-logout-nav {
+    background: none;
+    border: 1px solid #333;
+    color: #888;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.75rem;
+}
