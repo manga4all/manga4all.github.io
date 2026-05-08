@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -37,16 +37,27 @@ if (navContainer) {
         <div class="auth-modal-overlay" id="authModal">
             <div class="auth-modal">
                 <span class="close-modal" id="closeM">&times;</span>
-                <h2 style="color:white; margin-bottom:20px;">Bienvenido</h2>
+                <h2 id="modalTitle" style="color:white; margin-bottom:20px;">Bienvenido</h2>
+                
+                <div id="regNameField" class="auth-input-group" style="display:none;">
+                    <input type="text" id="logName" placeholder="Tu nombre completo">
+                </div>
                 <div class="auth-input-group">
                     <input type="email" id="logEmail" placeholder="Correo electrónico">
                 </div>
                 <div class="auth-input-group">
                     <input type="password" id="logPass" placeholder="Contraseña">
                 </div>
-                <button class="btn-login" id="doEmailLogin" style="width:100%; margin-bottom:15px;">Entrar</button>
-                <div style="color:#555; margin-bottom:15px; font-size:0.8rem;">O CONTINUAR CON</div>
-                <button id="doGoogleLogin" style="width:100%; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px;">
+                
+                <button class="btn-login" id="mainAuthBtn" style="width:100%; margin-bottom:15px;">Entrar</button>
+                
+                <p id="toggleAuthText" style="color:#888; font-size:0.85rem; cursor:pointer; margin-bottom:15px;">
+                    ¿No tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Regístrate aquí</span>
+                </p>
+
+                <div class="auth-divider"><span>O CONTINUAR CON</span></div>
+                
+                <button id="doGoogleLogin" class="btn-google-login" style="width:100%; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px; border:none; background:white; color:black;">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Google
                 </button>
                 <p id="errLog" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
@@ -55,45 +66,110 @@ if (navContainer) {
     `;
 }
 
-// Funciones de apertura/cierre
+// Lógica de intercambio entre Login y Registro
+let isRegisterMode = false;
+const toggleText = document.getElementById('toggleAuthText');
+const modalTitle = document.getElementById('modalTitle');
+const nameField = document.getElementById('regNameField');
+const mainBtn = document.getElementById('mainAuthBtn');
+
+toggleText.onclick = () => {
+    isRegisterMode = !isRegisterMode;
+    if (isRegisterMode) {
+        modalTitle.innerText = "Crear Cuenta";
+        nameField.style.display = "block";
+        mainBtn.innerText = "Registrarse";
+        toggleText.innerHTML = '¿Ya tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Inicia sesión</span>';
+    } else {
+        modalTitle.innerText = "Bienvenido";
+        nameField.style.display = "none";
+        mainBtn.innerText = "Entrar";
+        toggleText.innerHTML = '¿No tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Regístrate aquí</span>';
+    }
+};
+
+// Cierre de modal
 window.openAuth = () => document.getElementById('authModal').style.display = 'flex';
 document.getElementById('closeM').onclick = () => document.getElementById('authModal').style.display = 'none';
 
-// Logueo Google
+// --- ACCIONES DE AUTENTICACIÓN ---
+
+// Login/Registro con Email
+mainBtn.onclick = async () => {
+    const email = document.getElementById('logEmail').value.trim();
+    const pass = document.getElementById('logPass').value;
+    const name = document.getElementById('logName').value.trim();
+    const errorEl = document.getElementById('errLog');
+    errorEl.innerText = "";
+
+    try {
+        if (isRegisterMode) {
+            if(!name) throw new Error("Por favor ingresa tu nombre");
+            const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+            await updateProfile(userCred.user, { displayName: name });
+            console.log("Usuario registrado con éxito");
+        } else {
+            await signInWithEmailAndPassword(auth, email, pass);
+        }
+    } catch (error) {
+        errorEl.innerText = "Error: " + error.message;
+    }
+};
+
+// Google
 document.getElementById('doGoogleLogin').onclick = () => {
     signInWithPopup(auth, provider).catch(() => document.getElementById('errLog').innerText = "Error con Google");
 };
 
-// Logueo Email
-document.getElementById('doEmailLogin').onclick = () => {
-    const e = document.getElementById('logEmail').value;
-    const p = document.getElementById('logPass').value;
-    signInWithEmailAndPassword(auth, e, p).catch(() => document.getElementById('errLog').innerText = "Datos incorrectos");
-};
+// Salir
+function setupLogout() {
+    const btn = document.getElementById('logout');
+    if(btn) btn.onclick = () => signOut(auth);
+}
 
-// Escucha de Búsqueda
+// Sincronizar con Firestore
+async function syncUser(user) {
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (!snap.exists()) {
+        await setDoc(userRef, {
+            uid: user.uid,
+            displayName: user.displayName || "Usuario",
+            email: user.email,
+            photoURL: user.photoURL || "",
+            role: "user",
+            createdAt: serverTimestamp(),
+            favorites: [],
+            readingHistory: {}
+        });
+    }
+}
+
+// Estado del Usuario
+onAuthStateChanged(auth, async (user) => {
+    const area = document.getElementById('auth-content');
+    if (!area) return;
+    
+    if (user) {
+        await syncUser(user);
+        document.getElementById('authModal').style.display = 'none';
+        area.innerHTML = `
+            <div class="user-capsule">
+                <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="p">
+                <span style="font-size:0.85rem; font-weight:bold; color:white;">${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
+                <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:10px; text-decoration:underline;">Salir</button>
+            </div>
+        `;
+        setupLogout();
+    } else {
+        area.innerHTML = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
+    }
+});
+
+// Búsqueda
 document.getElementById('globalSearch').onkeypress = (e) => {
     if(e.key === 'Enter') {
         const q = e.target.value.trim();
         if(q) window.location.href = `results.html?q=${encodeURIComponent(q)}`;
     }
 };
-
-// Estado del Usuario
-onAuthStateChanged(auth, async (user) => {
-    const area = document.getElementById('auth-content');
-    if (!area) return;
-    if (user) {
-        document.getElementById('authModal').style.display = 'none';
-        area.innerHTML = `
-            <div class="user-capsule">
-                <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="">
-                <span style="font-size:0.85rem; font-weight:bold;">${user.displayName || 'Usuario'}</span>
-                <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:5px;">Salir</button>
-            </div>
-        `;
-        document.getElementById('logout').onclick = () => signOut(auth);
-    } else {
-        area.innerHTML = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
-    }
-});
