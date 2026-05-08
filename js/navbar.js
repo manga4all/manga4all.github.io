@@ -73,28 +73,30 @@ const modalTitle = document.getElementById('modalTitle');
 const nameField = document.getElementById('regNameField');
 const mainBtn = document.getElementById('mainAuthBtn');
 
-toggleText.onclick = () => {
-    isRegisterMode = !isRegisterMode;
-    if (isRegisterMode) {
-        modalTitle.innerText = "Crear Cuenta";
-        nameField.style.display = "block";
-        mainBtn.innerText = "Registrarse";
-        toggleText.innerHTML = '¿Ya tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Inicia sesión</span>';
-    } else {
-        modalTitle.innerText = "Bienvenido";
-        nameField.style.display = "none";
-        mainBtn.innerText = "Entrar";
-        toggleText.innerHTML = '¿No tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Regístrate aquí</span>';
-    }
-};
+if(toggleText) {
+    toggleText.onclick = () => {
+        isRegisterMode = !isRegisterMode;
+        if (isRegisterMode) {
+            modalTitle.innerText = "Crear Cuenta";
+            nameField.style.display = "block";
+            mainBtn.innerText = "Registrarse";
+            toggleText.innerHTML = '¿Ya tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Inicia sesión</span>';
+        } else {
+            modalTitle.innerText = "Bienvenido";
+            nameField.style.display = "none";
+            mainBtn.innerText = "Entrar";
+            toggleText.innerHTML = '¿No tienes cuenta? <span style="color:#ff0055; font-weight:bold;">Regístrate aquí</span>';
+        }
+    };
+}
 
 // Cierre de modal
 window.openAuth = () => document.getElementById('authModal').style.display = 'flex';
-document.getElementById('closeM').onclick = () => document.getElementById('authModal').style.display = 'none';
+const closeBtn = document.getElementById('closeM');
+if(closeBtn) closeBtn.onclick = () => document.getElementById('authModal').style.display = 'none';
 
 // --- ACCIONES DE AUTENTICACIÓN ---
 
-// Login/Registro con Email
 mainBtn.onclick = async () => {
     const email = document.getElementById('logEmail').value.trim();
     const pass = document.getElementById('logPass').value;
@@ -107,7 +109,6 @@ mainBtn.onclick = async () => {
             if(!name) throw new Error("Por favor ingresa tu nombre");
             const userCred = await createUserWithEmailAndPassword(auth, email, pass);
             await updateProfile(userCred.user, { displayName: name });
-            console.log("Usuario registrado con éxito");
         } else {
             await signInWithEmailAndPassword(auth, email, pass);
         }
@@ -116,18 +117,18 @@ mainBtn.onclick = async () => {
     }
 };
 
-// Google
 document.getElementById('doGoogleLogin').onclick = () => {
     signInWithPopup(auth, provider).catch(() => document.getElementById('errLog').innerText = "Error con Google");
 };
 
-// Salir
 function setupLogout() {
     const btn = document.getElementById('logout');
-    if(btn) btn.onclick = () => signOut(auth);
+    if(btn) btn.onclick = (e) => {
+        e.stopPropagation(); // Evita que al dar click a Salir también intente ir al perfil
+        signOut(auth);
+    };
 }
 
-// Sincronizar con Firestore
 async function syncUser(user) {
     const userRef = doc(db, "users", user.uid);
     const snap = await getDoc(userRef);
@@ -152,18 +153,21 @@ onAuthStateChanged(auth, async (user) => {
     
     if (user) {
         await syncUser(user);
-        document.getElementById('authModal').style.display = 'none';
+        const modal = document.getElementById('authModal');
+        if(modal) modal.style.display = 'none';
         
-        // --- AQUÍ ESTÁ EL CAMBIO DE LA IMAGEN ---
         const userImg = user.photoURL ? user.photoURL : 'img/default-user.png';
         
         area.innerHTML = `
-            <div class="user-capsule">
+            <div class="user-capsule" id="goToProfile" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
                 <img src="${userImg}" alt="p" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                 <span style="font-size:0.85rem; font-weight:bold; color:white;">${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
                 <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:10px; text-decoration:underline;">Salir</button>
             </div>
         `;
+        
+        // Redirección al perfil al hacer clic en la cápsula
+        document.getElementById('goToProfile').onclick = () => window.location.href = 'perfil.html';
         setupLogout();
     } else {
         area.innerHTML = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
@@ -171,9 +175,12 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // Búsqueda
-document.getElementById('globalSearch').onkeypress = (e) => {
-    if(e.key === 'Enter') {
-        const q = e.target.value.trim();
-        if(q) window.location.href = `results.html?q=${encodeURIComponent(q)}`;
-    }
-};
+const searchBtn = document.getElementById('globalSearch');
+if(searchBtn) {
+    searchBtn.onkeypress = (e) => {
+        if(e.key === 'Enter') {
+            const q = e.target.value.trim();
+            if(q) window.location.href = `results.html?q=${encodeURIComponent(q)}`;
+        }
+    };
+}
