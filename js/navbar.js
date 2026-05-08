@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
@@ -12,8 +13,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// 1. INYECTAR EL HTML (Con el link corregido a directory.html)
 const navbarContainer = document.getElementById('main-navbar');
 
 if (navbarContainer) {
@@ -23,7 +26,7 @@ if (navbarContainer) {
                 <a href="index.html" class="nav-logo">MANGA 4 ALL</a>
                 <div class="nav-main-links">
                     <a href="index.html">Inicio</a>
-                    <a href="directorio.html">Directorio</a>
+                    <a href="directory.html">Directorio</a>
                 </div>
             </div>
             
@@ -49,11 +52,37 @@ if (navbarContainer) {
     }
 }
 
-onAuthStateChanged(auth, (user) => {
+// 2. FUNCIÓN PARA CREAR USUARIO EN FIRESTORE SI NO EXISTE
+async function syncUser(user) {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+        // Es la primera vez que entra, lo registramos
+        await setDoc(userRef, {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            role: "user", // Por defecto es usuario normal
+            createdAt: serverTimestamp(),
+            favorites: [], // Lista de IDs de mangas favoritos vacía
+            readingHistory: {} // Para la fase de "Continuar leyendo"
+        });
+        console.log("Nuevo usuario registrado en Firestore");
+    }
+}
+
+// 3. LÓGICA DE ESTADO DE USUARIO
+onAuthStateChanged(auth, async (user) => {
     const authContent = document.getElementById('auth-content');
     if (!authContent) return;
 
     if (user) {
+        // Sincronizar datos con Firestore
+        await syncUser(user);
+
+        // Mostrar Interfaz Logueada
         authContent.innerHTML = `
             <div class="user-nav-wrapper">
                 <div class="user-profile-nav">
@@ -67,11 +96,18 @@ onAuthStateChanged(auth, (user) => {
         `;
         document.getElementById('navLogout').onclick = () => signOut(auth);
     } else {
+        // Mostrar Botones de Login
         authContent.innerHTML = `
             <button class="btn-login" id="navLogin">Iniciar sesión</button>
             <button class="btn-register" id="navRegister">Regístrate</button>
         `;
-        document.getElementById('navLogin').onclick = (e) => { e.preventDefault(); signInWithPopup(auth, provider); };
-        document.getElementById('navRegister').onclick = (e) => { e.preventDefault(); signInWithPopup(auth, provider); };
+        
+        const loginAction = (e) => {
+            e.preventDefault();
+            signInWithPopup(auth, provider).catch(error => console.error("Error al loguear:", error));
+        };
+
+        document.getElementById('navLogin').onclick = loginAction;
+        document.getElementById('navRegister').onclick = loginAction;
     }
 });
