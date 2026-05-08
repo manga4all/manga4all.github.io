@@ -16,10 +16,10 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// 1. INYECTAR ESTRUCTURA (NAVBAR + MODAL)
-const navbarContainer = document.getElementById('main-navbar');
-if (navbarContainer) {
-    navbarContainer.innerHTML = `
+// Inyectar HTML
+const navContainer = document.getElementById('main-navbar');
+if (navContainer) {
+    navContainer.innerHTML = `
         <nav class="main-navbar">
             <div class="nav-left">
                 <a href="index.html" class="nav-logo">MANGA 4 ALL</a>
@@ -36,95 +36,64 @@ if (navbarContainer) {
 
         <div class="auth-modal-overlay" id="authModal">
             <div class="auth-modal">
-                <span class="close-auth-modal" id="closeModal">&times;</span>
-                <h2>Ingresar a Manga4All</h2>
-                
+                <span class="close-modal" id="closeM">&times;</span>
+                <h2 style="color:white; margin-bottom:20px;">Bienvenido</h2>
                 <div class="auth-input-group">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="emailLogin" placeholder="tu@email.com">
+                    <input type="email" id="logEmail" placeholder="Correo electrónico">
                 </div>
                 <div class="auth-input-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="passLogin" placeholder="••••••••">
+                    <input type="password" id="logPass" placeholder="Contraseña">
                 </div>
-                
-                <button class="btn-auth-primary" id="btnEmailLogin">Entrar</button>
-
-                <div class="auth-divider"><span>O CONTINUAR CON</span></div>
-
-                <button class="btn-google-login" id="btnGoogleLogin">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-                    Google
+                <button class="btn-login" id="doEmailLogin" style="width:100%; margin-bottom:15px;">Entrar</button>
+                <div style="color:#555; margin-bottom:15px; font-size:0.8rem;">O CONTINUAR CON</div>
+                <button id="doGoogleLogin" style="width:100%; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px;">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Google
                 </button>
-                <p id="authError" style="color: #ff3333; font-size: 0.8rem; margin-top: 15px;"></p>
+                <p id="errLog" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
             </div>
         </div>
     `;
-
-    // Lógica del buscador
-    document.getElementById('globalSearch').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const query = e.target.value.trim();
-            if (query) window.location.href = `results.html?q=${encodeURIComponent(query)}`;
-        }
-    });
-
-    // Lógica del Modal
-    const modal = document.getElementById('authModal');
-    window.showLogin = () => modal.style.display = 'flex';
-    document.getElementById('closeModal').onclick = () => modal.style.display = 'none';
 }
 
-// 2. SINCRONIZAR USUARIO
-async function syncUser(user) {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-        await setDoc(userRef, {
-            uid: user.uid, displayName: user.displayName || "Usuario",
-            email: user.email, photoURL: user.photoURL || "",
-            role: "user", createdAt: serverTimestamp(), favorites: [], readingHistory: {}
-        });
+// Funciones de apertura/cierre
+window.openAuth = () => document.getElementById('authModal').style.display = 'flex';
+document.getElementById('closeM').onclick = () => document.getElementById('authModal').style.display = 'none';
+
+// Logueo Google
+document.getElementById('doGoogleLogin').onclick = () => {
+    signInWithPopup(auth, provider).catch(() => document.getElementById('errLog').innerText = "Error con Google");
+};
+
+// Logueo Email
+document.getElementById('doEmailLogin').onclick = () => {
+    const e = document.getElementById('logEmail').value;
+    const p = document.getElementById('logPass').value;
+    signInWithEmailAndPassword(auth, e, p).catch(() => document.getElementById('errLog').innerText = "Datos incorrectos");
+};
+
+// Escucha de Búsqueda
+document.getElementById('globalSearch').onkeypress = (e) => {
+    if(e.key === 'Enter') {
+        const q = e.target.value.trim();
+        if(q) window.location.href = `results.html?q=${encodeURIComponent(q)}`;
     }
-}
+};
 
-// 3. ESTADO DE SESIÓN
+// Estado del Usuario
 onAuthStateChanged(auth, async (user) => {
-    const authContent = document.getElementById('auth-content');
-    if (!authContent) return;
-
+    const area = document.getElementById('auth-content');
+    if (!area) return;
     if (user) {
-        await syncUser(user);
         document.getElementById('authModal').style.display = 'none';
-        authContent.innerHTML = `
-            <div class="user-nav-wrapper">
-                <div class="user-profile-nav">
-                    <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="p">
-                    <span>${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
-                </div>
-                <button class="btn-logout-minimal" id="navLogout">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-                </button>
+        area.innerHTML = `
+            <div class="user-capsule">
+                <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="">
+                <span style="font-size:0.85rem; font-weight:bold;">${user.displayName || 'Usuario'}</span>
+                <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:5px;">Salir</button>
             </div>
         `;
-        document.getElementById('navLogout').onclick = () => signOut(auth);
+        document.getElementById('logout').onclick = () => signOut(auth);
     } else {
-        authContent.innerHTML = `
-            <button class="btn-login" onclick="showLogin()">Iniciar sesión</button>
-            <button class="btn-register" onclick="showLogin()">Regístrate</button>
-        `;
+        area.innerHTML = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
     }
 });
-
-// 4. LISTENERS DE BOTONES DE LOGIN
-document.getElementById('btnGoogleLogin').onclick = () => {
-    signInWithPopup(auth, provider).catch(err => document.getElementById('authError').innerText = "Error con Google");
-};
-
-document.getElementById('btnEmailLogin').onclick = () => {
-    const email = document.getElementById('emailLogin').value;
-    const pass = document.getElementById('passLogin').value;
-    signInWithEmailAndPassword(auth, email, pass).catch(err => {
-        document.getElementById('authError').innerText = "Correo o contraseña incorrectos";
-    });
-};
