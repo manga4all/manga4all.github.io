@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Manga 4 All</title>
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/perfil.css">
+</head>
+<body>
+
+    <div id="main-navbar"></div>
+
+    <div class="profile-layout">
+        <aside class="profile-sidebar">
+            <div class="avatar-edit-container">
+                <img src="img/default-user.png" id="profileAvatar" alt="Avatar">
+                <label for="avatarUpload" class="edit-overlay">
+                    <span>Cambiar</span>
+                </label>
+                <input type="file" id="avatarUpload" accept="image/*" style="display:none;">
+            </div>
+            <h2 id="userNameDisplay">Cargando...</h2>
+            <p id="userEmailDisplay">---</p>
+            
+            <nav class="profile-menu">
+                <button class="menu-btn active" onclick="switchTab('info')">👤 Mis Datos</button>
+                <button class="menu-btn" onclick="switchTab('favs')">❤️ Favoritos</button>
+                <button class="menu-btn" onclick="switchTab('history')">📖 Continuando</button>
+            </nav>
+        </aside>
+
+        <main class="profile-content">
+            <section id="tab-info" class="tab-pane active">
+                <h3>Información Personal</h3>
+                <div class="info-form">
+                    <div class="input-group">
+                        <label>Nombre de Usuario</label>
+                        <input type="text" id="editName" placeholder="Tu nombre">
+                    </div>
+                    <div class="input-group">
+                        <label>País / Ubicación</label>
+                        <select id="editCountry">
+                            <option value="">Seleccionar...</option>
+                            <option value="GT">Guatemala</option>
+                            <option value="MX">México</option>
+                            </select>
+                    </div>
+                    <button class="save-btn" id="saveProfileBtn">Guardar Cambios</button>
+                </div>
+            </section>
+
+            <section id="tab-favs" class="tab-pane">
+                <div class="tab-header">
+                    <h3>Mis Mangas Favoritos</h3>
+                    <span class="count">0 Mangas</span>
+                </div>
+                <div class="manga-grid-perfil" id="favsGrid">
+                    <p class="empty-msg">Aún no tienes favoritos. ¡Explora el directorio!</p>
+                </div>
+            </section>
+
+            <section id="tab-history" class="tab-pane">
+                <div class="tab-header">
+                    <h3>Continuar Leyendo</h3>
+                </div>
+                <div class="manga-grid-perfil" id="historyGrid">
+                    <p class="empty-msg">No hay historial reciente.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="js/navbar.js"></script>
+    <script type="module" src="js/perfil.js"></script>
+</body>
+</html>
