@@ -153,9 +153,13 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         await syncUser(user);
         document.getElementById('authModal').style.display = 'none';
+        
+        // --- AQUÍ ESTÁ EL CAMBIO DE LA IMAGEN ---
+        const userImg = user.photoURL ? user.photoURL : 'img/default-user.png';
+        
         area.innerHTML = `
             <div class="user-capsule">
-                <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="p">
+                <img src="${userImg}" alt="p" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
                 <span style="font-size:0.85rem; font-weight:bold; color:white;">${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
                 <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:10px; text-decoration:underline;">Salir</button>
             </div>
