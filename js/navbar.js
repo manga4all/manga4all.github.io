@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -16,9 +16,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// 1. INYECTAR EL HTML (Con el link corregido a directory.html)
+// 1. INYECTAR ESTRUCTURA (NAVBAR + MODAL)
 const navbarContainer = document.getElementById('main-navbar');
-
 if (navbarContainer) {
     navbarContainer.innerHTML = `
         <nav class="main-navbar">
@@ -29,85 +28,103 @@ if (navbarContainer) {
                     <a href="directory.html">Directorio</a>
                 </div>
             </div>
-            
             <div class="nav-search-container">
                 <input type="text" id="globalSearch" placeholder="Buscar manga o autor...">
             </div>
-
-            <div class="nav-auth-area" id="auth-content">
-                </div>
+            <div class="nav-auth-area" id="auth-content"></div>
         </nav>
+
+        <div class="auth-modal-overlay" id="authModal">
+            <div class="auth-modal">
+                <span class="close-auth-modal" id="closeModal">&times;</span>
+                <h2>Ingresar a Manga4All</h2>
+                
+                <div class="auth-input-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="emailLogin" placeholder="tu@email.com">
+                </div>
+                <div class="auth-input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="passLogin" placeholder="••••••••">
+                </div>
+                
+                <button class="btn-auth-primary" id="btnEmailLogin">Entrar</button>
+
+                <div class="auth-divider"><span>O CONTINUAR CON</span></div>
+
+                <button class="btn-google-login" id="btnGoogleLogin">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+                    Google
+                </button>
+                <p id="authError" style="color: #ff3333; font-size: 0.8rem; margin-top: 15px;"></p>
+            </div>
+        </div>
     `;
 
-    const searchInput = document.getElementById('globalSearch');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const query = searchInput.value.trim();
-                if (query.length > 0) {
-                    window.location.href = `results.html?q=${encodeURIComponent(query)}`;
-                }
-            }
-        });
-    }
+    // Lógica del buscador
+    document.getElementById('globalSearch').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const query = e.target.value.trim();
+            if (query) window.location.href = `results.html?q=${encodeURIComponent(query)}`;
+        }
+    });
+
+    // Lógica del Modal
+    const modal = document.getElementById('authModal');
+    window.showLogin = () => modal.style.display = 'flex';
+    document.getElementById('closeModal').onclick = () => modal.style.display = 'none';
 }
 
-// 2. FUNCIÓN PARA CREAR USUARIO EN FIRESTORE SI NO EXISTE
+// 2. SINCRONIZAR USUARIO
 async function syncUser(user) {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
-
     if (!userSnap.exists()) {
-        // Es la primera vez que entra, lo registramos
         await setDoc(userRef, {
-            uid: user.uid,
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
-            role: "user", // Por defecto es usuario normal
-            createdAt: serverTimestamp(),
-            favorites: [], // Lista de IDs de mangas favoritos vacía
-            readingHistory: {} // Para la fase de "Continuar leyendo"
+            uid: user.uid, displayName: user.displayName || "Usuario",
+            email: user.email, photoURL: user.photoURL || "",
+            role: "user", createdAt: serverTimestamp(), favorites: [], readingHistory: {}
         });
-        console.log("Nuevo usuario registrado en Firestore");
     }
 }
 
-// 3. LÓGICA DE ESTADO DE USUARIO
+// 3. ESTADO DE SESIÓN
 onAuthStateChanged(auth, async (user) => {
     const authContent = document.getElementById('auth-content');
     if (!authContent) return;
 
     if (user) {
-        // Sincronizar datos con Firestore
         await syncUser(user);
-
-        // Mostrar Interfaz Logueada
+        document.getElementById('authModal').style.display = 'none';
         authContent.innerHTML = `
             <div class="user-nav-wrapper">
                 <div class="user-profile-nav">
-                    <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="perfil">
+                    <img src="${user.photoURL || 'https://via.placeholder.com/150'}" alt="p">
                     <span>${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
                 </div>
-                <button class="btn-logout-minimal" id="navLogout" title="Cerrar Sesión">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <button class="btn-logout-minimal" id="navLogout">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
                 </button>
             </div>
         `;
         document.getElementById('navLogout').onclick = () => signOut(auth);
     } else {
-        // Mostrar Botones de Login
         authContent.innerHTML = `
-            <button class="btn-login" id="navLogin">Iniciar sesión</button>
-            <button class="btn-register" id="navRegister">Regístrate</button>
+            <button class="btn-login" onclick="showLogin()">Iniciar sesión</button>
+            <button class="btn-register" onclick="showLogin()">Regístrate</button>
         `;
-        
-        const loginAction = (e) => {
-            e.preventDefault();
-            signInWithPopup(auth, provider).catch(error => console.error("Error al loguear:", error));
-        };
-
-        document.getElementById('navLogin').onclick = loginAction;
-        document.getElementById('navRegister').onclick = loginAction;
     }
 });
+
+// 4. LISTENERS DE BOTONES DE LOGIN
+document.getElementById('btnGoogleLogin').onclick = () => {
+    signInWithPopup(auth, provider).catch(err => document.getElementById('authError').innerText = "Error con Google");
+};
+
+document.getElementById('btnEmailLogin').onclick = () => {
+    const email = document.getElementById('emailLogin').value;
+    const pass = document.getElementById('passLogin').value;
+    signInWithEmailAndPassword(auth, email, pass).catch(err => {
+        document.getElementById('authError').innerText = "Correo o contraseña incorrectos";
+    });
+};
