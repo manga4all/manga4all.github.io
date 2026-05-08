@@ -1,0 +1,85 @@
+body { background: #070707; color: white; padding-top: 100px; }
+
+.profile-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 30px;
+    padding: 20px;
+}
+
+/* SIDEBAR */
+.profile-sidebar {
+    background: #111;
+    border-radius: 20px;
+    padding: 40px 20px;
+    text-align: center;
+    height: fit-content;
+    border: 1px solid #1f1f1f;
+}
+
+.avatar-edit-container {
+    position: relative;
+    width: 150px; height: 150px;
+    margin: 0 auto 20px;
+}
+
+.avatar-edit-container img {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #ff0055;
+}
+
+.edit-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center; justify-content: center;
+    opacity: 0; transition: 0.3s; cursor: pointer;
+}
+
+.avatar-edit-container:hover .edit-overlay { opacity: 1; }
+
+.profile-menu { margin-top: 30px; display: flex; flex-direction: column; gap: 10px; }
+
+.menu-btn {
+    background: transparent; border: none; color: #888;
+    padding: 12px; text-align: left; border-radius: 10px;
+    font-weight: bold; cursor: pointer; transition: 0.3s;
+}
+
+.menu-btn.active, .menu-btn:hover { background: #1a1a1a; color: #ff0055; }
+
+/* CONTENT */
+.profile-content { background: #111; border-radius: 20px; padding: 40px; border: 1px solid #1f1f1f; }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: fadeIn 0.4s; }
+
+h3 { margin-bottom: 25px; font-size: 1.5rem; color: #ff0055; }
+
+.input-group { margin-bottom: 20px; }
+.input-group label { display: block; margin-bottom: 8px; color: #888; }
+.input-group input, .input-group select {
+    width: 100%; background: #070707; border: 1px solid #333;
+    padding: 12px; border-radius: 10px; color: white;
+}
+
+.save-btn {
+    background: #ff0055; border: none; color: white;
+    padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer;
+}
+
+/* GRID PERFIL */
+.manga-grid-perfil {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.empty-msg { color: #555; font-style: italic; text-align: center; grid-column: 1/-1; padding: 40px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
