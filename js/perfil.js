@@ -23,10 +23,19 @@ window.switchTab = (tabId) => {
 
 async function loadUserFavorites(favIds) {
     const grid = document.getElementById('favsGrid');
+    const favCountElement = document.getElementById('favCount'); // Seleccionamos el contador
+
     if (!favIds || favIds.length === 0) {
         grid.innerHTML = '<p class="empty-msg">Aún no tienes favoritos.</p>';
+        if (favCountElement) favCountElement.innerText = "0 Mangas"; // Reset si no hay nada
         return;
     }
+
+    // ACTUALIZACIÓN DEL CONTADOR
+    if (favCountElement) {
+        favCountElement.innerText = `${favIds.length} ${favIds.length === 1 ? 'Manga' : 'Mangas'}`;
+    }
+
     grid.innerHTML = '';
     for (const id of favIds) {
         const snap = await getDoc(doc(db, "mangas", id));
@@ -60,7 +69,6 @@ async function loadFullHistory(historyMap, userId) {
         card.id = `hist-${m.id}`;
         card.style.position = 'relative';
         
-        // CORRECCIÓN: Pasamos el scrollPos en la URL para sincronización nube
         const pos = m.scrollPos || 0;
         
         card.innerHTML = `
@@ -82,13 +90,9 @@ async function loadFullHistory(historyMap, userId) {
             const mid = e.target.dataset.id;
             if (confirm("¿Eliminar del historial?")) {
                 try {
-                    // Borrado visual inmediato
                     const card = document.getElementById(`hist-${mid}`);
                     if(card) card.remove();
-                    // Si queda vacío
                     if (grid.children.length === 0) grid.innerHTML = '<p class="empty-msg">Historial vacío.</p>';
-                    
-                    // Borrado en la nube en segundo plano
                     await updateDoc(doc(db, "users", userId), { [`readingHistory.${mid}`]: deleteField() });
                 } catch (err) { alert("Error al borrar"); }
             }
