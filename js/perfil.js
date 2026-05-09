@@ -15,30 +15,28 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// SOLUCIÓN PESTAÑAS: Al guardar o borrar, recordamos dónde estábamos
+// NAVEGACIÓN SIMPLE (Sin memoria para que siempre inicie en Datos al volver de otra página)
 window.switchTab = (tabId) => {
     document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
     
-    document.getElementById(`tab-${tabId}`).classList.add('active');
-    document.getElementById(`btn-${tabId}`).classList.add('active');
-    
-    // Guardamos la pestaña actual en la sesión
-    sessionStorage.setItem('perfilActiveTab', tabId);
+    const targetTab = document.getElementById(`tab-${tabId}`);
+    const targetBtn = document.getElementById(`btn-${tabId}`);
+    if(targetTab) targetTab.classList.add('active');
+    if(targetBtn) targetBtn.classList.add('active');
 };
 
-// --- FASE 3: CARGAR FAVORITOS ---
+// --- CARGAR FAVORITOS ---
 async function loadUserFavorites(favIds) {
     const grid = document.getElementById('favsGrid');
     const counter = document.getElementById('favCount');
     
     if (!favIds || favIds.length === 0) {
-        grid.innerHTML = '<p class="empty-msg">Aún no tienes favoritos. ¡Explora el directorio!</p>';
+        grid.innerHTML = '<p class="empty-msg">Aún no tienes favoritos.</p>';
         counter.innerText = '0 Mangas';
         return;
     }
 
-    // Actualizamos el contador real
     counter.innerText = `${favIds.length} ${favIds.length === 1 ? 'Manga' : 'Mangas'}`;
     grid.innerHTML = '';
 
@@ -59,7 +57,7 @@ async function loadUserFavorites(favIds) {
     }
 }
 
-// --- FASE 3: CARGAR HISTORIAL CON BORRADO ---
+// --- CARGAR HISTORIAL CON BORRADO DINÁMICO (INSTANTÁNEO) ---
 async function loadFullHistory(historyMap, userId) {
     const grid = document.getElementById('historyGrid');
     if (!historyMap || Object.keys(historyMap).length === 0) {
@@ -73,31 +71,41 @@ async function loadFullHistory(historyMap, userId) {
     sorted.forEach(m => {
         const card = document.createElement('div');
         card.className = 'manga-card-perfil';
-        card.style.position = 'relative';
+        card.id = `hist-${m.id}`; // ID para borrarlo sin recargar
         card.innerHTML = `
             <div class="card-img-container">
                 <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true">
                     <img src="${m.image}">
                     <div class="chapter-badge">Cap. ${m.chapter}</div>
                 </a>
-                <button class="drop-btn" data-id="${m.id}" title="Borrar historial" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.85); color:#ff0055; border:1px solid #ff0055; border-radius:50%; width:28px; height:28px; cursor:pointer; font-weight:bold; font-size:16px; z-index:10; display:flex; align-items:center; justify-content:center;">×</button>
+                <button class="drop-btn" data-id="${m.id}" title="Borrar" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:#ff0055; border:1px solid #ff0055; border-radius:50%; width:26px; height:26px; cursor:pointer; font-weight:bold; z-index:10; display:flex; align-items:center; justify-content:center;">×</button>
             </div>
             <h4>${m.title}</h4>
         `;
         grid.appendChild(card);
     });
 
-    document.querySelectorAll('.drop-btn').forEach(btn => {
-        btn.onclick = async (e) => {
-            e.preventDefault();
+    // Lógica de borrado PRO (Sin recarga)
+    grid.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('drop-btn')) {
             const mid = e.target.dataset.id;
-            if (confirm("¿Borrar este manga de tu historial?")) {
-                // Antes de recargar, nos aseguramos de que la pestaña activa sea 'history'
-                sessionStorage.setItem('perfilActiveTab', 'history');
-                await updateDoc(doc(db, "users", userId), { [`readingHistory.${mid}`]: deleteField() });
-                location.reload();
+            if (confirm("¿Eliminar del historial?")) {
+                try {
+                    // 1. Borramos en Firebase
+                    await updateDoc(doc(db, "users", userId), {
+                        [`readingHistory.${mid}`]: deleteField()
+                    });
+                    // 2. Borramos la tarjeta visualmente al instante
+                    const cardToRemove = document.getElementById(`hist-${mid}`);
+                    if (cardToRemove) cardToRemove.remove();
+                    
+                    // 3. Si ya no quedan tarjetas, mostramos mensaje de vacío
+                    if (grid.children.length === 0) {
+                        grid.innerHTML = '<p class="empty-msg">No hay historial reciente.</p>';
+                    }
+                } catch (err) { alert("Error al borrar"); }
             }
-        };
+        }
     });
 }
 
@@ -108,42 +116,33 @@ onAuthStateChanged(auth, async (user) => {
         if (snap.exists()) {
             const d = snap.data();
             
-            // CORRECCIÓN: Aseguramos que el nombre se asigne al sidebar y al input
-            const nombreFinal = d.displayName || user.displayName || "Usuario";
-            document.getElementById('userNameDisplay').innerText = nombreFinal;
-            document.getElementById('editName').value = nombreFinal;
-            
+            // Fix Nombre: Sidebar + Input
+            const name = d.displayName || user.displayName || "Usuario";
+            document.getElementById('userNameDisplay').innerText = name;
+            document.getElementById('editName').value = name;
             document.getElementById('userEmailDisplay').innerText = user.email;
             document.getElementById('profileAvatar').src = d.photoURL || user.photoURL || 'img/default-user.png';
             
             loadUserFavorites(d.favorites || []);
             loadFullHistory(d.readingHistory || {}, user.uid);
-
-            // Al terminar de cargar, verificamos si hay una pestaña guardada
-            const savedTab = sessionStorage.getItem('perfilActiveTab');
-            if (savedTab) {
-                switchTab(savedTab);
-                // La limpiamos para que si entra de cero otra vez vaya a "Mis Datos"
-                sessionStorage.removeItem('perfilActiveTab');
-            }
         }
     } else {
         window.location.href = "index.html";
     }
 });
 
-// BOTÓN GUARDAR
+// GUARDAR CAMBIOS (Aquí sí recargamos para actualizar Navbar y Sidebar)
 const saveBtn = document.getElementById('saveProfileBtn');
 if (saveBtn) {
     saveBtn.onclick = async () => {
         const user = auth.currentUser;
         if (!user) return;
         const newName = document.getElementById('editName').value.trim();
-        if (!newName) return alert("El nombre no puede estar vacío");
+        if (!newName) return alert("Ingresa un nombre");
         try {
             await updateDoc(doc(db, "users", user.uid), { displayName: newName });
-            alert("✅ Perfil actualizado correctamente");
+            alert("✅ Perfil actualizado");
             location.reload();
-        } catch (error) { alert("❌ Error al guardar."); }
+        } catch (e) { alert("Error"); }
     };
 }
