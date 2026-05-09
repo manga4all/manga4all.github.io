@@ -49,47 +49,36 @@
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
     const shouldScroll = params.get("scroll") === "true";
     
+    // Capturamos el scroll que nos pasó el Index/Perfil en la URL
+    const savedScrollParam = params.get("savedScroll");
+
     let currentUser = null;
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // FUNCIÓN DE GUARDADO MEJORADA
+    // FUNCIÓN DE GUARDADO (Sigue igual, guardando scrollY)
     async function guardarProgreso(scrollVal) {
         if (!mangaId || !numLimpio) return;
-        
-        try {
-            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-            if (!mangaSnap.exists()) return;
-            const d = mangaSnap.data();
+        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
+        if (!mangaSnap.exists()) return;
+        const d = mangaSnap.data();
 
-            const datos = {
-                id: mangaId, title: d.title, chapter: numLimpio,
-                image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
-            };
+        const datos = {
+            id: mangaId, title: d.title, chapter: numLimpio,
+            image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
+        };
 
-            // Guardado Local
-            localStorage.setItem("manga_last_seen", JSON.stringify(datos));
+        localStorage.setItem("manga_last_seen", JSON.stringify(datos));
 
-            // Guardado en la Nube (Solo si el usuario ya fue detectado)
-            if (currentUser) {
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    [`readingHistory.${mangaId}`]: datos
-                });
-            }
-        } catch (e) { console.error("Error guardando:", e); }
+        if (currentUser) {
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                [`readingHistory.${mangaId}`]: datos
+            });
+        }
     }
 
-    // Escuchador de Auth: Cuando el usuario entra, guardamos su presencia de inmediato
-    onAuthStateChanged(auth, (user) => { 
-        currentUser = user; 
-        if(user) {
-            // Guardado inicial apenas detectamos al usuario
-            guardarProgreso(window.scrollY);
-        }
-    });
-
-    // Escuchador de Scroll: Sigue funcionando como antes
     window.addEventListener('scroll', () => {
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(() => guardarProgreso(window.scrollY), 1000);
@@ -112,20 +101,42 @@
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
+          
+          // --- CORRECCIÓN DE SCROLL (TIMING PRO) ---
+          let imagesLoaded = 0;
+          const totalImages = tomo.images.length;
+
           tomo.images.forEach((url) => {
             const img = document.createElement("img");
             img.src = url;
+            img.loading = "lazy";
+            
             img.onload = () => {
-                if (shouldScroll) {
-                    const local = JSON.parse(localStorage.getItem("manga_last_seen"));
-                    if (local && local.id === mangaId) window.scrollTo(0, local.scrollPos);
+                imagesLoaded++;
+                // Solo ejecutamos el scroll cuando cargó la ÚLTIMA imagen
+                if (imagesLoaded === totalImages && shouldScroll) {
+                    let targetScroll = 0;
+                    
+                    // Prioridad 1: Scroll que viene en la URL (Nube/Sincronizado)
+                    if (savedScrollParam) {
+                        targetScroll = parseFloat(savedScrollParam);
+                    } else {
+                        // Prioridad 2: Scroll local (para Invitados/mismo dispositivo)
+                        const local = JSON.parse(localStorage.getItem("manga_last_seen"));
+                        if (local && local.id === mangaId && local.chapter === numLimpio) {
+                            targetScroll = local.scrollPos || 0;
+                        }
+                    }
+                    
+                    // Hacemos el scroll suave para mejor UX
+                    window.scrollTo({
+                        top: targetScroll,
+                        behavior: 'smooth'
+                    });
                 }
             };
             cont.appendChild(img);
           });
-          
-          // GUARDADO FORZADO: Al cargar el capítulo también disparamos el guardado
-          guardarProgreso(window.scrollY);
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
