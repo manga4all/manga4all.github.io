@@ -1,81 +1,139 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manga 4 All</title>
-  <link rel="stylesheet" href="css/style.css?v=22">
-  <style>
-    /* Ajustes de espacio específicos para esta página */
-    .container { padding-top: 5px; padding-bottom: 5px; }
-    .section-title { margin-top: 15px !important; margin-bottom: 15px !important; }
-    header { margin-bottom: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manga 4 All</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/style.css?v=23">
+    <style>
+        * { font-family: 'Poppins', sans-serif !important; }
+        .container { padding-top: 5px; padding-bottom: 5px; }
+        .section-title { margin-top: 15px !important; margin-bottom: 15px !important; }
+        
+        /* ESTILOS CARRUSEL "CONTINUAR LEYENDO" */
+        .continue-wrapper { position: relative; display: flex; align-items: center; }
+        .carousel-track { 
+            display: flex; gap: 15px; overflow-x: auto; scroll-behavior: smooth; 
+            padding: 10px 5px; width: 100%;
+        }
+        .carousel-track::-webkit-scrollbar { display: none; }
+        .carousel-btn {
+            background: #ff0055; color: white; border: none; border-radius: 50%;
+            width: 35px; height: 35px; cursor: pointer; position: absolute; z-index: 10;
+            display: none; box-shadow: 0 0 10px rgba(255,0,85,0.5); font-weight: bold;
+        }
+        .btn-prev { left: -15px; }
+        .btn-next { right: -15px; }
+
+        .history-item {
+            min-width: 280px; max-width: 280px; display: flex; align-items: center; gap: 12px; 
+            background: #111; padding: 10px; border-radius: 12px; border: 1px solid #1f1f1f; 
+            text-decoration: none; color: white; transition: 0.3s; flex-shrink: 0;
+        }
+        .history-item:hover { border-color: #ff0055; transform: translateY(-3px); }
+        .history-item img { width: 55px; height: 80px; object-fit: cover; border-radius: 6px; }
+    </style>
 </head>
 <body>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/navbar.css">
 
-<div id="main-navbar"></div>
+    <div id="main-navbar"></div>
 
-<script type="module" src="js/navbar.js"></script>
+    <header>
+        <img src="assets/banners/1299859.jpg" alt="Banner" class="banner-img">
+        <div class="overlay"></div>
+        <div class="header-content">
+            <h1>Manga 4 All</h1>
+            <p>Tu portal definitivo para sumergirte en el mundo del manga en español.</p>
+        </div>
+    </header>
 
-  <header>
-    <img src="assets/banners/1299859.jpg" alt="Banner" class="banner-img">
-    <div class="overlay"></div>
-    <div class="header-content">
-      <h1>Manga 4 All</h1>
-      <p>Tu portal definitivo para sumergirte en el mundo del manga en español.</p>
+    <div id="continue-container" class="container" style="display: none; margin-bottom: 20px;">
+        <h2 class="section-title">Continuar Leyendo</h2>
+        <div class="continue-wrapper">
+            <button class="carousel-btn btn-prev" id="prevHist">❮</button>
+            <div id="continue-track" class="carousel-track"></div>
+            <button class="carousel-btn btn-next" id="nextHist">❯</button>
+        </div>
     </div>
-  </header>
 
-  <div id="continue-container" class="container" style="display: none; margin-top: 0; margin-bottom: 10px;">
-      <h2 class="section-title">Continuar Leyendo</h2>
-      <div id="continue-card-place"></div>
-  </div>
+    <div class="container" style="margin-bottom: 10px;">
+        <h2 class="section-title">Últimas Actualizaciones</h2>
+        <div class="updates-wrapper">
+            <div id="updates-track" class="updates-track"></div>
+        </div>
+    </div>
 
-  <div class="container" style="margin-top: 0; margin-bottom: 10px;">
-      <h2 class="section-title">Últimas Actualizaciones</h2>
-      <div class="updates-wrapper" style="padding-top: 0;">
-          <div id="updates-track" class="updates-track"></div>
-      </div>
-  </div>
+    <main class="container">
+        <h2 class="section-title">Destacados</h2>
+        <div id="manga-grid" class="manga-grid"></div>
+    </main>
 
-  <main class="container" style="margin-top: 0;">
-    <h2 class="section-title">Destacados</h2>
-    <div id="manga-grid" class="manga-grid"></div>
-  </main>
+    <footer>Manga 4 All © 2026</footer>
 
-  <footer>Manga 4 All © 2026</footer>
+    <script type="module" src="js/navbar.js"></script>
+    <script type="module" src="js/app.js"></script>
 
-  <script type="module" src="js/app.js"></script>
- 
-  <script>
-    // Función autoejecutable para carga instantánea
-    (function renderHistorial() {
-        const contenedor = document.getElementById("continue-container");
-        const lugarCard = document.getElementById("continue-card-place");
-        const storage = localStorage.getItem("manga_last_seen");
+    <script type="module">
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-        if (storage && contenedor && lugarCard) {
-            const m = JSON.parse(storage);
-            contenedor.style.display = "block";
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
+            authDomain: "manga4all-f520f.firebaseapp.com",
+            projectId: "manga4all-f520f",
+            storageBucket: "manga4all-f520f.firebasestorage.app",
+            appId: "1:372561836700:web:cbb295bda656abd2ea0b59"
+        };
 
-            // Renderizado limpio con el parámetro scroll=true
-            lugarCard.innerHTML = `
-                <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true" style="display: flex; align-items: center; gap: 25px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #ff0055; text-decoration: none; color: white; transition: 0.3s;">
-                    <img src="${m.image}" style="width: 85px; height: 120px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                    <div style="flex: 1; text-align: left;">
-                        <span style="color: #ff0055; font-weight: bold; font-size: 0.8rem; letter-spacing: 0.5px; display: block;">REANUDAR LECTURA</span>
-                        <h3 style="margin: 3px 0; font-size: 1.4rem; line-height: 1.2;">${m.title}</h3>
-                        <p style="color: #bbb; font-size: 1rem;">Capítulo ${m.chapter}</p>
-                    </div>
-                </a>
-            `;
-        }
-    })();
-  </script>
+        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            const track = document.getElementById("continue-track");
+            const container = document.getElementById("continue-container");
+            let items = [];
+
+            if (user) {
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                if (userSnap.exists()) {
+                    const historyMap = userSnap.data().readingHistory || {};
+                    items = Object.values(historyMap)
+                        .sort((a, b) => b.time - a.time)
+                        .slice(0, 10); // Límite de 10 para usuarios
+                }
+            } else {
+                const local = localStorage.getItem("manga_last_seen");
+                if (local) items = [JSON.parse(local)]; // Solo 1 para invitados
+            }
+
+            if (items.length > 0) {
+                container.style.display = "block";
+                track.innerHTML = items.map(m => `
+                    <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true" class="history-item">
+                        <img src="${m.image}">
+                        <div style="overflow: hidden;">
+                            <span style="color: #ff0055; font-weight: bold; font-size: 0.65rem; letter-spacing: 1px;">REANUDAR</span>
+                            <h3 style="margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.title}</h3>
+                            <p style="color: #888; font-size: 0.8rem; margin: 0;">Capítulo ${m.chapter}</p>
+                        </div>
+                    </a>
+                `).join('');
+
+                if (items.length > 3) {
+                    document.getElementById("prevHist").style.display = "block";
+                    document.getElementById("nextHist").style.display = "block";
+                }
+            }
+        });
+
+        document.getElementById("nextHist").onclick = () => document.getElementById("continue-track").scrollLeft += 300;
+        document.getElementById("prevHist").onclick = () => document.getElementById("continue-track").scrollLeft -= 300;
+    </script>
 </body>
 </html>
