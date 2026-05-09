@@ -105,25 +105,29 @@
                     const historyMap = userSnap.data().readingHistory || {};
                     items = Object.values(historyMap)
                         .sort((a, b) => b.time - a.time)
-                        .slice(0, 10); // Límite de 10 para usuarios
+                        .slice(0, 10);
                 }
             } else {
                 const local = localStorage.getItem("manga_last_seen");
-                if (local) items = [JSON.parse(local)]; // Solo 1 para invitados
+                if (local) items = [JSON.parse(local)];
             }
 
             if (items.length > 0) {
                 container.style.display = "block";
-                track.innerHTML = items.map(m => `
-                    <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true" class="history-item">
-                        <img src="${m.image}">
-                        <div style="overflow: hidden;">
-                            <span style="color: #ff0055; font-weight: bold; font-size: 0.65rem; letter-spacing: 1px;">REANUDAR</span>
-                            <h3 style="margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.title}</h3>
-                            <p style="color: #888; font-size: 0.8rem; margin: 0;">Capítulo ${m.chapter}</p>
-                        </div>
-                    </a>
-                `).join('');
+                track.innerHTML = items.map(m => {
+                    // CORRECCIÓN: Pasamos el scrollPos en la URL para sincronización nube
+                    const pos = m.scrollPos || 0;
+                    return `
+                        <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true&savedScroll=${pos}" class="history-item">
+                            <img src="${m.image}">
+                            <div style="overflow: hidden;">
+                                <span style="color: #ff0055; font-weight: bold; font-size: 0.65rem; letter-spacing: 1px;">REANUDAR</span>
+                                <h3 style="margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.title}</h3>
+                                <p style="color: #888; font-size: 0.8rem; margin: 0;">Capítulo ${m.chapter}</p>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
 
                 if (items.length > 3) {
                     document.getElementById("prevHist").style.display = "block";
