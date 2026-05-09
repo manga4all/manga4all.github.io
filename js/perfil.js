@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,7 +14,6 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Variable temporal para la nueva foto
 let tempAvatarBase64 = null;
 
 window.switchTab = (tabId) => {
@@ -88,7 +87,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// SUBIDA DE FOTO (VISTA PREVIA)
 const avatarInput = document.getElementById('avatarUpload');
 if (avatarInput) {
     avatarInput.onchange = (e) => {
@@ -104,7 +102,6 @@ if (avatarInput) {
     };
 }
 
-// BOTÓN GUARDAR DATOS (NOMBRE, PAÍS Y FOTO)
 const saveBtn = document.getElementById('saveProfileBtn');
 if (saveBtn) {
     saveBtn.onclick = async () => {
@@ -112,15 +109,9 @@ if (saveBtn) {
         if (!user) return;
         const newName = document.getElementById('editName').value.trim();
         const newCountry = document.getElementById('editCountry').value;
-        
         try {
-            const updateData = {
-                displayName: newName,
-                country: newCountry
-            };
-            // Si hay una foto nueva cargada, la incluimos
+            const updateData = { displayName: newName, country: newCountry };
             if (tempAvatarBase64) updateData.photoURL = tempAvatarBase64;
-
             await updateDoc(doc(db, "users", user.uid), updateData);
             alert("✅ Perfil actualizado correctamente");
             location.reload();
@@ -128,21 +119,17 @@ if (saveBtn) {
     };
 }
 
-// BOTÓN CAMBIAR CONTRASEÑA
-const updatePassBtn = document.getElementById('updatePassBtn');
-if (updatePassBtn) {
-    updatePassBtn.onclick = async () => {
+// ARREGLO: Lógica para enviar correo de restablecimiento
+const sendResetBtn = document.getElementById('sendResetBtn');
+if (sendResetBtn) {
+    sendResetBtn.onclick = async () => {
         const user = auth.currentUser;
-        const newPass = document.getElementById('newPassword').value;
-        if (newPass.length < 6) return alert("❌ La contraseña debe tener al menos 6 caracteres");
-        
+        if (!user) return;
         try {
-            await updatePassword(user, newPass);
-            alert("✅ Contraseña actualizada");
-            document.getElementById('newPassword').value = "";
+            await sendPasswordResetEmail(auth, user.email);
+            alert(`✅ ¡Correo enviado a ${user.email}!\n\nRevisa tu bandeja de entrada para crear o cambiar tu contraseña.`);
         } catch (e) {
-            console.error(e);
-            alert("❌ Error: Por seguridad, debes haber iniciado sesión recientemente para cambiar tu contraseña.");
+            alert("Error al enviar el correo: " + e.message);
         }
     };
 }
