@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="tabTitle">Leyendo... | Manga 4 All</title>
+  <title id="tabTitle">Manga 4 All</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -48,17 +48,17 @@
     const mangaId = params.get("manga");
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
     const shouldScroll = params.get("scroll") === "true";
-    
-    // Capturamos el scroll que nos pasó el Index/Perfil en la URL
     const savedScrollParam = params.get("savedScroll");
 
     let currentUser = null;
-    onAuthStateChanged(auth, (user) => { currentUser = user; });
+    onAuthStateChanged(auth, (user) => { 
+        currentUser = user; 
+        if(user) guardarProgreso(window.scrollY);
+    });
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // FUNCIÓN DE GUARDADO (Sigue igual, guardando scrollY)
     async function guardarProgreso(scrollVal) {
         if (!mangaId || !numLimpio) return;
         const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
@@ -86,6 +86,10 @@
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
+
+      // --- CORRECCIÓN: Título dinámico de la pestaña ---
+      document.title = `M4A | Capítulo ${numLimpio}`;
+      
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("listBtnTop").href = `manga.html?id=${mangaId}`;
 
@@ -101,8 +105,6 @@
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
-          
-          // --- CORRECCIÓN DE SCROLL (TIMING PRO) ---
           let imagesLoaded = 0;
           const totalImages = tomo.images.length;
 
@@ -113,30 +115,22 @@
             
             img.onload = () => {
                 imagesLoaded++;
-                // Solo ejecutamos el scroll cuando cargó la ÚLTIMA imagen
                 if (imagesLoaded === totalImages && shouldScroll) {
                     let targetScroll = 0;
-                    
-                    // Prioridad 1: Scroll que viene en la URL (Nube/Sincronizado)
                     if (savedScrollParam) {
                         targetScroll = parseFloat(savedScrollParam);
                     } else {
-                        // Prioridad 2: Scroll local (para Invitados/mismo dispositivo)
                         const local = JSON.parse(localStorage.getItem("manga_last_seen"));
                         if (local && local.id === mangaId && local.chapter === numLimpio) {
                             targetScroll = local.scrollPos || 0;
                         }
                     }
-                    
-                    // Hacemos el scroll suave para mejor UX
-                    window.scrollTo({
-                        top: targetScroll,
-                        behavior: 'smooth'
-                    });
+                    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
                 }
             };
             cont.appendChild(img);
           });
+          guardarProgreso(window.scrollY);
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
