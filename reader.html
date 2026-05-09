@@ -1,143 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="tabTitle">Leyendo... | Manga 4 All</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/navbar.css">
-  
-  <style>
-    /* Estilos base con la nueva fuente */
-    * { 
-        font-family: 'Poppins', sans-serif !important; 
-        box-sizing: border-box;
-    }
-    
-    body { 
-        background: #070707; 
-        color: white; 
-        margin: 0; 
-        padding-top: 75px; /* Altura de la navbar */
-    }
+// ... (Mantén todo igual hasta el bloque de Firebase en el script tipo module)
 
-    /* Navegación del Lector (Sticky) */
-    .reader-nav { 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        gap: 15px; 
-        padding: 15px; 
-        background: rgba(17, 17, 17, 0.95); 
-        position: sticky; 
-        top: 75px; /* Pegado justo debajo de la navbar */
-        z-index: 1000; 
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid #1f1f1f;
-    }
-
-    .btn-nav { 
-        background: #ff0055; 
-        color: white; 
-        padding: 10px 25px; 
-        border-radius: 25px; 
-        text-decoration: none; 
-        font-weight: bold; 
-        font-size: 0.9rem;
-        transition: 0.3s; 
-    }
-    
-    .btn-nav:hover { transform: scale(1.05); background: #ff2b72; }
-    
-    .btn-nav.disabled { 
-        background: #222 !important; 
-        color: #555 !important; 
-        pointer-events: none; 
-        opacity: 0.6; 
-    }
-
-    #chapterLabelTop, #chapterLabelBottom { 
-        font-weight: 600; 
-        color: white; 
-        text-align: center; 
-        min-width: 150px; 
-        font-size: 1rem; 
-    }
-
-    /* Contenedor de Imágenes */
-    .manga-pages-container { 
-        max-width: 850px; 
-        margin: 20px auto; 
-        display: flex; 
-        flex-direction: column; 
-        min-height: 50vh; 
-        box-shadow: 0 0 50px rgba(0,0,0,0.5);
-    }
-
-    .manga-pages-container img { 
-        width: 100%; 
-        height: auto; 
-        display: block; 
-        background: #000;
-        margin-bottom: 2px; /* Separación mínima elegante */
-    }
-
-    .list-btn { 
-        background: #1a1a1a; 
-        color: #ccc; 
-        padding: 10px 20px; 
-        border-radius: 25px; 
-        text-decoration: none; 
-        display: flex; 
-        align-items: center; 
-        gap: 8px; 
-        font-size: 0.85rem;
-        border: 1px solid #333;
-        transition: 0.3s;
-    }
-    
-    .list-btn:hover { border-color: #ff0055; color: white; }
-
-    footer { 
-        text-align: center; 
-        padding: 40px; 
-        color: #444; 
-        font-size: 0.8rem; 
-        letter-spacing: 1px;
-    }
-  </style>
-</head>
-<body>
-
-  <div id="main-navbar"></div>
-
-  <div class="reader-nav">
-    <a href="#" id="listBtnTop" class="list-btn">☰ Lista</a>
-    <a href="#" id="prevBtnTop" class="btn-nav">Anterior</a>
-    <span id="chapterLabelTop">Cargando...</span>
-    <a href="#" id="nextBtnTop" class="btn-nav">Siguiente</a>
-  </div>
-
-  <div class="manga-pages-container" id="mangaPages">
-      </div>
-
-  <div class="reader-nav" style="margin-bottom: 50px; position: static; border-top: 1px solid #1f1f1f;">
-    <a href="#" id="listBtnBottom" class="list-btn">☰ Lista</a>
-    <a href="#" id="prevBtnBottom" class="btn-nav">Anterior</a>
-    <span id="chapterLabelBottom">Cargando...</span>
-    <a href="#" id="nextBtnBottom" class="btn-nav">Siguiente</a>
-  </div>
-
-  <footer>MANGA 4 ALL © 2026</footer>
-
-  <script type="module" src="js/navbar.js"></script>
-
-  <script type="module">
     import { db } from "./js/firebase.js";
-    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+
+    const auth = getAuth();
+    let currentUser = null;
+
+    // Detectar usuario para saber dónde guardar
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+    });
 
     const params = new URLSearchParams(window.location.search);
     const mangaId = params.get("manga");
@@ -148,113 +21,42 @@
         const parsed = parseFloat(n);
         return isNaN(parsed) ? n : parsed.toString();
     }
-
     const numLimpio = limpiarNum(rawNumber);
 
-    // GUARDAR POSICIÓN DE SCROLL
-    window.addEventListener('scroll', () => {
-        const storage = localStorage.getItem("manga_last_seen");
-        if (storage) {
-            const data = JSON.parse(storage);
-            if (data.id === mangaId && data.chapter === numLimpio) {
-                data.scrollPos = window.scrollY;
-                localStorage.setItem("manga_last_seen", JSON.stringify(data));
-            }
+    // FUNCIÓN UNIFICADA DE GUARDADO
+    async function guardarProgreso(scrollVal) {
+        const mangaDoc = await getDoc(doc(db, "mangas", mangaId));
+        if (!mangaDoc.exists()) return;
+        const d = mangaDoc.data();
+
+        const datos = {
+            id: mangaId,
+            title: d.title,
+            chapter: numLimpio,
+            image: d.cover || d.image,
+            scrollPos: scrollVal || 0,
+            time: Date.now()
+        };
+
+        // 1. Siempre guardar en Local (para invitados o sesión actual)
+        localStorage.setItem("manga_last_seen", JSON.stringify(datos));
+
+        // 2. Si hay usuario, sincronizar con la nube
+        if (currentUser) {
+            const userRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userRef, {
+                [`readingHistory.${mangaId}`]: datos
+            });
         }
+    }
+
+    // Guardar al scrollear (con un pequeño delay para no saturar Firebase)
+    let saveTimeout;
+    window.addEventListener('scroll', () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            guardarProgreso(window.scrollY);
+        }, 1000);
     });
 
-    async function loadReader() {
-      if (!mangaId || !rawNumber) return;
-
-      document.title = `Cap. ${numLimpio} | Manga 4 All`;
-      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
-      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
-      document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
-
-      try {
-        const mangaDoc = await getDoc(doc(db, "mangas", mangaId));
-        if (mangaDoc.exists()) {
-            const d = mangaDoc.data();
-            const storage = localStorage.getItem("manga_last_seen");
-            let savedScroll = 0;
-
-            if (storage) {
-                const old = JSON.parse(storage);
-                if (old.id === mangaId && old.chapter === numLimpio) savedScroll = old.scrollPos || 0;
-            }
-
-            const historial = {
-                id: mangaId,
-                title: d.title,
-                chapter: numLimpio,
-                image: d.cover || d.image,
-                scrollPos: savedScroll,
-                time: Date.now()
-            };
-            localStorage.setItem("manga_last_seen", JSON.stringify(historial));
-        }
-
-        const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
-        const snap = await getDocs(q);
-        let caps = [];
-        snap.forEach(doc => {
-            let data = doc.data();
-            data.normNum = String(data.number).trim();
-            caps.push(data);
-        });
-
-        caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-        const idx = caps.findIndex(c => c.normNum === rawNumber);
-        const tomo = caps[idx];
-
-        if (tomo && tomo.images) {
-          const cont = document.getElementById("mangaPages");
-          cont.innerHTML = "";
-          
-          let imagesLoaded = 0;
-          tomo.images.forEach((url, i) => {
-            const img = document.createElement("img");
-            img.src = url;
-            img.loading = "lazy"; // Optimización de carga
-            
-            img.onload = () => {
-                imagesLoaded++;
-                if (imagesLoaded === tomo.images.length && shouldScroll) {
-                    const data = JSON.parse(localStorage.getItem("manga_last_seen"));
-                    if (data && data.scrollPos) {
-                        window.scrollTo({ top: data.scrollPos, behavior: 'smooth' });
-                    }
-                }
-            };
-            cont.appendChild(img);
-          });
-        }
-
-        // Navegación Anterior
-        if (idx > 0) {
-            const p = caps[idx-1].number;
-            document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${p}`;
-            document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${p}`;
-        } else {
-            document.getElementById("prevBtnTop").classList.add("disabled");
-            document.getElementById("prevBtnBottom").classList.add("disabled");
-        }
-
-        // Navegación Siguiente
-        if (idx !== -1 && idx < caps.length - 1) {
-            const n = caps[idx+1].number;
-            document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${n}`;
-            document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${n}`;
-        } else {
-            const nt = document.getElementById("nextBtnTop");
-            const nb = document.getElementById("nextBtnBottom");
-            nt.classList.add("disabled"); nb.classList.add("disabled");
-            nt.textContent = nb.textContent = "FIN";
-        }
-
-      } catch (e) { console.error(e); }
-    }
-    loadReader();
-  </script>
-</body>
-</html>
+    // ... (El resto de tu función loadReader se mantiene IGUAL)
