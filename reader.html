@@ -50,31 +50,46 @@
     const shouldScroll = params.get("scroll") === "true";
     
     let currentUser = null;
-    onAuthStateChanged(auth, (user) => { currentUser = user; });
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
+    // FUNCIÓN DE GUARDADO MEJORADA
     async function guardarProgreso(scrollVal) {
-        if (!mangaId) return;
-        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-        if (!mangaSnap.exists()) return;
-        const d = mangaSnap.data();
+        if (!mangaId || !numLimpio) return;
+        
+        try {
+            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
+            if (!mangaSnap.exists()) return;
+            const d = mangaSnap.data();
 
-        const datos = {
-            id: mangaId, title: d.title, chapter: numLimpio,
-            image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
-        };
+            const datos = {
+                id: mangaId, title: d.title, chapter: numLimpio,
+                image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
+            };
 
-        localStorage.setItem("manga_last_seen", JSON.stringify(datos));
+            // Guardado Local
+            localStorage.setItem("manga_last_seen", JSON.stringify(datos));
 
-        if (currentUser) {
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                [`readingHistory.${mangaId}`]: datos
-            });
-        }
+            // Guardado en la Nube (Solo si el usuario ya fue detectado)
+            if (currentUser) {
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    [`readingHistory.${mangaId}`]: datos
+                });
+            }
+        } catch (e) { console.error("Error guardando:", e); }
     }
 
+    // Escuchador de Auth: Cuando el usuario entra, guardamos su presencia de inmediato
+    onAuthStateChanged(auth, (user) => { 
+        currentUser = user; 
+        if(user) {
+            // Guardado inicial apenas detectamos al usuario
+            guardarProgreso(window.scrollY);
+        }
+    });
+
+    // Escuchador de Scroll: Sigue funcionando como antes
     window.addEventListener('scroll', () => {
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(() => guardarProgreso(window.scrollY), 1000);
@@ -108,6 +123,9 @@
             };
             cont.appendChild(img);
           });
+          
+          // GUARDADO FORZADO: Al cargar el capítulo también disparamos el guardado
+          guardarProgreso(window.scrollY);
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
