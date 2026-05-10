@@ -90,12 +90,9 @@ if(toggleText) {
     };
 }
 
-// Cierre de modal
 window.openAuth = () => document.getElementById('authModal').style.display = 'flex';
 const closeBtn = document.getElementById('closeM');
 if(closeBtn) closeBtn.onclick = () => document.getElementById('authModal').style.display = 'none';
-
-// --- ACCIONES DE AUTENTICACIÓN ---
 
 mainBtn.onclick = async () => {
     const email = document.getElementById('logEmail').value.trim();
@@ -124,7 +121,7 @@ document.getElementById('doGoogleLogin').onclick = () => {
 function setupLogout() {
     const btn = document.getElementById('logout');
     if(btn) btn.onclick = (e) => {
-        e.stopPropagation(); // Evita que al dar click a Salir también intente ir al perfil
+        e.stopPropagation();
         signOut(auth);
     };
 }
@@ -146,7 +143,7 @@ async function syncUser(user) {
     }
 }
 
-// Estado del Usuario
+// ESTADO DEL USUARIO MODIFICADO SOLO PARA LA IMAGEN
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -156,7 +153,18 @@ onAuthStateChanged(auth, async (user) => {
         const modal = document.getElementById('authModal');
         if(modal) modal.style.display = 'none';
         
-        const userImg = user.photoURL ? user.photoURL : 'img/default-user.png';
+        // --- BUSCAMOS LA FOTO EN FIRESTORE ---
+        let userImg = 'img/default-user.png';
+        try {
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if (userSnap.exists()) {
+                const userData = userSnap.data();
+                // Prioridad a la de Firestore, luego Google, luego default
+                userImg = userData.photoURL || user.photoURL || 'img/default-user.png';
+            }
+        } catch (e) {
+            userImg = user.photoURL || 'img/default-user.png';
+        }
         
         area.innerHTML = `
             <div class="user-capsule" id="goToProfile" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
@@ -166,7 +174,6 @@ onAuthStateChanged(auth, async (user) => {
             </div>
         `;
         
-        // Redirección al perfil al hacer clic en la cápsula
         document.getElementById('goToProfile').onclick = () => window.location.href = 'perfil.html';
         setupLogout();
     } else {
