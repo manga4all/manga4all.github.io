@@ -51,16 +51,20 @@
     const savedScrollParam = params.get("savedScroll");
 
     let currentUser = null;
+    let isReadyToSave = false; // LLAVE DE SEGURIDAD
+
     onAuthStateChanged(auth, (user) => { 
         currentUser = user; 
-        if(user) guardarProgreso(window.scrollY);
+        // Eliminamos el guardado automático al inicio para no sobrescribir con 0
     });
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
     async function guardarProgreso(scrollVal) {
-        if (!mangaId || !numLimpio) return;
+        // Solo guardamos si la página ya terminó de cargar y hacer el scroll inicial
+        if (!mangaId || !numLimpio || !isReadyToSave) return;
+
         const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
         if (!mangaSnap.exists()) return;
         const d = mangaSnap.data();
@@ -80,6 +84,7 @@
     }
 
     window.addEventListener('scroll', () => {
+        if (!isReadyToSave) return; // Bloqueo de guardado durante el salto inicial
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(() => guardarProgreso(window.scrollY), 1000);
     });
@@ -87,9 +92,7 @@
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
-      // --- CORRECCIÓN: Título dinámico de la pestaña ---
       document.title = `M4A | Capítulo ${numLimpio}`;
-      
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("listBtnTop").href = `manga.html?id=${mangaId}`;
 
@@ -115,22 +118,32 @@
             
             img.onload = () => {
                 imagesLoaded++;
-                if (imagesLoaded === totalImages && shouldScroll) {
-                    let targetScroll = 0;
-                    if (savedScrollParam) {
-                        targetScroll = parseFloat(savedScrollParam);
-                    } else {
-                        const local = JSON.parse(localStorage.getItem("manga_last_seen"));
-                        if (local && local.id === mangaId && local.chapter === numLimpio) {
-                            targetScroll = local.scrollPos || 0;
+                // Cuando todas las imágenes están listas
+                if (imagesLoaded === totalImages) {
+                    if (shouldScroll) {
+                        let targetScroll = 0;
+                        if (savedScrollParam) {
+                            targetScroll = parseFloat(savedScrollParam);
+                        } else {
+                            const local = JSON.parse(localStorage.getItem("manga_last_seen"));
+                            if (local && local.id === mangaId && local.chapter === numLimpio) {
+                                targetScroll = local.scrollPos || 0;
+                            }
                         }
+                        
+                        // Salto inmediato para precisión técnica
+                        window.scrollTo(0, targetScroll);
+
+                        // Esperamos un momento a que el navegador se asiente para activar el guardado
+                        setTimeout(() => { isReadyToSave = true; }, 1500);
+                    } else {
+                        // Si no hay que scrollear, activamos guardado de inmediato
+                        isReadyToSave = true;
                     }
-                    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
                 }
             };
             cont.appendChild(img);
           });
-          guardarProgreso(window.scrollY);
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
