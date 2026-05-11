@@ -48,50 +48,65 @@
     const mangaId = params.get("manga");
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
     const shouldScroll = params.get("scroll") === "true";
-    const savedScrollParam = params.get("savedScroll");
-
+    
     let currentUser = null;
-    let isReadyToSave = false; // LLAVE DE SEGURIDAD
+    let isReadyToSave = false;
 
-    onAuthStateChanged(auth, (user) => { 
-        currentUser = user; 
-        // Eliminamos el guardado automático al inicio para no sobrescribir con 0
-    });
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    async function guardarProgreso(scrollVal) {
-        // Solo guardamos si la página ya terminó de cargar y hacer el scroll inicial
+    // NUEVA LÓGICA: Encontrar qué imagen está en pantalla
+    function obtenerIndiceImagenVisible() {
+        const imagenes = document.querySelectorAll("#mangaPages img");
+        let indiceVisible = 0;
+        let menorDistancia = Math.abs(window.scrollY - 75); // Ajuste por la navbar
+
+        imagenes.forEach((img, index) => {
+            const rect = img.getBoundingClientRect();
+            // Si la parte superior de la imagen está cerca del tope de la pantalla
+            if (rect.top < 150 && rect.bottom > 0) {
+                indiceVisible = index;
+            }
+        });
+        return indiceVisible;
+    }
+
+    async function guardarProgreso() {
         if (!mangaId || !numLimpio || !isReadyToSave) return;
+        
+        const imgIndex = obtenerIndiceImagenVisible();
+        
+        try {
+            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
+            if (!mangaSnap.exists()) return;
+            const d = mangaSnap.data();
 
-        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-        if (!mangaSnap.exists()) return;
-        const d = mangaSnap.data();
+            const datos = {
+                id: mangaId, title: d.title, chapter: numLimpio,
+                image: d.cover || d.image, 
+                imageIndex: imgIndex, // GUARDAMOS EL ÍNDICE DE LA IMAGEN
+                time: Date.now()
+            };
 
-        const datos = {
-            id: mangaId, title: d.title, chapter: numLimpio,
-            image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
-        };
-
-        localStorage.setItem("manga_last_seen", JSON.stringify(datos));
-
-        if (currentUser) {
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                [`readingHistory.${mangaId}`]: datos
-            });
-        }
+            localStorage.setItem("manga_last_seen", JSON.stringify(datos));
+            if (currentUser) {
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    [`readingHistory.${mangaId}`]: datos
+                });
+            }
+        } catch(e) { console.error(e); }
     }
 
     window.addEventListener('scroll', () => {
-        if (!isReadyToSave) return; // Bloqueo de guardado durante el salto inicial
+        if (!isReadyToSave) return;
         clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(() => guardarProgreso(window.scrollY), 1000);
+        window.saveTimer = setTimeout(() => guardarProgreso(), 1000);
     });
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
-
       document.title = `M4A | Capítulo ${numLimpio}`;
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("listBtnTop").href = `manga.html?id=${mangaId}`;
@@ -109,41 +124,50 @@
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
           let imagesLoaded = 0;
-          const totalImages = tomo.images.length;
 
-          tomo.images.forEach((url) => {
+          tomo.images.forEach((url, i) => {
             const img = document.createElement("img");
             img.src = url;
-            img.loading = "lazy";
-            
+            img.dataset.index = i; // Marcamos cada imagen con su número
             img.onload = () => {
                 imagesLoaded++;
-                // Cuando todas las imágenes están listas
-                if (imagesLoaded === totalImages) {
-                    if (shouldScroll) {
-                        let targetScroll = 0;
-                        if (savedScrollParam) {
-                            targetScroll = parseFloat(savedScrollParam);
-                        } else {
-                            const local = JSON.parse(localStorage.getItem("manga_last_seen"));
-                            if (local && local.id === mangaId && local.chapter === numLimpio) {
-                                targetScroll = local.scrollPos || 0;
-                            }
-                        }
-                        
-                        // Salto inmediato para precisión técnica
-                        window.scrollTo(0, targetScroll);
-
-                        // Esperamos un momento a que el navegador se asiente para activar el guardado
-                        setTimeout(() => { isReadyToSave = true; }, 1500);
-                    } else {
-                        // Si no hay que scrollear, activamos guardado de inmediato
-                        isReadyToSave = true;
-                    }
+                if (imagesLoaded === tomo.images.length) {
+                    ejecutarSaltoAImagen();
                 }
             };
             cont.appendChild(img);
           });
+        }
+
+        async function ejecutarSaltoAImagen() {
+            if (shouldScroll) {
+                let targetIndex = 0;
+                
+                // Intentar sacar el índice de la nube/local
+                const local = JSON.parse(localStorage.getItem("manga_last_seen"));
+                if (local && local.id === mangaId && local.chapter === numLimpio) {
+                    targetIndex = local.imageIndex || 0;
+                }
+
+                const todasLasImgs = document.querySelectorAll("#mangaPages img");
+                if (todasLasImgs[targetIndex]) {
+                    // Saltamos a la imagen guardada
+                    const yOffset = -80; // Para que no la tape la navbar
+                    const y = todasLasImgs[targetIndex].getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    
+                    window.scrollTo(0, y);
+                    
+                    // Doble verificación para tablets
+                    setTimeout(() => {
+                        window.scrollTo(0, y);
+                        isReadyToSave = true;
+                    }, 300);
+                } else {
+                    isReadyToSave = true;
+                }
+            } else {
+                isReadyToSave = true;
+            }
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
