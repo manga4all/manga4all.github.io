@@ -51,22 +51,24 @@
     
     let currentUser = null;
     let isReadyToSave = false;
-
-    onAuthStateChanged(auth, (user) => { currentUser = user; });
+    let imagesLoaded = 0;
+    let totalImages = 0;
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // NUEVA LÓGICA: Encontrar qué imagen está en pantalla
+    // Esperar al usuario para poder leer la nube
+    onAuthStateChanged(auth, (user) => { 
+        currentUser = user; 
+        verificarSiTodoEstaListo();
+    });
+
     function obtenerIndiceImagenVisible() {
         const imagenes = document.querySelectorAll("#mangaPages img");
         let indiceVisible = 0;
-        let menorDistancia = Math.abs(window.scrollY - 75); // Ajuste por la navbar
-
         imagenes.forEach((img, index) => {
             const rect = img.getBoundingClientRect();
-            // Si la parte superior de la imagen está cerca del tope de la pantalla
-            if (rect.top < 150 && rect.bottom > 0) {
+            if (rect.top < 200 && rect.bottom > 0) {
                 indiceVisible = index;
             }
         });
@@ -74,7 +76,7 @@
     }
 
     async function guardarProgreso() {
-        if (!mangaId || !numLimpio || !isReadyToSave) return;
+        if (!mangaId || !numLimpio || !isReadyToSave || !currentUser) return;
         
         const imgIndex = obtenerIndiceImagenVisible();
         
@@ -86,16 +88,14 @@
             const datos = {
                 id: mangaId, title: d.title, chapter: numLimpio,
                 image: d.cover || d.image, 
-                imageIndex: imgIndex, // GUARDAMOS EL ÍNDICE DE LA IMAGEN
+                imageIndex: imgIndex,
                 time: Date.now()
             };
 
             localStorage.setItem("manga_last_seen", JSON.stringify(datos));
-            if (currentUser) {
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    [`readingHistory.${mangaId}`]: datos
-                });
-            }
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                [`readingHistory.${mangaId}`]: datos
+            });
         } catch(e) { console.error(e); }
     }
 
@@ -104,6 +104,49 @@
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(() => guardarProgreso(), 1000);
     });
+
+    // Función para verificar si el usuario Y las imágenes están listos
+    function verificarSiTodoEstaListo() {
+        if (currentUser && imagesLoaded === totalImages && totalImages > 0) {
+            ejecutarSaltoAImagen();
+        }
+    }
+
+    async function ejecutarSaltoAImagen() {
+        if (!shouldScroll) { isReadyToSave = true; return; }
+
+        try {
+            // BUSCAMOS EN LA NUBE (FIREBASE) PRIMERO
+            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+            let targetIndex = 0;
+
+            if (userSnap.exists()) {
+                const history = userSnap.data().readingHistory;
+                if (history && history[mangaId] && history[mangaId].chapter === numLimpio) {
+                    targetIndex = history[mangaId].imageIndex || 0;
+                }
+            }
+
+            const todasLasImgs = document.querySelectorAll("#mangaPages img");
+            if (todasLasImgs[targetIndex]) {
+                const yOffset = -85; 
+                const y = todasLasImgs[targetIndex].getBoundingClientRect().top + window.pageYOffset + yOffset;
+                
+                window.scrollTo(0, y);
+                
+                // Re-intento para Tablets lentas
+                setTimeout(() => {
+                    window.scrollTo(0, y);
+                    isReadyToSave = true;
+                }, 600);
+            } else {
+                isReadyToSave = true;
+            }
+        } catch (e) {
+            console.error(e);
+            isReadyToSave = true;
+        }
+    }
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
@@ -123,51 +166,17 @@
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
-          let imagesLoaded = 0;
+          totalImages = tomo.images.length;
 
           tomo.images.forEach((url, i) => {
             const img = document.createElement("img");
             img.src = url;
-            img.dataset.index = i; // Marcamos cada imagen con su número
             img.onload = () => {
                 imagesLoaded++;
-                if (imagesLoaded === tomo.images.length) {
-                    ejecutarSaltoAImagen();
-                }
+                verificarSiTodoEstaListo();
             };
             cont.appendChild(img);
           });
-        }
-
-        async function ejecutarSaltoAImagen() {
-            if (shouldScroll) {
-                let targetIndex = 0;
-                
-                // Intentar sacar el índice de la nube/local
-                const local = JSON.parse(localStorage.getItem("manga_last_seen"));
-                if (local && local.id === mangaId && local.chapter === numLimpio) {
-                    targetIndex = local.imageIndex || 0;
-                }
-
-                const todasLasImgs = document.querySelectorAll("#mangaPages img");
-                if (todasLasImgs[targetIndex]) {
-                    // Saltamos a la imagen guardada
-                    const yOffset = -80; // Para que no la tape la navbar
-                    const y = todasLasImgs[targetIndex].getBoundingClientRect().top + window.pageYOffset + yOffset;
-                    
-                    window.scrollTo(0, y);
-                    
-                    // Doble verificación para tablets
-                    setTimeout(() => {
-                        window.scrollTo(0, y);
-                        isReadyToSave = true;
-                    }, 300);
-                } else {
-                    isReadyToSave = true;
-                }
-            } else {
-                isReadyToSave = true;
-            }
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
