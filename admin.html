@@ -34,7 +34,7 @@
     input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 15px; }
     .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
 
-    .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; }
+    .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222; }
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .file-input-wrapper { background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; text-align: center; cursor: pointer; }
     
@@ -83,16 +83,16 @@
         </div>
 
         <div id="fullTab" class="tab-content">
-            <h1>🚀 Todo en Uno (Manga + JSON)</h1>
+            <h1>🚀 Todo en Uno</h1>
             <div class="input-group"><label>Título</label><input type="text" id="fullMangaTitle"></div>
-            <div class="input-group"><label>JSON de Capítulos</label><input type="file" id="fullJsonInput" accept=".json"></div>
+            <div class="input-group"><label>JSON</label><input type="file" id="fullJsonInput" accept=".json"></div>
             <button class="primary-btn" id="fullProcessBtn">Subir Todo</button>
             <div id="fullStatus"></div>
         </div>
 
         <div id="bulkTab" class="tab-content">
             <h1>📦 Carga Industrial (Excel)</h1>
-            <div class="input-group"><label>1. Excel</label><input type="file" id="bulkExcelInput" accept=".xlsx, .csv"></div>
+            <div class="input-group"><label>1. Excel</label><input type="file" id="bulkExcelInput" accept=".xlsx"></div>
             <div class="input-group">
                 <label>2. Carpeta de JSONs</label>
                 <div class="file-input-wrapper" onclick="document.getElementById('bulkFolderInput').click()">
@@ -108,19 +108,21 @@
         <div id="editTab" class="tab-content">
             <h1>✏️ Gestionar Manga</h1>
             
-            <div style="background:#1a1a1a; padding:20px; border-radius:15px; border:1px solid #333; margin-bottom:30px;">
-                <h3 style="color:#ff0055; margin-bottom:10px;">🛠️ Reparación Automática Global</h3>
-                <p style="font-size:0.85rem; color:#888; margin-bottom:15px;">Este botón buscará <b>TODOS</b> los capítulos de la web que no tengan portada y les pondrá la de su manga correspondiente de forma automática.</p>
-                <button class="primary-btn" id="globalRepairBtn" style="background:#900;">🔥 REPARAR TODAS LAS PORTADAS AHORA</button>
+            <div style="background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333; margin-bottom:20px;">
+                <p style="font-size:0.8rem; color:#888;">Herramienta Rápida:</p>
+                <button class="primary-btn" id="globalRepairBtn" style="background:#444; padding:10px; font-size:0.8rem;">Reparar Todas las Portadas de Capítulos</button>
             </div>
 
-            <hr style="border:0; border-top:1px solid #222; margin-bottom:30px;">
-            
-            <h3>Editar Manga Individual</h3>
-            <select id="editMangaSelector" style="margin-top:10px;"><option value="">-- Seleccionar --</option></select>
+            <select id="editMangaSelector"><option value="">-- Seleccionar Manga --</option></select>
             
             <div id="editForm" style="display:none; margin-top:20px;">
                 <div class="input-group"><label>Título</label><input type="text" id="editTitle"></div>
+                <div class="input-group"><label>Descripción</label><textarea id="editDesc"></textarea></div>
+                <div class="input-group"><label>Portada URL</label><input type="text" id="editCover"></div>
+                <div class="input-group">
+                    <label>Géneros</label>
+                    <div class="genres-grid" id="editGenresGrid"></div>
+                </div>
                 <button class="primary-btn" id="updateMangaBtn">Guardar Cambios</button>
             </div>
             <div id="editStatus"></div>
@@ -129,28 +131,27 @@
         <div id="singleTab" class="tab-content">
             <h1>📄 Capítulo Individual</h1>
             <input type="text" id="singleMangaId" placeholder="ID del Manga">
-            <input type="number" id="singleNum" placeholder="Número del Capítulo">
-            <textarea id="singleImages" placeholder="Links de imágenes (uno por línea)" style="height:150px; margin-top:10px;"></textarea>
-            <button class="primary-btn" id="uploadSingleBtn">Subir Capítulo</button>
+            <input type="number" id="singleNum" placeholder="Capítulo #">
+            <textarea id="singleImages" placeholder="Links (uno por línea)" style="height:150px; margin-top:10px;"></textarea>
+            <button class="primary-btn" id="uploadSingleBtn">Subir</button>
         </div>
 
         <div id="jsonTab" class="tab-content">
             <h1>📂 JSON Solo</h1>
             <input type="text" id="targetMangaId" placeholder="ID del Manga">
-            <input type="file" id="jsonFileInput" accept=".json" style="margin-top:10px;">
+            <input type="file" id="jsonFileInput" accept=".json">
             <button class="primary-btn" id="uploadJsonBtn">Subir JSON</button>
         </div>
 
         <div id="settingsTab" class="tab-content">
-            <h1>⚙️ Gestionar Géneros</h1>
-            <input type="text" id="newGenreName" placeholder="Nuevo Género">
+            <h1>⚙️ Géneros</h1>
+            <input type="text" id="newGenreName" placeholder="Nombre">
             <button class="primary-btn" id="addGenreBtn">Añadir</button>
             <div id="genreListDisplay" style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px;"></div>
         </div>
 
         <div id="nukeTab" class="tab-content">
-            <h1 style="color:#ff3333;">🧨 Limpieza Total (Hoy)</h1>
-            <p style="margin-bottom: 20px; color: #888;">Borra todo lo que se haya subido hoy para reiniciar el proceso.</p>
+            <h1 style="color:red;">🧨 Limpieza Total</h1>
             <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR TODO LO DE HOY</button>
             <div id="nukeStatus"></div>
         </div>
@@ -194,7 +195,7 @@
     document.getElementById('loginBtn').onclick = async () => {
         const e = document.getElementById('adminEmail').value.trim();
         const p = document.getElementById('adminPassword').value;
-        try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { document.getElementById('loginError').innerText = "Error de acceso"; }
+        try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { document.getElementById('loginError').innerText = "Error"; }
     };
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
@@ -214,63 +215,70 @@
           return String(id).startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
         };
 
-        // --- REPARACIÓN GLOBAL (LA SOLUCIÓN A TU PROBLEMA) ---
-        document.getElementById('globalRepairBtn').onclick = async function() {
-            if(!confirm("¿Seguro? Se escaneará toda la base de datos para arreglar las portadas.")) return;
-            const btn = this;
-            const stat = document.getElementById('editStatus');
-            btn.disabled = true;
-            btn.innerText = "⏳ TRABAJANDO...";
-            stat.style.display = "block";
-            stat.innerHTML = "🔍 Escaneando mangas...";
-
-            try {
-                const mangasSnap = await getDocs(collection(db, "mangas"));
-                let fixedTotal = 0;
-
-                for(let mDoc of mangasSnap.docs) {
-                    const mData = mDoc.data();
-                    const mainCover = mData.cover || mData.image;
-                    
-                    stat.innerHTML += `<br>> Revisando: ${mData.title}...`;
-                    
-                    const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
-                    
-                    for(let tDoc of ts.docs) {
-                        const tData = tDoc.data();
-                        if(!tData.cover) { // Si no tiene portada, se la ponemos
-                            await updateDoc(doc(db, "tomos", tDoc.id), { cover: mainCover });
-                            fixedTotal++;
-                        }
-                    }
-                }
-                stat.innerHTML += `<br><br>✅ ¡LISTO! Se repararon ${fixedTotal} capítulos en total.`;
-            } catch (e) { stat.innerHTML = "❌ Error: " + e.message; }
-            btn.disabled = false;
-            btn.innerText = "🔥 REPARAR TODAS LAS PORTADAS AHORA";
+        // GESTIONAR: RELLENAR FORMULARIO
+        document.getElementById('editMangaSelector').onchange = async (e) => {
+            const id = e.target.value;
+            if(!id) { document.getElementById('editForm').style.display = "none"; return; }
+            
+            const snap = await getDoc(doc(db, "mangas", id));
+            if(snap.exists()) {
+                const d = snap.data();
+                document.getElementById('editForm').style.display = "block";
+                document.getElementById('editTitle').value = d.title || "";
+                document.getElementById('editDesc').value = d.description || "";
+                document.getElementById('editCover').value = d.cover || "";
+                document.querySelectorAll('.genre-checkbox-editGenresGrid').forEach(cb => {
+                    cb.checked = d.genres?.includes(cb.value);
+                });
+            }
         };
 
-        // --- CARGA INDUSTRIAL (YA ARREGLADA PARA SIEMPRE) ---
+        document.getElementById('updateMangaBtn').onclick = async () => {
+            const id = document.getElementById('editMangaSelector').value;
+            const coverRaw = document.getElementById('editCover').value;
+            const coverFinal = formatDriveThumbnail(coverRaw, "w1000");
+            
+            await updateDoc(doc(db, "mangas", id), {
+                title: document.getElementById('editTitle').value,
+                description: document.getElementById('editDesc').value,
+                cover: coverFinal,
+                genres: Array.from(document.querySelectorAll('.genre-checkbox-editGenresGrid:checked')).map(cb => cb.value)
+            });
+            document.getElementById('editStatus').style.display = "block";
+            document.getElementById('editStatus').innerHTML = "✅ Actualizado correctamente.";
+        };
+
+        // REPARAR GLOBAL
+        document.getElementById('globalRepairBtn').onclick = async function() {
+            if(!confirm("¿Reparar todas las portadas?")) return;
+            const stat = document.getElementById('editStatus');
+            stat.style.display = "block"; stat.innerHTML = "⏳ Trabajando...";
+            const mSnap = await getDocs(collection(db, "mangas"));
+            for(let mDoc of mSnap.docs) {
+                const cover = mDoc.data().cover;
+                const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
+                for(let tDoc of ts.docs) await updateDoc(doc(db, "tomos", tDoc.id), { cover });
+            }
+            stat.innerHTML = "✅ Portadas reparadas.";
+        };
+
+        // CARGA INDUSTRIAL
         let jsonFilesMap = {};
         document.getElementById('bulkFolderInput').onchange = (e) => {
             jsonFilesMap = {};
             for(let f of e.target.files) {
                 const n = f.name.toLowerCase().trim();
-                jsonFilesMap[n] = f;
-                jsonFilesMap[n.replace('.json', '')] = f;
+                jsonFilesMap[n] = f; jsonFilesMap[n.replace('.json', '')] = f;
             }
-            document.getElementById('folderStatus').innerText = "✅ JSONs detectados";
+            document.getElementById('folderStatus').innerText = "✅ JSONs Listos";
         };
 
         document.getElementById('startBulkBtn').onclick = async function() {
-            const btn = this;
             const excelInput = document.getElementById('bulkExcelInput');
             const status = document.getElementById('bulkStatus');
             if(!excelInput.files[0]) return alert("Falta Excel");
-            btn.disabled = true;
-            status.style.display = "block";
-            status.innerHTML = "=== INICIANDO ===<br>";
-
+            status.style.display = "block"; status.innerHTML = "⏳ Cargando...";
+            
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
@@ -278,58 +286,49 @@
                 for(let i = 1; i < data.length; i++) {
                     const row = data[i]; if(!row || !row[0]) continue;
                     const nombre = String(row[0]).trim();
+                    const cover = formatDriveThumbnail(row[1], "w1000");
                     const jName = String(row[4] || "").toLowerCase().trim();
-                    const currentCover = formatDriveThumbnail(row[1], "w1000"); 
                     
-                    status.innerHTML += `> [${i}] Subiendo: ${nombre}...<br>`;
-                    try {
-                        const mRef = await addDoc(collection(db, "mangas"), {
-                            title: nombre, description: String(row[2]||""), cover: currentCover,
-                            genres: String(row[3]||"").split(',').map(x=>x.trim()).filter(x=>x), createdAt: Timestamp.now()
-                        });
-                        if(jsonFilesMap[jName]) {
-                            const jData = JSON.parse(await jsonFilesMap[jName].text());
-                            for(let cap of jData) {
-                                const imgs = (cap.links || cap.images || []).map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
-                                // Portada automática al subir
-                                await addDoc(collection(db, "tomos"), { 
-                                    mangaId: mRef.id, number: String(cap.capitulo||cap.number), 
-                                    cover: currentCover, images: imgs, createdAt: Timestamp.now() 
-                                });
-                            }
-                            status.innerHTML += `<span style="color:#0f0">   ✅ OK</span><br>`;
+                    const mRef = await addDoc(collection(db, "mangas"), {
+                        title: nombre, description: String(row[2]||""), cover,
+                        genres: String(row[3]||"").split(',').map(x=>x.trim()).filter(x=>x), createdAt: Timestamp.now()
+                    });
+
+                    if(jsonFilesMap[jName]) {
+                        const jData = JSON.parse(await jsonFilesMap[jName].text());
+                        for(let cap of jData) {
+                            const imgs = (cap.links || cap.images || []).map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
+                            await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(cap.capitulo||cap.number), cover, images: imgs, createdAt: Timestamp.now() });
                         }
-                    } catch (err) { status.innerHTML += `<span style="color:red">   ❌ ERROR</span><br>`; }
+                    }
                 }
-                status.innerHTML += "=== FIN ===";
-                btn.disabled = false;
+                status.innerHTML = "✅ Carga masiva finalizada.";
             };
             reader.readAsArrayBuffer(excelInput.files[0]);
         };
 
-        // --- LIMPIEZA TOTAL HOY ---
+        // LIMPIEZA
         document.getElementById('nukeBtn').onclick = async () => {
-            if(!confirm("BORRAR TODO LO DE HOY?")) return;
             const stat = document.getElementById('nukeStatus');
-            stat.style.display = "block";
-            stat.innerHTML = "⏳ Limpiando...";
+            stat.style.display = "block"; stat.innerHTML = "⏳ Limpiando...";
             const hoy = new Date(); hoy.setHours(0,0,0,0);
-            const inicioHoy = Timestamp.fromDate(hoy);
-            const q = query(collection(db, "mangas"), where("createdAt", ">=", inicioHoy));
+            const q = query(collection(db, "mangas"), where("createdAt", ">=", Timestamp.fromDate(hoy)));
             const snap = await getDocs(q);
             for(let mDoc of snap.docs) {
                 const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
                 for(let tDoc of ts.docs) await deleteDoc(doc(db, "tomos", tDoc.id));
                 await deleteDoc(doc(db, "mangas", mDoc.id));
             }
-            stat.innerHTML = `✅ Eliminados ${snap.size} mangas de hoy.`;
+            stat.innerHTML = "✅ Limpio.";
         };
 
         // GÉNEROS
         onSnapshot(collection(db, "generos"), (snap) => {
             const gens = snap.docs.map(d => d.data().nombre).sort();
-            const c = document.getElementById('genresGrid');
-            if(c) c.innerHTML = gens.map(g => `<label class="genre-item"><input type="checkbox" class="genre-checkbox-genresGrid" value="${g}"> ${g}</label>`).join('');
+            ['genresGrid', 'editGenresGrid'].forEach(id => {
+                const c = document.getElementById(id);
+                if(c) c.innerHTML = gens.map(g => `<label class="genre-item"><input type="checkbox" class="genre-checkbox-${id}" value="${g}"> ${g}</label>`).join('');
+            });
         });
 
         window.addEventListener('refreshSelector', async () => {
@@ -338,10 +337,6 @@
             const sel = document.getElementById('editMangaSelector');
             sel.innerHTML = '<option value="">-- Seleccionar --</option>' + sorted.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
         });
-
-        document.getElementById('editMangaSelector').onchange = (e) => {
-            if(e.target.value) document.getElementById('editForm').style.display = "block";
-        };
     }
   </script>
 </body>
