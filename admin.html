@@ -107,13 +107,21 @@
 
         <div id="editTab" class="tab-content">
             <h1>✏️ Gestionar Manga</h1>
-            <select id="editMangaSelector"><option value="">Cargando...</option></select>
+            
+            <div style="background:#1a1a1a; padding:20px; border-radius:15px; border:1px solid #333; margin-bottom:30px;">
+                <h3 style="color:#ff0055; margin-bottom:10px;">🛠️ Reparación Automática Global</h3>
+                <p style="font-size:0.85rem; color:#888; margin-bottom:15px;">Este botón buscará <b>TODOS</b> los capítulos de la web que no tengan portada y les pondrá la de su manga correspondiente de forma automática.</p>
+                <button class="primary-btn" id="globalRepairBtn" style="background:#900;">🔥 REPARAR TODAS LAS PORTADAS AHORA</button>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #222; margin-bottom:30px;">
+            
+            <h3>Editar Manga Individual</h3>
+            <select id="editMangaSelector" style="margin-top:10px;"><option value="">-- Seleccionar --</option></select>
+            
             <div id="editForm" style="display:none; margin-top:20px;">
-                <input type="text" id="editTitle" placeholder="Nuevo Título">
-                <button class="primary-btn" id="updateMangaBtn">Actualizar Título</button>
-                <hr style="margin:20px 0; border:0; border-top:1px solid #222;">
-                <p style="font-size:0.8rem; color:#888; margin-bottom:10px;">Usa esto para ponerle la portada del manga a todos sus capítulos que salieron vacíos:</p>
-                <button class="primary-btn" id="repairCoversBtn" style="background:#444;">🛠️ Reparar Portadas de Capítulos</button>
+                <div class="input-group"><label>Título</label><input type="text" id="editTitle"></div>
+                <button class="primary-btn" id="updateMangaBtn">Guardar Cambios</button>
             </div>
             <div id="editStatus"></div>
         </div>
@@ -206,7 +214,43 @@
           return String(id).startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
         };
 
-        // --- CARGA INDUSTRIAL (CON FIX DE PORTADA) ---
+        // --- REPARACIÓN GLOBAL (LA SOLUCIÓN A TU PROBLEMA) ---
+        document.getElementById('globalRepairBtn').onclick = async function() {
+            if(!confirm("¿Seguro? Se escaneará toda la base de datos para arreglar las portadas.")) return;
+            const btn = this;
+            const stat = document.getElementById('editStatus');
+            btn.disabled = true;
+            btn.innerText = "⏳ TRABAJANDO...";
+            stat.style.display = "block";
+            stat.innerHTML = "🔍 Escaneando mangas...";
+
+            try {
+                const mangasSnap = await getDocs(collection(db, "mangas"));
+                let fixedTotal = 0;
+
+                for(let mDoc of mangasSnap.docs) {
+                    const mData = mDoc.data();
+                    const mainCover = mData.cover || mData.image;
+                    
+                    stat.innerHTML += `<br>> Revisando: ${mData.title}...`;
+                    
+                    const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
+                    
+                    for(let tDoc of ts.docs) {
+                        const tData = tDoc.data();
+                        if(!tData.cover) { // Si no tiene portada, se la ponemos
+                            await updateDoc(doc(db, "tomos", tDoc.id), { cover: mainCover });
+                            fixedTotal++;
+                        }
+                    }
+                }
+                stat.innerHTML += `<br><br>✅ ¡LISTO! Se repararon ${fixedTotal} capítulos en total.`;
+            } catch (e) { stat.innerHTML = "❌ Error: " + e.message; }
+            btn.disabled = false;
+            btn.innerText = "🔥 REPARAR TODAS LAS PORTADAS AHORA";
+        };
+
+        // --- CARGA INDUSTRIAL (YA ARREGLADA PARA SIEMPRE) ---
         let jsonFilesMap = {};
         document.getElementById('bulkFolderInput').onchange = (e) => {
             jsonFilesMap = {};
@@ -235,7 +279,7 @@
                     const row = data[i]; if(!row || !row[0]) continue;
                     const nombre = String(row[0]).trim();
                     const jName = String(row[4] || "").toLowerCase().trim();
-                    const currentCover = formatDriveThumbnail(row[1], "w1000"); // Portada del manga
+                    const currentCover = formatDriveThumbnail(row[1], "w1000"); 
                     
                     status.innerHTML += `> [${i}] Subiendo: ${nombre}...<br>`;
                     try {
@@ -247,41 +291,20 @@
                             const jData = JSON.parse(await jsonFilesMap[jName].text());
                             for(let cap of jData) {
                                 const imgs = (cap.links || cap.images || []).map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
-                                // FIX APLICADO: Ahora guardamos cover en el tomo
+                                // Portada automática al subir
                                 await addDoc(collection(db, "tomos"), { 
-                                    mangaId: mRef.id, 
-                                    number: String(cap.capitulo||cap.number), 
-                                    cover: currentCover, 
-                                    images: imgs, 
-                                    createdAt: Timestamp.now() 
+                                    mangaId: mRef.id, number: String(cap.capitulo||cap.number), 
+                                    cover: currentCover, images: imgs, createdAt: Timestamp.now() 
                                 });
                             }
-                            status.innerHTML += `<span style="color:#0f0">   ✅ OK</span><br>`;
+                            status.innerHTML += `<span style="color:#0f0">   ✅ OK</span><br>`;
                         }
-                    } catch (err) { status.innerHTML += `<span style="color:red">   ❌ ERROR</span><br>`; }
+                    } catch (err) { status.innerHTML += `<span style="color:red">   ❌ ERROR</span><br>`; }
                 }
                 status.innerHTML += "=== FIN ===";
                 btn.disabled = false;
             };
             reader.readAsArrayBuffer(excelInput.files[0]);
-        };
-
-        // --- BOTÓN DE REPARACIÓN (Para arreglar portadas vacías) ---
-        document.getElementById('repairCoversBtn').onclick = async () => {
-            const mangaId = document.getElementById('editMangaSelector').value;
-            if(!mangaId) return alert("Selecciona un manga");
-            const stat = document.getElementById('editStatus');
-            stat.style.display = "block";
-            stat.innerHTML = "⏳ Reparando capítulos...";
-            try {
-                const mSnap = await getDoc(doc(db, "mangas", mangaId));
-                const mainCover = mSnap.data().cover;
-                const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mangaId)));
-                for(let tDoc of ts.docs) {
-                    await updateDoc(doc(db, "tomos", tDoc.id), { cover: mainCover });
-                }
-                stat.innerHTML = `✅ Se repararon ${ts.size} capítulos.`;
-            } catch (e) { stat.innerHTML = "❌ Error: " + e.message; }
         };
 
         // --- LIMPIEZA TOTAL HOY ---
@@ -313,7 +336,7 @@
             const snap = await getDocs(collection(db, "mangas"));
             const sorted = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.title.localeCompare(b.title));
             const sel = document.getElementById('editMangaSelector');
-            sel.innerHTML = '<option value="">-- Seleccionar Manga --</option>' + sorted.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+            sel.innerHTML = '<option value="">-- Seleccionar --</option>' + sorted.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
         });
 
         document.getElementById('editMangaSelector').onchange = (e) => {
