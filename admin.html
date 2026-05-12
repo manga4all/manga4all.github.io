@@ -10,12 +10,13 @@
     body { background: #070707; color: white; display: flex; min-height: 100vh; }
 
     #login-overlay { position: fixed; inset: 0; background: #070707; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-    .login-box { background: #111; padding: 40px; border-radius: 20px; border: 1px solid #ff0055; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(255, 0, 85, 0.2); }
+    .login-box { background: #111; padding: 40px; border-radius: 20px; border: 1px solid #ff0055; width: 100%; max-width: 400px; text-align: center; }
     .login-box h2 { color: #ff0055; margin-bottom: 25px; }
 
     #admin-ui { display: none; width: 100%; }
     .sidebar { width: 260px; background: #111; border-right: 1px solid #1f1f1f; display: flex; flex-direction: column; padding: 20px; position: fixed; height: 100vh; z-index: 100; }
     .sidebar h2 { color: #ff0055; font-size: 1.4rem; margin-bottom: 30px; text-align: center; }
+    
     .main-content { flex: 1; margin-left: 260px; padding: 40px; display: flex; justify-content: center; }
     .admin-container { width: 100%; max-width: 900px; }
     
@@ -31,11 +32,9 @@
     .input-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #bbb; }
     input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 15px; }
-    
     .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    .primary-btn:hover { background: #ff2b72; transform: translateY(-2px); }
 
-    .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222; }
+    .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; }
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .file-input-wrapper { background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; text-align: center; cursor: pointer; }
     
@@ -58,10 +57,14 @@
     <aside class="sidebar">
       <h2>Manga 4 All</h2>
       <div class="tabs-header">
-        <button class="tab-btn active" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
-        <button class="tab-btn" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
+        <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
+        <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
+        <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
         <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar</button>
-        <button class="tab-btn" onclick="openTab('nukeTab')" style="color:#ff3333; margin-top: 20px; border: 1px solid #300;">🧨 Limpieza Total</button>
+        <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo</button>
+        <button class="tab-btn" onclick="openTab('jsonTab')">📂 JSON Solo</button>
+        <button class="tab-btn" onclick="openTab('settingsTab')">⚙️ Géneros</button>
+        <button class="tab-btn" onclick="openTab('nukeTab')" style="color:#ff3333; margin-top: 20px; border: 1px solid #300;">🧨 Limpieza</button>
         <button id="logoutBtn" style="margin-top: 15px; background: none; border: none; color: #555; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">Cerrar Sesión</button>
       </div>
     </aside>
@@ -69,8 +72,26 @@
     <main class="main-content">
       <div class="admin-container">
 
-        <div id="bulkTab" class="tab-content active">
-            <h1>📦 Carga Industrial</h1>
+        <div id="mangaTab" class="tab-content active">
+            <h1>🆕 Registrar Manga</h1>
+            <div class="input-group"><label>Título</label><input type="text" id="mangaTitle"></div>
+            <div class="input-group"><label>Descripción</label><textarea id="mangaDesc"></textarea></div>
+            <div class="input-group"><label>Portada (Drive)</label><input type="text" id="mangaCover"></div>
+            <div class="input-group"><label>Géneros</label><div class="genres-grid" id="genresGrid"></div></div>
+            <button class="primary-btn" id="createMangaBtn">Crear Manga</button>
+            <div id="mangaResult" style="margin-top:20px; display:none; padding:10px; border:1px dashed #0f0;">ID: <span id="newMangaId"></span></div>
+        </div>
+
+        <div id="fullTab" class="tab-content">
+            <h1>🚀 Todo en Uno (Manga + JSON)</h1>
+            <div class="input-group"><label>Título</label><input type="text" id="fullMangaTitle"></div>
+            <div class="input-group"><label>JSON de Capítulos</label><input type="file" id="fullJsonInput" accept=".json"></div>
+            <button class="primary-btn" id="fullProcessBtn">Subir Todo</button>
+            <div id="fullStatus"></div>
+        </div>
+
+        <div id="bulkTab" class="tab-content">
+            <h1>📦 Carga Industrial (Excel)</h1>
             <div class="input-group"><label>1. Excel</label><input type="file" id="bulkExcelInput" accept=".xlsx, .csv"></div>
             <div class="input-group">
                 <label>2. Carpeta de JSONs</label>
@@ -84,37 +105,47 @@
             <div id="bulkStatus"></div>
         </div>
 
+        <div id="editTab" class="tab-content">
+            <h1>✏️ Gestionar Manga</h1>
+            <select id="editMangaSelector"><option value="">Cargando...</option></select>
+            <div id="editForm" style="display:none; margin-top:20px;">
+                <input type="text" id="editTitle" placeholder="Nuevo Título">
+                <button class="primary-btn" id="updateMangaBtn" style="margin-top:10px;">Actualizar</button>
+            </div>
+        </div>
+
+        <div id="singleTab" class="tab-content">
+            <h1>📄 Capítulo Individual</h1>
+            <input type="text" id="singleMangaId" placeholder="ID del Manga">
+            <input type="number" id="singleNum" placeholder="Número del Capítulo">
+            <textarea id="singleImages" placeholder="Links de imágenes (uno por línea)" style="height:150px; margin-top:10px;"></textarea>
+            <button class="primary-btn" id="uploadSingleBtn" style="margin-top:10px;">Subir Capítulo</button>
+        </div>
+
+        <div id="jsonTab" class="tab-content">
+            <h1>📂 JSON Solo</h1>
+            <input type="text" id="targetMangaId" placeholder="ID del Manga">
+            <input type="file" id="jsonFileInput" accept=".json" style="margin-top:10px;">
+            <button class="primary-btn" id="uploadJsonBtn" style="margin-top:10px;">Subir JSON</button>
+        </div>
+
+        <div id="settingsTab" class="tab-content">
+            <h1>⚙️ Gestionar Géneros</h1>
+            <input type="text" id="newGenreName" placeholder="Nuevo Género">
+            <button class="primary-btn" id="addGenreBtn" style="margin-top:10px;">Añadir</button>
+            <div id="genreListDisplay" style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px;"></div>
+        </div>
+
         <div id="nukeTab" class="tab-content">
-            <h1 style="color:#ff3333;">🧨 Limpieza Total de Hoy</h1>
-            <p style="margin-bottom: 20px; color: #888;">Esta acción borrará ABSOLUTAMENTE TODO lo que se haya subido hoy (mangas y capítulos). Úsalo para reiniciar el proceso.</p>
+            <h1 style="color:#ff3333;">🧨 Limpieza Total (Hoy)</h1>
+            <p style="margin-bottom: 20px; color: #888;">Esta acción borrará ABSOLUTAMENTE TODO lo que hayas subido hoy.</p>
             <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR TODO LO DE HOY</button>
             <div id="nukeStatus"></div>
-        </div>
-
-        <div id="mangaTab" class="tab-content">
-            <h1>Registrar Nueva Serie</h1>
-            <div class="input-group"><label>Título</label><input type="text" id="mangaTitle"></div>
-            <div class="input-group"><label>Géneros</label><div class="genres-grid" id="genresGrid"></div></div>
-            <button class="primary-btn" id="createMangaBtn">Crear</button>
-        </div>
-
-        <div id="editTab" class="tab-content">
-            <h1>✏️ Gestionar</h1>
-            <select id="editMangaSelector"><option value="">Cargando...</option></select>
         </div>
 
       </div>
     </main>
   </div>
-
-  <script>
-    function openTab(tabName) {
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
-      if (event) event.currentTarget.classList.add('active');
-    }
-  </script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -137,14 +168,12 @@
     const ADMIN_EMAIL = "brian.ag.cd2@gmail.com";
     let listenersReady = false;
 
+    // LOGIN LOGIC
     onAuthStateChanged(auth, (user) => {
         if (user && user.email === ADMIN_EMAIL) {
             document.getElementById('login-overlay').style.display = "none";
             document.getElementById('admin-ui').style.display = "block";
-            if (!listenersReady) {
-                initAdminListeners();
-                listenersReady = true;
-            }
+            if (!listenersReady) { initAdminListeners(); listenersReady = true; }
         } else {
             document.getElementById('login-overlay').style.display = "flex";
             document.getElementById('admin-ui').style.display = "none";
@@ -152,11 +181,19 @@
     });
 
     document.getElementById('loginBtn').onclick = async () => {
-        const email = document.getElementById('adminEmail').value.trim();
-        const pass = document.getElementById('adminPassword').value;
-        try { await signInWithEmailAndPassword(auth, email, pass); } catch (e) { document.getElementById('loginError').innerText = "Acceso denegado"; }
+        const e = document.getElementById('adminEmail').value.trim();
+        const p = document.getElementById('adminPassword').value;
+        try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { document.getElementById('loginError').innerText = "Error de acceso"; }
     };
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
+
+    window.openTab = (n) => {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(n).classList.add('active');
+        if(event) event.currentTarget.classList.add('active');
+        if(n === 'editTab') window.dispatchEvent(new CustomEvent('refreshSelector'));
+    };
 
     function initAdminListeners() {
         const formatDriveThumbnail = (url, size = "w1600") => {
@@ -166,7 +203,7 @@
           return String(id).startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
         };
 
-        // --- CARGA INDUSTRIAL ---
+        // --- CARGA INDUSTRIAL (EXCEL) ---
         let jsonFilesMap = {};
         document.getElementById('bulkFolderInput').onchange = (e) => {
             jsonFilesMap = {};
@@ -175,101 +212,67 @@
                 jsonFilesMap[n] = f;
                 jsonFilesMap[n.replace('.json', '')] = f;
             }
-            document.getElementById('folderStatus').innerText = "✅ Carpeta de JSONs lista";
+            document.getElementById('folderStatus').innerText = "✅ JSONs detectados";
         };
 
         document.getElementById('startBulkBtn').onclick = async function() {
             const btn = this;
             const excelInput = document.getElementById('bulkExcelInput');
             const status = document.getElementById('bulkStatus');
-            if(!excelInput.files[0]) return alert("Sube el Excel");
-
+            if(!excelInput.files[0]) return alert("Falta Excel");
             btn.disabled = true;
-            btn.innerText = "⏳ TRABAJANDO...";
             status.style.display = "block";
-            status.innerHTML = "=== INICIANDO PROCESO ===<br>";
+            status.innerHTML = "=== INICIANDO ===<br>";
 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
                 const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-
                 for(let i = 1; i < data.length; i++) {
                     const row = data[i]; if(!row || !row[0]) continue;
                     const nombre = String(row[0]).trim();
                     const jName = String(row[4] || "").toLowerCase().trim();
-
                     status.innerHTML += `> [${i}] Subiendo: ${nombre}...<br>`;
-                    status.scrollTop = status.scrollHeight;
-
                     try {
                         const mRef = await addDoc(collection(db, "mangas"), {
-                            title: nombre,
-                            description: String(row[2] || "").trim(),
-                            cover: formatDriveThumbnail(row[1], "w1000"),
-                            genres: String(row[3] || "").split(',').map(x => x.trim()).filter(x => x),
-                            createdAt: Timestamp.now()
+                            title: nombre, description: String(row[2]||""), cover: formatDriveThumbnail(row[1], "w1000"),
+                            genres: String(row[3]||"").split(',').map(x=>x.trim()).filter(x=>x), createdAt: Timestamp.now()
                         });
-
                         if(jsonFilesMap[jName]) {
                             const jData = JSON.parse(await jsonFilesMap[jName].text());
                             for(let cap of jData) {
-                                const links = cap.links || cap.images || [];
-                                const imgs = links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
-                                await addDoc(collection(db, "tomos"), {
-                                    mangaId: mRef.id,
-                                    number: String(cap.capitulo || cap.number || 0),
-                                    images: imgs,
-                                    createdAt: Timestamp.now()
-                                });
+                                const imgs = (cap.links || cap.images || []).map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
+                                await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(cap.capitulo||cap.number), images: imgs, createdAt: Timestamp.now() });
                             }
-                            status.innerHTML += `<span style="color:#0f0">   ✅ ÉXITO</span><br>`;
+                            status.innerHTML += `<span style="color:#0f0">   ✅ OK</span><br>`;
                         }
-                    } catch (err) { status.innerHTML += `<span style="color:#f00">   ❌ ERROR: ${err.message}</span><br>`; }
+                    } catch (err) { status.innerHTML += `<span style="color:red">   ❌ ERROR</span><br>`; }
                 }
-                status.innerHTML += "<br>⭐⭐ PROCESO TERMINADO ⭐⭐";
+                status.innerHTML += "=== FIN ===";
                 btn.disabled = false;
-                btn.innerText = "🔥 Iniciar Carga Masiva";
             };
             reader.readAsArrayBuffer(excelInput.files[0]);
         };
 
-        // --- LIMPIEZA TOTAL DE HOY ---
+        // --- LIMPIEZA TOTAL HOY ---
         document.getElementById('nukeBtn').onclick = async () => {
-            if(!confirm("¿Borrar ABSOLUTAMENTE TODO lo subido hoy? Esta acción limpiará la base de datos para empezar de cero.")) return;
+            if(!confirm("BORRAR TODO LO DE HOY?")) return;
             const stat = document.getElementById('nukeStatus');
             stat.style.display = "block";
-            stat.innerHTML = "⏳ Calculando registros de hoy...";
-
-            try {
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
-                const inicioHoy = Timestamp.fromDate(hoy);
-
-                // 1. Buscamos mangas
-                const q = query(collection(db, "mangas"), where("createdAt", ">=", inicioHoy));
-                const snap = await getDocs(q);
-
-                if (snap.empty) {
-                    stat.innerHTML = "ℹ️ No hay nada que borrar de hoy.";
-                    return;
-                }
-
-                stat.innerHTML = `⏳ Borrando ${snap.size} mangas y sus capítulos...`;
-
-                for(let mDoc of snap.docs) {
-                    // Borrar capítulos
-                    const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
-                    for(let tDoc of ts.docs) await deleteDoc(doc(db, "tomos", tDoc.id));
-                    // Borrar manga
-                    await deleteDoc(doc(db, "mangas", mDoc.id));
-                }
-
-                stat.innerHTML = `✅ Limpieza completa. Se eliminaron ${snap.size} mangas y todos sus capítulos.`;
-            } catch (e) { stat.innerHTML = "❌ Error: " + e.message; }
+            stat.innerHTML = "⏳ Limpiando...";
+            const hoy = new Date(); hoy.setHours(0,0,0,0);
+            const inicioHoy = Timestamp.fromDate(hoy);
+            const q = query(collection(db, "mangas"), where("createdAt", ">=", inicioHoy));
+            const snap = await getDocs(q);
+            for(let mDoc of snap.docs) {
+                const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
+                for(let tDoc of ts.docs) await deleteDoc(doc(db, "tomos", tDoc.id));
+                await deleteDoc(doc(db, "mangas", mDoc.id));
+            }
+            stat.innerHTML = `✅ Eliminados ${snap.size} mangas de hoy.`;
         };
 
-        // Géneros
+        // GÉNEROS
         onSnapshot(collection(db, "generos"), (snap) => {
             const gens = snap.docs.map(d => d.data().nombre).sort();
             const c = document.getElementById('genresGrid');
