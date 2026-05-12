@@ -16,7 +16,7 @@
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
     #chapterLabelTop { font-weight: 600; min-width: 150px; text-align: center; }
     .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; }
-    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; }
+    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; min-height: 100px; }
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
   </style>
@@ -55,11 +55,10 @@
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // PASO 1: Cargar imágenes de inmediato
+    // PASO 1: Cargar todas las imágenes relacionadas al capítulo
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
-      // RESTAURADO: Nombre de la pestaña
       document.title = `M4A | Capítulo ${numLimpio}`;
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("listBtnTop").href = `manga.html?id=${mangaId}`;
@@ -76,6 +75,7 @@
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
+          // Las imágenes se inyectan directamente para que el navegador las gestione rápido
           tomo.images.forEach((url) => {
             const img = document.createElement("img");
             img.src = url; 
@@ -83,22 +83,16 @@
           });
         }
 
+        // Navegación
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else document.getElementById("prevBtnTop").classList.add("disabled");
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
         else document.getElementById("nextBtnTop").textContent = "FIN";
 
-        iniciarSincronizacion();
-
-      } catch (e) { console.error(e); }
-    }
-
-    // PASO 2: Comprobar Firebase y saltar
-    function iniciarSincronizacion() {
+        // PASO 2: Buscar en Firebase la ubicación
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                
                 if (shouldScroll) {
                     const userSnap = await getDoc(doc(db, "users", user.uid));
                     if (userSnap.exists()) {
@@ -109,25 +103,22 @@
                             const index = miProgreso.imageIndex || 0;
                             const todasLasImgs = document.querySelectorAll("#mangaPages img");
                             if (todasLasImgs[index]) {
-                                setTimeout(() => {
-                                    todasLasImgs[index].scrollIntoView();
-                                    window.scrollBy(0, -85);
-                                    activarGuardado();
-                                }, 500);
-                                return; 
+                                // Salto instantáneo a la imagen
+                                todasLasImgs[index].scrollIntoView();
+                                window.scrollBy(0, -85);
                             }
                         }
                     }
                 }
-                activarGuardado();
+                
+                // PASO 3: Activar guardado SOLO después de la comprobación
+                setTimeout(() => {
+                    canSaveProgress = true;
+                }, 1000);
             }
         });
-    }
 
-    function activarGuardado() {
-        setTimeout(() => {
-            canSaveProgress = true;
-        }, 1000);
+      } catch (e) { console.error(e); }
     }
 
     function obtenerIndiceImagenVisible() {
