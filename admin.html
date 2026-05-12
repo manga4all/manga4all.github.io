@@ -9,24 +9,13 @@
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #070707; color: white; display: flex; min-height: 100vh; }
 
-    /* --- LOGIN OVERLAY --- */
-    #login-overlay {
-        position: fixed; inset: 0; background: #070707; z-index: 9999;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .login-box {
-        background: #111; padding: 40px; border-radius: 20px; border: 1px solid #ff0055;
-        width: 100%; max-width: 400px; text-align: center;
-        box-shadow: 0 0 30px rgba(255, 0, 85, 0.2);
-    }
+    #login-overlay { position: fixed; inset: 0; background: #070707; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .login-box { background: #111; padding: 40px; border-radius: 20px; border: 1px solid #ff0055; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(255, 0, 85, 0.2); }
     .login-box h2 { color: #ff0055; margin-bottom: 25px; }
 
-    /* --- PANEL DE ADMIN --- */
     #admin-ui { display: none; width: 100%; }
-    
     .sidebar { width: 260px; background: #111; border-right: 1px solid #1f1f1f; display: flex; flex-direction: column; padding: 20px; position: fixed; height: 100vh; z-index: 100; }
     .sidebar h2 { color: #ff0055; font-size: 1.4rem; margin-bottom: 30px; text-align: center; }
-    
     .main-content { flex: 1; margin-left: 260px; padding: 40px; display: flex; justify-content: center; }
     .admin-container { width: 100%; max-width: 900px; }
     
@@ -37,13 +26,11 @@
 
     .tab-content { display: none; background: #111; padding: 30px; border-radius: 20px; border: 1px solid #1f1f1f; animation: fadeIn 0.4s ease; }
     .tab-content.active { display: block; }
-
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     .input-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #bbb; }
     input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 15px; }
-    input:focus, textarea:focus, select:focus { border-color: #ff0055; outline: none; background: #222; }
     
     .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
     .primary-btn:hover { background: #ff2b72; transform: translateY(-2px); }
@@ -52,8 +39,7 @@
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .file-input-wrapper { background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; text-align: center; cursor: pointer; }
     
-    .id-display { background: #000; border: 1px dashed #00ff88; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; text-align: center; }
-    #bulkStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:350px; overflow-y:auto; border: 1px solid #333; color: #0f0; }
+    #bulkStatus, #nukeStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:350px; overflow-y:auto; border: 1px solid #333; color: #0f0; }
   </style>
 </head>
 <body>
@@ -61,13 +47,9 @@
   <div id="login-overlay">
     <div class="login-box">
         <h2>Acceso Restringido</h2>
-        <div class="input-group">
-            <input type="email" id="adminEmail" placeholder="Correo del Administrador">
-        </div>
-        <div class="input-group">
-            <input type="password" id="adminPassword" placeholder="Contraseña">
-        </div>
-        <button class="primary-btn" id="loginBtn">Entrar al Panel</button>
+        <div class="input-group"><input type="email" id="adminEmail" placeholder="Admin Email"></div>
+        <div class="input-group"><input type="password" id="adminPassword" placeholder="Contraseña"></div>
+        <button class="primary-btn" id="loginBtn">Entrar</button>
         <p id="loginError" style="color: #ff3333; margin-top: 15px; font-size: 0.9rem;"></p>
     </div>
   </div>
@@ -76,14 +58,10 @@
     <aside class="sidebar">
       <h2>Manga 4 All</h2>
       <div class="tabs-header">
-        <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
-        <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
-        <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
+        <button class="tab-btn active" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
+        <button class="tab-btn" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
         <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar</button>
-        <button class="tab-btn" onclick="openTab('singleTab')">📄 Capítulo</button>
-        <button class="tab-btn" onclick="openTab('jsonTab')">📂 JSON Solo</button>
-        <button class="tab-btn" onclick="openTab('settingsTab')">⚙️ Géneros</button>
-        <button class="tab-btn" onclick="openTab('nukeTab')" style="color:#ff3333; margin-top: 20px; border: 1px solid #300;">🧨 Limpieza</button>
+        <button class="tab-btn" onclick="openTab('nukeTab')" style="color:#ff3333; margin-top: 20px; border: 1px solid #300;">🧨 Limpieza Total</button>
         <button id="logoutBtn" style="margin-top: 15px; background: none; border: none; color: #555; cursor: pointer; font-size: 0.8rem; text-decoration: underline;">Cerrar Sesión</button>
       </div>
     </aside>
@@ -107,29 +85,22 @@
         </div>
 
         <div id="nukeTab" class="tab-content">
-            <h1 style="color:#ff3333;">🧨 Limpieza Inteligente</h1>
-            <p style="margin-bottom: 20px; color: #888;">Esta acción borrará únicamente los mangas y capítulos subidos el día de HOY.</p>
-            <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR MANGAS DE HOY</button>
-            <div id="nukeStatus" style="margin-top:20px; text-align:center; font-family: monospace;"></div>
+            <h1 style="color:#ff3333;">🧨 Limpieza Total de Hoy</h1>
+            <p style="margin-bottom: 20px; color: #888;">Esta acción borrará ABSOLUTAMENTE TODO lo que se haya subido hoy (mangas y capítulos). Úsalo para reiniciar el proceso.</p>
+            <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR TODO LO DE HOY</button>
+            <div id="nukeStatus"></div>
         </div>
 
         <div id="mangaTab" class="tab-content">
             <h1>Registrar Nueva Serie</h1>
             <div class="input-group"><label>Título</label><input type="text" id="mangaTitle"></div>
-            <div class="input-group"><label>Descripción</label><textarea id="mangaDesc"></textarea></div>
-            <div class="input-group"><label>Portada (Drive)</label><input type="text" id="mangaCover"></div>
             <div class="input-group"><label>Géneros</label><div class="genres-grid" id="genresGrid"></div></div>
-            <button class="primary-btn" id="createMangaBtn">🚀 Crear Manga</button>
-            <div id="mangaResult" class="id-display">ID: <span id="newMangaId"></span></div>
+            <button class="primary-btn" id="createMangaBtn">Crear</button>
         </div>
-        
+
         <div id="editTab" class="tab-content">
-            <h1>✏️ Editar Manga</h1>
+            <h1>✏️ Gestionar</h1>
             <select id="editMangaSelector"><option value="">Cargando...</option></select>
-            <div id="editForm" style="display:none; margin-top:20px;">
-                <div class="input-group"><label>Título</label><input type="text" id="editTitle"></div>
-                <button class="primary-btn" id="updateMangaBtn">Guardar Cambios</button>
-            </div>
         </div>
 
       </div>
@@ -141,7 +112,7 @@
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(tabName).classList.add('active');
-      if(event) event.currentTarget.classList.add('active');
+      if (event) event.currentTarget.classList.add('active');
     }
   </script>
 
@@ -183,7 +154,7 @@
     document.getElementById('loginBtn').onclick = async () => {
         const email = document.getElementById('adminEmail').value.trim();
         const pass = document.getElementById('adminPassword').value;
-        try { await signInWithEmailAndPassword(auth, email, pass); } catch (e) { document.getElementById('loginError').innerText = "Acceso denegado."; }
+        try { await signInWithEmailAndPassword(auth, email, pass); } catch (e) { document.getElementById('loginError').innerText = "Acceso denegado"; }
     };
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
@@ -199,12 +170,12 @@
         let jsonFilesMap = {};
         document.getElementById('bulkFolderInput').onchange = (e) => {
             jsonFilesMap = {};
-            for(let f of e.target.files) if(f.name.toLowerCase().endsWith('.json')) {
+            for(let f of e.target.files) {
                 const n = f.name.toLowerCase().trim();
                 jsonFilesMap[n] = f;
                 jsonFilesMap[n.replace('.json', '')] = f;
             }
-            document.getElementById('folderStatus').innerText = `✅ Carpeta lista`;
+            document.getElementById('folderStatus').innerText = "✅ Carpeta de JSONs lista";
         };
 
         document.getElementById('startBulkBtn').onclick = async function() {
@@ -214,9 +185,9 @@
             if(!excelInput.files[0]) return alert("Sube el Excel");
 
             btn.disabled = true;
-            btn.innerText = "⏳ PROCESANDO...";
+            btn.innerText = "⏳ TRABAJANDO...";
             status.style.display = "block";
-            status.innerHTML = "=== INICIANDO CARGA ===<br>";
+            status.innerHTML = "=== INICIANDO PROCESO ===<br>";
 
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -252,60 +223,57 @@
                                     createdAt: Timestamp.now()
                                 });
                             }
-                            status.innerHTML += `<span style="color:#0f0">   ✅ COMPLETO</span><br>`;
+                            status.innerHTML += `<span style="color:#0f0">   ✅ ÉXITO</span><br>`;
                         }
                     } catch (err) { status.innerHTML += `<span style="color:#f00">   ❌ ERROR: ${err.message}</span><br>`; }
                 }
-                status.innerHTML += "<br>⭐⭐ FIN ⭐⭐";
+                status.innerHTML += "<br>⭐⭐ PROCESO TERMINADO ⭐⭐";
                 btn.disabled = false;
                 btn.innerText = "🔥 Iniciar Carga Masiva";
             };
             reader.readAsArrayBuffer(excelInput.files[0]);
         };
 
-        // --- LIMPIEZA INTELIGENTE (LA MODIFICACIÓN QUE PEDISTE) ---
+        // --- LIMPIEZA TOTAL DE HOY ---
         document.getElementById('nukeBtn').onclick = async () => {
-            if(!confirm("¿Borrar TODOS los mangas subidos hoy? Esta acción no se puede deshacer.")) return;
+            if(!confirm("¿Borrar ABSOLUTAMENTE TODO lo subido hoy? Esta acción limpiará la base de datos para empezar de cero.")) return;
             const stat = document.getElementById('nukeStatus');
-            stat.innerHTML = "⏳ Buscando registros de hoy...";
+            stat.style.display = "block";
+            stat.innerHTML = "⏳ Calculando registros de hoy...";
 
             try {
-                // Calcular el inicio del día de HOY (00:00:00)
                 const hoy = new Date();
                 hoy.setHours(0, 0, 0, 0);
                 const inicioHoy = Timestamp.fromDate(hoy);
 
-                // Consultar mangas creados hoy
+                // 1. Buscamos mangas
                 const q = query(collection(db, "mangas"), where("createdAt", ">=", inicioHoy));
                 const snap = await getDocs(q);
 
                 if (snap.empty) {
-                    stat.innerHTML = "ℹ️ No se encontraron mangas subidos hoy.";
+                    stat.innerHTML = "ℹ️ No hay nada que borrar de hoy.";
                     return;
                 }
 
                 stat.innerHTML = `⏳ Borrando ${snap.size} mangas y sus capítulos...`;
 
                 for(let mDoc of snap.docs) {
-                    // Borrar capítulos asociados a ese manga
+                    // Borrar capítulos
                     const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mDoc.id)));
                     for(let tDoc of ts.docs) await deleteDoc(doc(db, "tomos", tDoc.id));
-                    // Borrar el manga
+                    // Borrar manga
                     await deleteDoc(doc(db, "mangas", mDoc.id));
                 }
 
-                stat.innerHTML = `✅ Se eliminaron ${snap.size} mangas de hoy correctamente.`;
-            } catch (error) {
-                console.error(error);
-                stat.innerHTML = "❌ Error en la limpieza: " + error.message;
-            }
+                stat.innerHTML = `✅ Limpieza completa. Se eliminaron ${snap.size} mangas y todos sus capítulos.`;
+            } catch (e) { stat.innerHTML = "❌ Error: " + e.message; }
         };
 
-        // Otros (Mantenidos igual)
-        window.addEventListener('refreshSelector', async () => {
-            const snap = await getDocs(collection(db, "mangas"));
-            const sel = document.getElementById('editMangaSelector');
-            sel.innerHTML = '<option value="">-- Seleccionar --</option>' + snap.docs.map(d => `<option value="${d.id}">${d.data().title}</option>`).join('');
+        // Géneros
+        onSnapshot(collection(db, "generos"), (snap) => {
+            const gens = snap.docs.map(d => d.data().nombre).sort();
+            const c = document.getElementById('genresGrid');
+            if(c) c.innerHTML = gens.map(g => `<label class="genre-item"><input type="checkbox" class="genre-checkbox-genresGrid" value="${g}"> ${g}</label>`).join('');
         });
     }
   </script>
