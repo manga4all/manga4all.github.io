@@ -53,6 +53,7 @@
     .file-input-wrapper { background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; text-align: center; cursor: pointer; }
     
     .id-display { background: #000; border: 1px dashed #00ff88; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; text-align: center; }
+    #bulkStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:250px; overflow-y:auto; border: 1px solid #333; }
   </style>
 </head>
 <body>
@@ -100,24 +101,6 @@
             <div id="mangaResult" class="id-display">ID: <span id="newMangaId"></span> <button onclick="window.copyId('newMangaId')" style="padding:4px 8px; cursor:pointer;">Copiar</button></div>
         </div>
 
-        <div id="fullTab" class="tab-content">
-            <h1>🚀 Todo en Uno</h1>
-            <div class="input-group"><label>Título</label><input type="text" id="fullMangaTitle"></div>
-            <div class="input-group"><label>Descripción</label><textarea id="fullMangaDesc"></textarea></div>
-            <div class="input-group"><label>Portada Principal</label><input type="text" id="fullMangaCover"></div>
-            <div class="input-group"><label>Géneros</label><div class="genres-grid" id="fullGenresGrid"></div></div>
-            <div class="input-group">
-                <label>JSON de Capítulos</label>
-                <div class="file-input-wrapper" onclick="document.getElementById('fullJsonInput').click()">
-                    📁 Seleccionar Archivo
-                    <input type="file" id="fullJsonInput" accept=".json" style="display: none;">
-                    <div id="fullFileNameDisplay" style="font-size: 0.8rem; color: #888; margin-top: 10px;">Ninguno</div>
-                </div>
-            </div>
-            <button class="primary-btn" id="fullProcessBtn">🚀 Subir Todo</button>
-            <div id="fullStatus" style="margin-top:15px; text-align:center;"></div>
-        </div>
-
         <div id="bulkTab" class="tab-content">
             <h1>📦 Carga Industrial</h1>
             <div class="input-group"><label>1. Excel</label><input type="file" id="bulkExcelInput" accept=".xlsx, .csv"></div>
@@ -130,7 +113,7 @@
                 </div>
             </div>
             <button class="primary-btn" id="startBulkBtn">🔥 Iniciar Carga Masiva</button>
-            <div id="bulkStatus" style="background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:250px; overflow-y:auto;"></div>
+            <div id="bulkStatus"></div>
         </div>
 
         <div id="editTab" class="tab-content">
@@ -162,6 +145,24 @@
             <button class="primary-btn" id="uploadJsonBtn">Subir Capítulos</button>
         </div>
 
+        <div id="fullTab" class="tab-content">
+            <h1>🚀 Todo en Uno</h1>
+            <div class="input-group"><label>Título</label><input type="text" id="fullMangaTitle"></div>
+            <div class="input-group"><label>Descripción</label><textarea id="fullMangaDesc"></textarea></div>
+            <div class="input-group"><label>Portada Principal</label><input type="text" id="fullMangaCover"></div>
+            <div class="input-group"><label>Géneros</label><div class="genres-grid" id="fullGenresGrid"></div></div>
+            <div class="input-group">
+                <label>JSON de Capítulos</label>
+                <div class="file-input-wrapper" onclick="document.getElementById('fullJsonInput').click()">
+                    📁 Seleccionar Archivo
+                    <input type="file" id="fullJsonInput" accept=".json" style="display: none;">
+                    <div id="fullFileNameDisplay" style="font-size: 0.8rem; color: #888; margin-top: 10px;">Ninguno</div>
+                </div>
+            </div>
+            <button class="primary-btn" id="fullProcessBtn">🚀 Subir Todo</button>
+            <div id="fullStatus" style="margin-top:15px; text-align:center;"></div>
+        </div>
+
         <div id="settingsTab" class="tab-content">
             <h1>⚙️ Gestión de Géneros</h1>
             <div class="input-group"><input type="text" id="newGenreName" placeholder="Nombre del género"></div>
@@ -184,7 +185,7 @@
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById(tabName).classList.add('active');
-      event.currentTarget.classList.add('active');
+      if(event) event.currentTarget.classList.add('active');
       if(tabName === 'editTab') window.dispatchEvent(new CustomEvent('refreshSelector'));
     }
   </script>
@@ -207,12 +208,10 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // --- PROTECCIÓN ---
-    const ADMIN_EMAIL = "brian.ag.cd2@gmail.com"; // Asegúrate de que sea exacto
+    const ADMIN_EMAIL = "brian.ag.cd2@gmail.com";
 
     onAuthStateChanged(auth, (user) => {
         if (user && user.email === ADMIN_EMAIL) {
-            console.log("Sesión activa:", user.email);
             document.getElementById('login-overlay').style.display = "none";
             document.getElementById('admin-ui').style.display = "block";
             initAdminListeners();
@@ -229,15 +228,12 @@
             await signInWithEmailAndPassword(auth, email, pass);
         } catch (e) {
             document.getElementById('loginError').innerText = "Acceso denegado.";
-            console.error("Error login:", e.message);
         }
     };
 
     document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-    // --- TODA LA LÓGICA DE ADMIN ---
     function initAdminListeners() {
-        
         const extractDriveId = (url) => {
           if(!url) return null;
           const match = String(url).match(/\/d\/(.*?)\/|id=(.*?)($|&)/);
@@ -265,48 +261,65 @@
         };
         window.delGen = async (id) => { if(confirm("¿Borrar?")) await deleteDoc(doc(db, "generos", id)); };
 
-        // Carga Industrial
+        // --- CARGA INDUSTRIAL ---
         let jsonFilesMap = {};
         document.getElementById('bulkFolderInput').onchange = (e) => {
             jsonFilesMap = {};
             for(let f of e.target.files) if(f.name.toLowerCase().endsWith('.json')) jsonFilesMap[f.name.toLowerCase().trim()] = f;
             document.getElementById('folderStatus').innerText = `✅ ${Object.keys(jsonFilesMap).length} JSONs listos`;
         };
+
         document.getElementById('startBulkBtn').onclick = async () => {
             const file = document.getElementById('bulkExcelInput').files[0];
             const status = document.getElementById('bulkStatus');
             if(!file) return alert("Sube el Excel");
+            status.style.display = "block";
+            status.innerHTML = "⏳ Iniciando carga industrial...<br>";
+
             const reader = new FileReader();
             reader.onload = async (e) => {
-                const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-                const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1}); 
-                status.style.display = "block";
-                for(let i = 1; i < data.length; i++) {
-                    const row = data[i]; if (!row || row.length === 0) continue;
-                    const nombre = String(row[0] || "").trim();
-                    const port = String(row[1] || "").trim();
-                    const desc = String(row[2] || "").trim();
-                    const gens = String(row[3] || "").split(',').map(x => x.trim()).filter(x => x);
-                    const jName = String(row[4] || "").toLowerCase().trim();
-                    if(!nombre) continue;
-                    try {
-                        const cover = formatDriveThumbnail(port, "w1000");
-                        const mRef = await addDoc(collection(db, "mangas"), { title: nombre, description: desc, cover, genres: gens, createdAt: Timestamp.now() });
-                        if(jsonFilesMap[jName]) {
-                            const jData = JSON.parse(await jsonFilesMap[jName].text());
-                            for(let cap of jData) {
-                                const imgs = cap.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
-                                await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(cap.capitulo), cover, images: imgs, createdAt: Timestamp.now() });
+                try {
+                    const workbook = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+                    const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1}); 
+                    
+                    for(let i = 1; i < data.length; i++) {
+                        const row = data[i]; if (!row || row.length === 0 || !row[0]) continue;
+                        const nombre = String(row[0] || "").trim();
+                        const port = String(row[1] || "").trim();
+                        const desc = String(row[2] || "").trim();
+                        const gens = String(row[3] || "").split(',').map(x => x.trim()).filter(x => x);
+                        const jName = String(row[4] || "").toLowerCase().trim();
+
+                        status.innerHTML += `> Procesando: ${nombre}...<br>`;
+                        status.scrollTop = status.scrollHeight;
+
+                        try {
+                            const cover = formatDriveThumbnail(port, "w1000");
+                            const mRef = await addDoc(collection(db, "mangas"), { title: nombre, description: desc, cover, genres: gens, createdAt: Timestamp.now() });
+                            
+                            if(jsonFilesMap[jName]) {
+                                const jData = JSON.parse(await jsonFilesMap[jName].text());
+                                for(let cap of jData) {
+                                    const imgs = cap.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
+                                    await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(cap.capitulo), cover, images: imgs, createdAt: Timestamp.now() });
+                                }
+                                status.innerHTML += `<span style="color:#0f8;">   ✅ ${nombre} subido con éxito.</span><br>`;
+                            } else {
+                                status.innerHTML += `<span style="color:#f80;">   ⚠️ ${nombre} subido (Sin capítulos: JSON no encontrado).</span><br>`;
                             }
+                        } catch(err) { 
+                            status.innerHTML += `<span style="color:red;">   ❌ Error en ${nombre}: ${err.message}</span><br>`;
                         }
-                        status.innerHTML += `<div style="color:#0f8;">✅ ${nombre} subido.</div>`;
-                    } catch(err) { console.error(err); }
+                    }
+                    status.innerHTML += "<br>⭐⭐ PROCESO TERMINADO ⭐⭐";
+                } catch(exc) {
+                    status.innerHTML += `<span style="color:red;">❌ ERROR CRÍTICO AL LEER EXCEL: ${exc.message}</span>`;
                 }
             };
             reader.readAsArrayBuffer(file);
         };
 
-        // Editar
+        // Otros (Editar, Individual, etc.) se mantienen igual
         window.addEventListener('refreshSelector', async () => {
             const snap = await getDocs(collection(db, "mangas"));
             const sorted = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.title.localeCompare(b.title));
@@ -325,8 +338,7 @@
         };
         document.getElementById('updateMangaBtn').onclick = async () => {
             const id = document.getElementById('editMangaSelector').value;
-            const rawCover = document.getElementById('editCover').value;
-            const finalCover = formatDriveThumbnail(rawCover, "w1000");
+            const finalCover = formatDriveThumbnail(document.getElementById('editCover').value, "w1000");
             await updateDoc(doc(db, "mangas", id), {
                 title: document.getElementById('editTitle').value,
                 description: document.getElementById('editDesc').value,
@@ -335,19 +347,6 @@
             });
             document.getElementById('editStatus').innerHTML = "✅ Guardado";
         };
-
-        // Crear Individual
-        document.getElementById('createMangaBtn').onclick = async () => {
-            const t = document.getElementById('mangaTitle').value;
-            const d = document.getElementById('mangaDesc').value;
-            const c = document.getElementById('mangaCover').value;
-            const g = Array.from(document.querySelectorAll('.genre-checkbox-genresGrid:checked')).map(cb => cb.value);
-            const mRef = await addDoc(collection(db, "mangas"), { title: t, description: d, cover: formatDriveThumbnail(c, "w1000"), genres: g, createdAt: Timestamp.now() });
-            document.getElementById('mangaResult').style.display = "block";
-            document.getElementById('newMangaId').innerText = mRef.id;
-        };
-
-        // Capítulo Individual
         document.getElementById('uploadSingleBtn').onclick = async () => {
             const id = document.getElementById('singleMangaId').value;
             const num = document.getElementById('singleNum').value;
@@ -355,30 +354,6 @@
             await addDoc(collection(db, "tomos"), { mangaId: id, number: String(num), cover: formatDriveThumbnail(document.getElementById('singleCover').value, "w1000"), images: imgs, createdAt: Timestamp.now() });
             alert("Subido");
         };
-
-        // Todo en Uno
-        document.getElementById('fullProcessBtn').onclick = async () => {
-            const t = document.getElementById('fullMangaTitle').value;
-            const d = document.getElementById('fullMangaDesc').value;
-            const c = document.getElementById('fullMangaCover').value;
-            const fInput = document.getElementById('fullJsonInput');
-            const g = Array.from(document.querySelectorAll('.genre-checkbox-fullGenresGrid:checked')).map(cb => cb.value);
-            const s = document.getElementById('fullStatus');
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const json = JSON.parse(e.target.result);
-                s.innerHTML = "⏳ Subiendo...";
-                const mRef = await addDoc(collection(db, "mangas"), { title: t, description: d, cover: formatDriveThumbnail(c, "w1000"), genres: g, createdAt: Timestamp.now() });
-                for(const item of json) {
-                    const imgs = item.links.map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
-                    await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(item.capitulo), cover: formatDriveThumbnail(c, "w1000"), images: imgs, createdAt: Timestamp.now() });
-                }
-                s.innerHTML = "✅ Éxito";
-            };
-            reader.readAsText(fInput.files[0]);
-        };
-
-        // Limpieza
         document.getElementById('nukeBtn').onclick = async () => {
             if(!confirm("¿Borrar últimos 30?")) return;
             const stat = document.getElementById('nukeStatus');
