@@ -3,158 +3,285 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="tabTitle">Leyendo... | Manga 4 All</title>
   <title id="tabTitle">Manga 4 All</title>
+  <link rel="stylesheet" href="css/style.css?v=21">
+  <title id="tabTitle">Leyendo... | Manga 4 All</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/navbar.css">
+  
   <style>
-    * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
-    body { background: #070707; color: white; margin: 0; padding-top: 75px; }
-    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; background: rgba(17,17,17,0.95); position: sticky; top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; }
-    .btn-nav { background: #ff0055; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; }
-    .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
-    #chapterLabelTop { font-weight: 600; min-width: 150px; text-align: center; }
-    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; }
-    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; }
-    .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
-    footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
+    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 20px; background: #111; position: sticky; top: 70px; z-index: 1000; }
+    .btn-nav { background: #ff0055; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s; }
+    .btn-nav.disabled { background: #333 !important; color: #777 !important; pointer-events: none !important; opacity: 0.6; cursor: default; }
+    #chapterLabelTop, #chapterLabelBottom { font-weight: bold; color: white; text-align: center; min-width: 140px; font-size: 1.1rem; }
+    .manga-pages-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; min-height: 50vh; }
+    .manga-pages-container img { width: 100%; height: auto; display: block; background: #111; }
+    .list-btn { background: #333; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+    /* Estilos base con la nueva fuente */
+    * { 
+        font-family: 'Poppins', sans-serif !important; 
+        box-sizing: border-box;
+    }
+    
+    body { 
+        background: #070707; 
+        color: white; 
+        margin: 0; 
+        padding-top: 75px; /* Altura de la navbar */
+    }
+
+    /* Navegación del Lector (Sticky) */
+    .reader-nav { 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        gap: 15px; 
+        padding: 15px; 
+        background: rgba(17, 17, 17, 0.95); 
+        position: sticky; 
+        top: 75px; /* Pegado justo debajo de la navbar */
+        z-index: 1000; 
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #1f1f1f;
+    }
+
+    .btn-nav { 
+        background: #ff0055; 
+        color: white; 
+        padding: 10px 25px; 
+        border-radius: 25px; 
+        text-decoration: none; 
+        font-weight: bold; 
+        font-size: 0.9rem;
+        transition: 0.3s; 
+    }
+    
+    .btn-nav:hover { transform: scale(1.05); background: #ff2b72; }
+    
+    .btn-nav.disabled { 
+        background: #222 !important; 
+        color: #555 !important; 
+        pointer-events: none; 
+        opacity: 0.6; 
+    }
+
+    #chapterLabelTop, #chapterLabelBottom { 
+        font-weight: 600; 
+        color: white; 
+        text-align: center; 
+        min-width: 150px; 
+        font-size: 1rem; 
+    }
+
+    /* Contenedor de Imágenes */
+    .manga-pages-container { 
+        max-width: 850px; 
+        margin: 20px auto; 
+        display: flex; 
+        flex-direction: column; 
+        min-height: 50vh; 
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    }
+
+    .manga-pages-container img { 
+        width: 100%; 
+        height: auto; 
+        display: block; 
+        background: #000;
+        margin-bottom: 2px; /* Separación mínima elegante */
+    }
+
+    .list-btn { 
+        background: #1a1a1a; 
+        color: #ccc; 
+        padding: 10px 20px; 
+        border-radius: 25px; 
+        text-decoration: none; 
+        display: flex; 
+        align-items: center; 
+        gap: 8px; 
+        font-size: 0.85rem;
+        border: 1px solid #333;
+        transition: 0.3s;
+    }
+    
+    .list-btn:hover { border-color: #ff0055; color: white; }
+
+    footer { 
+        text-align: center; 
+        padding: 40px; 
+        color: #444; 
+        font-size: 0.8rem; 
+        letter-spacing: 1px;
+    }
   </style>
 </head>
 <body>
 
+  <nav>
+    <div class="nav-left">
+        <a href="index.html" class="logo">Manga 4 All</a>
+        <div class="nav-links">
+            <a href="index.html">Inicio</a>
+            <a href="directory.html">Directorio</a>
+        </div>
+    </div>
+  </nav>
   <div id="main-navbar"></div>
 
   <div class="reader-nav">
     <a href="#" id="listBtnTop" class="list-btn">☰ Lista</a>
+    <a href="#" id="prevBtnTop" class="btn-nav">←</a>
     <a href="#" id="prevBtnTop" class="btn-nav">Anterior</a>
     <span id="chapterLabelTop">Cargando...</span>
+    <a href="#" id="nextBtnTop" class="btn-nav">→</a>
     <a href="#" id="nextBtnTop" class="btn-nav">Siguiente</a>
   </div>
 
   <div class="manga-pages-container" id="mangaPages"></div>
+  <div class="manga-pages-container" id="mangaPages">
+      </div>
 
+  <div class="reader-nav" style="margin-bottom: 50px;">
+  <div class="reader-nav" style="margin-bottom: 50px; position: static; border-top: 1px solid #1f1f1f;">
+    <a href="#" id="listBtnBottom" class="list-btn">☰ Lista</a>
+    <a href="#" id="prevBtnBottom" class="btn-nav">←</a>
+    <a href="#" id="prevBtnBottom" class="btn-nav">Anterior</a>
+    <span id="chapterLabelBottom">Cargando...</span>
+    <a href="#" id="nextBtnBottom" class="btn-nav">→</a>
+    <a href="#" id="nextBtnBottom" class="btn-nav">Siguiente</a>
+  </div>
+
+  <footer>Manga 4 All © 2026</footer>
   <footer>MANGA 4 ALL © 2026</footer>
 
+  <script src="js/navbar.js"></script>
   <script type="module" src="js/navbar.js"></script>
 
   <script type="module">
     import { db } from "./js/firebase.js";
-    import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+    import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    const auth = getAuth();
     const params = new URLSearchParams(window.location.search);
     const mangaId = params.get("manga");
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
+    const shouldScroll = params.get("scroll") === "true"; // Detecta si viene de "Reanudar"
     const shouldScroll = params.get("scroll") === "true";
-    
-    // Capturamos el scroll que nos pasó el Index/Perfil en la URL
-    const savedScrollParam = params.get("savedScroll");
 
-    let currentUser = null;
-    onAuthStateChanged(auth, (user) => { currentUser = user; });
-    onAuthStateChanged(auth, (user) => { 
-        currentUser = user; 
-        if(user) guardarProgreso(window.scrollY);
-    });
-
-    function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
-    const numLimpio = limpiarNum(rawNumber);
-
-    // FUNCIÓN DE GUARDADO (Sigue igual, guardando scrollY)
-    async function guardarProgreso(scrollVal) {
-        if (!mangaId || !numLimpio) return;
-        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-        if (!mangaSnap.exists()) return;
-        const d = mangaSnap.data();
-
-        const datos = {
-            id: mangaId, title: d.title, chapter: numLimpio,
-            image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
-        };
-
-        localStorage.setItem("manga_last_seen", JSON.stringify(datos));
-
-        if (currentUser) {
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                [`readingHistory.${mangaId}`]: datos
-            });
-        }
+    function limpiarNum(n) {
+        const parsed = parseFloat(n);
+        return isNaN(parsed) ? n : parsed.toString();
     }
 
+    const numLimpio = limpiarNum(rawNumber);
+
+    // GUARDAR POSICIÓN DE SCROLL MIENTRAS LEES
+    // GUARDAR POSICIÓN DE SCROLL
     window.addEventListener('scroll', () => {
-        clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(() => guardarProgreso(window.scrollY), 1000);
+        const storage = localStorage.getItem("manga_last_seen");
+        if (storage) {
+            const data = JSON.parse(storage);
+            if (data.id === mangaId && data.chapter === numLimpio) {
+                data.scrollPos = window.scrollY;
+                localStorage.setItem("manga_last_seen", JSON.stringify(data));
+            }
+        }
     });
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
-      // --- CORRECCIÓN: Título dinámico de la pestaña ---
-      document.title = `M4A | Capítulo ${numLimpio}`;
-      
+      document.title = `Cap. ${numLimpio} | M4A`;
+      document.title = `Cap. ${numLimpio} | Manga 4 All`;
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
-      document.getElementById("listBtnTop").href = `manga.html?id=${mangaId}`;
+      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
+      document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
 
       try {
+        const mangaDoc = await getDoc(doc(db, "mangas", mangaId));
+        if (mangaDoc.exists()) {
+            const d = mangaDoc.data();
+            const storage = localStorage.getItem("manga_last_seen");
+            let savedScroll = 0;
+
+            // Si ya estamos en este capítulo, mantenemos el scroll que ya teníamos guardado
+            if (storage) {
+                const old = JSON.parse(storage);
+                if (old.id === mangaId && old.chapter === numLimpio) savedScroll = old.scrollPos || 0;
+            }
+
+            const historial = {
+                id: mangaId,
+                title: d.title,
+                chapter: numLimpio,
+                image: d.cover || d.image,
+                scrollPos: savedScroll,
+                time: Date.now()
+            };
+            localStorage.setItem("manga_last_seen", JSON.stringify(historial));
+        }
+
         const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const snap = await getDocs(q);
         let caps = [];
-        snap.forEach(d => { let data = d.data(); data.norm = String(data.number).trim(); caps.push(data); });
-        caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+        snap.forEach(doc => {
+            let data = doc.data();
+            data.normNum = String(data.number).trim();
+            caps.push(data);
+        });
 
-        const idx = caps.findIndex(c => c.norm === rawNumber);
+        caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+        const idx = caps.findIndex(c => c.normNum === rawNumber);
         const tomo = caps[idx];
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
-          
-          // --- CORRECCIÓN DE SCROLL (TIMING PRO) ---
-          let imagesLoaded = 0;
-          const totalImages = tomo.images.length;
+          cont.innerHTML = "";
 
-          tomo.images.forEach((url) => {
+          let imagesLoaded = 0;
+          tomo.images.forEach((url, i) => {
             const img = document.createElement("img");
             img.src = url;
-            img.loading = "lazy";
+            img.loading = "lazy"; // Optimización de carga
 
+            // Cuando la última imagen carga, si venimos de "Reanudar", saltamos a la posición
             img.onload = () => {
                 imagesLoaded++;
-                // Solo ejecutamos el scroll cuando cargó la ÚLTIMA imagen
-                if (imagesLoaded === totalImages && shouldScroll) {
-                    let targetScroll = 0;
-                    
-                    // Prioridad 1: Scroll que viene en la URL (Nube/Sincronizado)
-                    if (savedScrollParam) {
-                        targetScroll = parseFloat(savedScrollParam);
-                    } else {
-                        // Prioridad 2: Scroll local (para Invitados/mismo dispositivo)
-                        const local = JSON.parse(localStorage.getItem("manga_last_seen"));
-                        if (local && local.id === mangaId && local.chapter === numLimpio) {
-                            targetScroll = local.scrollPos || 0;
-                        }
+                if (imagesLoaded === tomo.images.length && shouldScroll) {
+                    const data = JSON.parse(localStorage.getItem("manga_last_seen"));
+                    if (data && data.scrollPos) {
+                        window.scrollTo({ top: data.scrollPos, behavior: 'smooth' });
                     }
-                    
-                    // Hacemos el scroll suave para mejor UX
-                    window.scrollTo({
-                        top: targetScroll,
-                        behavior: 'smooth'
-                    });
-                    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
                 }
             };
             cont.appendChild(img);
           });
-          guardarProgreso(window.scrollY);
         }
 
-        if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
-        else document.getElementById("prevBtnTop").classList.add("disabled");
+        // Navegación Anterior
+        if (idx > 0) {
+            const p = caps[idx-1].number;
+            document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${p}`;
+            document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${p}`;
+        } else {
+            document.getElementById("prevBtnTop").classList.add("disabled");
+            document.getElementById("prevBtnBottom").classList.add("disabled");
+        }
 
-        if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
-        else document.getElementById("nextBtnTop").textContent = "FIN";
+        // Navegación Siguiente
+        if (idx !== -1 && idx < caps.length - 1) {
+            const n = caps[idx+1].number;
+            document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${n}`;
+            document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${n}`;
+        } else {
+            const nt = document.getElementById("nextBtnTop");
+            const nb = document.getElementById("nextBtnBottom");
+            nt.classList.add("disabled"); nb.classList.add("disabled");
+            nt.textContent = nb.textContent = "FIN";
+        }
 
       } catch (e) { console.error(e); }
     }
