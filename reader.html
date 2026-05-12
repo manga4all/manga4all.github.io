@@ -16,7 +16,7 @@
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
     #chapterLabelTop { font-weight: 600; min-width: 150px; text-align: center; }
     .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; }
-    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; min-height: 100px; }
+    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; min-height: 150px; }
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
   </style>
@@ -55,7 +55,7 @@
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // PASO 1: Cargar todas las imágenes relacionadas al capítulo
+    // PASO 1: Carga nativa de imágenes
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
@@ -75,7 +75,6 @@
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
-          // Las imágenes se inyectan directamente para que el navegador las gestione rápido
           tomo.images.forEach((url) => {
             const img = document.createElement("img");
             img.src = url; 
@@ -83,53 +82,80 @@
           });
         }
 
-        // Navegación
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else document.getElementById("prevBtnTop").classList.add("disabled");
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
         else document.getElementById("nextBtnTop").textContent = "FIN";
 
-        // PASO 2: Buscar en Firebase la ubicación
+        // Iniciar flujo de sincronización
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 if (shouldScroll) {
-                    const userSnap = await getDoc(doc(db, "users", user.uid));
-                    if (userSnap.exists()) {
-                        const history = userSnap.data().readingHistory;
-                        const miProgreso = (history && history[mangaId]) ? history[mangaId] : null;
-
-                        if (miProgreso && miProgreso.chapter === numLimpio) {
-                            const index = miProgreso.imageIndex || 0;
-                            const todasLasImgs = document.querySelectorAll("#mangaPages img");
-                            if (todasLasImgs[index]) {
-                                // Salto instantáneo a la imagen
-                                todasLasImgs[index].scrollIntoView();
-                                window.scrollBy(0, -85);
-                            }
-                        }
-                    }
+                    await ejecutarComprobacionYSalto();
+                } else {
+                    activarGuardado();
                 }
-                
-                // PASO 3: Activar guardado SOLO después de la comprobación
-                setTimeout(() => {
-                    canSaveProgress = true;
-                }, 1000);
             }
         });
 
       } catch (e) { console.error(e); }
     }
 
+    // PASO 2: Comprobar ubicación y saltar con precisión
+    async function ejecutarComprobacionYSalto() {
+        try {
+            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+            if (userSnap.exists()) {
+                const history = userSnap.data().readingHistory;
+                const miProgreso = (history && history[mangaId]) ? history[mangaId] : null;
+
+                if (miProgreso && miProgreso.chapter === numLimpio) {
+                    const index = miProgreso.imageIndex || 0;
+                    const todasLasImgs = document.querySelectorAll("#mangaPages img");
+                    
+                    if (todasLasImgs[index]) {
+                        // Esperamos un momento para que el navegador asiente el layout
+                        setTimeout(() => {
+                            const rect = todasLasImgs[index].getBoundingClientRect();
+                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            const targetY = rect.top + scrollTop - 80; // Compensar exactamente la navbar
+                            
+                            window.scrollTo({ top: targetY, behavior: 'instant' });
+                            activarGuardado();
+                        }, 600);
+                        return;
+                    }
+                }
+            }
+            activarGuardado();
+        } catch (e) { 
+            console.error(e); 
+            activarGuardado();
+        }
+    }
+
+    function activarGuardado() {
+        setTimeout(() => {
+            canSaveProgress = true;
+            console.log("Sistema de guardado listo.");
+        }, 1000);
+    }
+
+    // Detección estricta: ¿Qué imagen está tocando el borde superior?
     function obtenerIndiceImagenVisible() {
         const imagenes = document.querySelectorAll("#mangaPages img");
         let indiceVisible = 0;
-        imagenes.forEach((img, index) => {
-            const rect = img.getBoundingClientRect();
-            if (rect.top < 200 && rect.bottom > 0) {
-                indiceVisible = index;
+        const navbarHeight = 85;
+
+        for (let i = 0; i < imagenes.length; i++) {
+            const rect = imagenes[i].getBoundingClientRect();
+            // Si el fondo de la imagen actual todavía no ha pasado la navbar, esta es la que vemos
+            if (rect.bottom > navbarHeight + 50) {
+                indiceVisible = i;
+                break;
             }
-        });
+        }
         return indiceVisible;
     }
 
