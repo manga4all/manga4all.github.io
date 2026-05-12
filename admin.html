@@ -32,13 +32,13 @@
     .input-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #bbb; }
     input, textarea, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: white; font-size: 15px; }
-    .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .primary-btn { width: 100%; padding: 15px; border: none; border-radius: 10px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
 
     .genres-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; background: #0a0a0a; padding: 15px; border-radius: 10px; }
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .file-input-wrapper { background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; text-align: center; cursor: pointer; }
     
-    #bulkStatus, #nukeStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:350px; overflow-y:auto; border: 1px solid #333; color: #0f0; }
+    #bulkStatus, #nukeStatus, #editStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:350px; overflow-y:auto; border: 1px solid #333; color: #0f0; }
   </style>
 </head>
 <body>
@@ -110,8 +110,12 @@
             <select id="editMangaSelector"><option value="">Cargando...</option></select>
             <div id="editForm" style="display:none; margin-top:20px;">
                 <input type="text" id="editTitle" placeholder="Nuevo Título">
-                <button class="primary-btn" id="updateMangaBtn" style="margin-top:10px;">Actualizar</button>
+                <button class="primary-btn" id="updateMangaBtn">Actualizar Título</button>
+                <hr style="margin:20px 0; border:0; border-top:1px solid #222;">
+                <p style="font-size:0.8rem; color:#888; margin-bottom:10px;">Usa esto para ponerle la portada del manga a todos sus capítulos que salieron vacíos:</p>
+                <button class="primary-btn" id="repairCoversBtn" style="background:#444;">🛠️ Reparar Portadas de Capítulos</button>
             </div>
+            <div id="editStatus"></div>
         </div>
 
         <div id="singleTab" class="tab-content">
@@ -119,26 +123,26 @@
             <input type="text" id="singleMangaId" placeholder="ID del Manga">
             <input type="number" id="singleNum" placeholder="Número del Capítulo">
             <textarea id="singleImages" placeholder="Links de imágenes (uno por línea)" style="height:150px; margin-top:10px;"></textarea>
-            <button class="primary-btn" id="uploadSingleBtn" style="margin-top:10px;">Subir Capítulo</button>
+            <button class="primary-btn" id="uploadSingleBtn">Subir Capítulo</button>
         </div>
 
         <div id="jsonTab" class="tab-content">
             <h1>📂 JSON Solo</h1>
             <input type="text" id="targetMangaId" placeholder="ID del Manga">
             <input type="file" id="jsonFileInput" accept=".json" style="margin-top:10px;">
-            <button class="primary-btn" id="uploadJsonBtn" style="margin-top:10px;">Subir JSON</button>
+            <button class="primary-btn" id="uploadJsonBtn">Subir JSON</button>
         </div>
 
         <div id="settingsTab" class="tab-content">
             <h1>⚙️ Gestionar Géneros</h1>
             <input type="text" id="newGenreName" placeholder="Nuevo Género">
-            <button class="primary-btn" id="addGenreBtn" style="margin-top:10px;">Añadir</button>
+            <button class="primary-btn" id="addGenreBtn">Añadir</button>
             <div id="genreListDisplay" style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px;"></div>
         </div>
 
         <div id="nukeTab" class="tab-content">
             <h1 style="color:#ff3333;">🧨 Limpieza Total (Hoy)</h1>
-            <p style="margin-bottom: 20px; color: #888;">Esta acción borrará ABSOLUTAMENTE TODO lo que hayas subido hoy.</p>
+            <p style="margin-bottom: 20px; color: #888;">Borra todo lo que se haya subido hoy para reiniciar el proceso.</p>
             <button class="primary-btn" id="nukeBtn" style="background:#900;">BORRAR TODO LO DE HOY</button>
             <div id="nukeStatus"></div>
         </div>
@@ -168,7 +172,6 @@
     const ADMIN_EMAIL = "brian.ag.cd2@gmail.com";
     let listenersReady = false;
 
-    // LOGIN LOGIC
     onAuthStateChanged(auth, (user) => {
         if (user && user.email === ADMIN_EMAIL) {
             document.getElementById('login-overlay').style.display = "none";
@@ -203,7 +206,7 @@
           return String(id).startsWith('http') ? id : `https://drive.google.com/thumbnail?id=${id}&sz=${size}`;
         };
 
-        // --- CARGA INDUSTRIAL (EXCEL) ---
+        // --- CARGA INDUSTRIAL (CON FIX DE PORTADA) ---
         let jsonFilesMap = {};
         document.getElementById('bulkFolderInput').onchange = (e) => {
             jsonFilesMap = {};
@@ -232,17 +235,26 @@
                     const row = data[i]; if(!row || !row[0]) continue;
                     const nombre = String(row[0]).trim();
                     const jName = String(row[4] || "").toLowerCase().trim();
+                    const currentCover = formatDriveThumbnail(row[1], "w1000"); // Portada del manga
+                    
                     status.innerHTML += `> [${i}] Subiendo: ${nombre}...<br>`;
                     try {
                         const mRef = await addDoc(collection(db, "mangas"), {
-                            title: nombre, description: String(row[2]||""), cover: formatDriveThumbnail(row[1], "w1000"),
+                            title: nombre, description: String(row[2]||""), cover: currentCover,
                             genres: String(row[3]||"").split(',').map(x=>x.trim()).filter(x=>x), createdAt: Timestamp.now()
                         });
                         if(jsonFilesMap[jName]) {
                             const jData = JSON.parse(await jsonFilesMap[jName].text());
                             for(let cap of jData) {
                                 const imgs = (cap.links || cap.images || []).map(l => formatDriveThumbnail(l, "w1600")).filter(u => u);
-                                await addDoc(collection(db, "tomos"), { mangaId: mRef.id, number: String(cap.capitulo||cap.number), images: imgs, createdAt: Timestamp.now() });
+                                // FIX APLICADO: Ahora guardamos cover en el tomo
+                                await addDoc(collection(db, "tomos"), { 
+                                    mangaId: mRef.id, 
+                                    number: String(cap.capitulo||cap.number), 
+                                    cover: currentCover, 
+                                    images: imgs, 
+                                    createdAt: Timestamp.now() 
+                                });
                             }
                             status.innerHTML += `<span style="color:#0f0">   ✅ OK</span><br>`;
                         }
@@ -252,6 +264,24 @@
                 btn.disabled = false;
             };
             reader.readAsArrayBuffer(excelInput.files[0]);
+        };
+
+        // --- BOTÓN DE REPARACIÓN (Para arreglar portadas vacías) ---
+        document.getElementById('repairCoversBtn').onclick = async () => {
+            const mangaId = document.getElementById('editMangaSelector').value;
+            if(!mangaId) return alert("Selecciona un manga");
+            const stat = document.getElementById('editStatus');
+            stat.style.display = "block";
+            stat.innerHTML = "⏳ Reparando capítulos...";
+            try {
+                const mSnap = await getDoc(doc(db, "mangas", mangaId));
+                const mainCover = mSnap.data().cover;
+                const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", mangaId)));
+                for(let tDoc of ts.docs) {
+                    await updateDoc(doc(db, "tomos", tDoc.id), { cover: mainCover });
+                }
+                stat.innerHTML = `✅ Se repararon ${ts.size} capítulos.`;
+            } catch (e) { stat.innerHTML = "❌ Error: " + e.message; }
         };
 
         // --- LIMPIEZA TOTAL HOY ---
@@ -278,6 +308,17 @@
             const c = document.getElementById('genresGrid');
             if(c) c.innerHTML = gens.map(g => `<label class="genre-item"><input type="checkbox" class="genre-checkbox-genresGrid" value="${g}"> ${g}</label>`).join('');
         });
+
+        window.addEventListener('refreshSelector', async () => {
+            const snap = await getDocs(collection(db, "mangas"));
+            const sorted = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => a.title.localeCompare(b.title));
+            const sel = document.getElementById('editMangaSelector');
+            sel.innerHTML = '<option value="">-- Seleccionar Manga --</option>' + sorted.map(m => `<option value="${m.id}">${m.title}</option>`).join('');
+        });
+
+        document.getElementById('editMangaSelector').onchange = (e) => {
+            if(e.target.value) document.getElementById('editForm').style.display = "block";
+        };
     }
   </script>
 </body>
