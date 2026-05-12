@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="tabTitle">Leyendo... | Manga 4 All</title>
   <title id="tabTitle">Manga 4 All</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +17,7 @@
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
     #chapterLabelTop { font-weight: 600; min-width: 150px; text-align: center; }
     .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; }
-    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; min-height: 150px; }
+    .manga-pages-container img { width: 100%; display: block; background: #000; margin-bottom: 2px; }
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
   </style>
@@ -49,17 +50,51 @@
     const rawNumber = params.get("number") ? params.get("number").trim() : null;
     const shouldScroll = params.get("scroll") === "true";
     
+    // Capturamos el scroll que nos pasó el Index/Perfil en la URL
+    const savedScrollParam = params.get("savedScroll");
+
     let currentUser = null;
-    let canSaveProgress = false; 
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
+    onAuthStateChanged(auth, (user) => { 
+        currentUser = user; 
+        if(user) guardarProgreso(window.scrollY);
+    });
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // PASO 1: Carga nativa de imágenes
+    // FUNCIÓN DE GUARDADO (Sigue igual, guardando scrollY)
+    async function guardarProgreso(scrollVal) {
+        if (!mangaId || !numLimpio) return;
+        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
+        if (!mangaSnap.exists()) return;
+        const d = mangaSnap.data();
+
+        const datos = {
+            id: mangaId, title: d.title, chapter: numLimpio,
+            image: d.cover || d.image, scrollPos: scrollVal || 0, time: Date.now()
+        };
+
+        localStorage.setItem("manga_last_seen", JSON.stringify(datos));
+
+        if (currentUser) {
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                [`readingHistory.${mangaId}`]: datos
+            });
+        }
+    }
+
+    window.addEventListener('scroll', () => {
+        clearTimeout(window.saveTimer);
+        window.saveTimer = setTimeout(() => guardarProgreso(window.scrollY), 1000);
+    });
+
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
+      // --- CORRECCIÓN: Título dinámico de la pestaña ---
       document.title = `M4A | Capítulo ${numLimpio}`;
+      
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("listBtnTop").href = `manga.html?id=${mangaId}`;
 
@@ -69,121 +104,60 @@
         let caps = [];
         snap.forEach(d => { let data = d.data(); data.norm = String(data.number).trim(); caps.push(data); });
         caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-        
+
         const idx = caps.findIndex(c => c.norm === rawNumber);
         const tomo = caps[idx];
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
+          
+          // --- CORRECCIÓN DE SCROLL (TIMING PRO) ---
+          let imagesLoaded = 0;
+          const totalImages = tomo.images.length;
+
           tomo.images.forEach((url) => {
             const img = document.createElement("img");
-            img.src = url; 
+            img.src = url;
+            img.loading = "lazy";
+
+            img.onload = () => {
+                imagesLoaded++;
+                // Solo ejecutamos el scroll cuando cargó la ÚLTIMA imagen
+                if (imagesLoaded === totalImages && shouldScroll) {
+                    let targetScroll = 0;
+                    
+                    // Prioridad 1: Scroll que viene en la URL (Nube/Sincronizado)
+                    if (savedScrollParam) {
+                        targetScroll = parseFloat(savedScrollParam);
+                    } else {
+                        // Prioridad 2: Scroll local (para Invitados/mismo dispositivo)
+                        const local = JSON.parse(localStorage.getItem("manga_last_seen"));
+                        if (local && local.id === mangaId && local.chapter === numLimpio) {
+                            targetScroll = local.scrollPos || 0;
+                        }
+                    }
+                    
+                    // Hacemos el scroll suave para mejor UX
+                    window.scrollTo({
+                        top: targetScroll,
+                        behavior: 'smooth'
+                    });
+                    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+                }
+            };
             cont.appendChild(img);
           });
+          guardarProgreso(window.scrollY);
         }
 
         if (idx > 0) document.getElementById("prevBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else document.getElementById("prevBtnTop").classList.add("disabled");
+
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
         else document.getElementById("nextBtnTop").textContent = "FIN";
 
-        // Iniciar flujo de sincronización
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                if (shouldScroll) {
-                    await ejecutarComprobacionYSalto();
-                } else {
-                    activarGuardado();
-                }
-            }
-        });
-
       } catch (e) { console.error(e); }
     }
-
-    // PASO 2: Comprobar ubicación y saltar con precisión
-    async function ejecutarComprobacionYSalto() {
-        try {
-            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-            if (userSnap.exists()) {
-                const history = userSnap.data().readingHistory;
-                const miProgreso = (history && history[mangaId]) ? history[mangaId] : null;
-
-                if (miProgreso && miProgreso.chapter === numLimpio) {
-                    const index = miProgreso.imageIndex || 0;
-                    const todasLasImgs = document.querySelectorAll("#mangaPages img");
-                    
-                    if (todasLasImgs[index]) {
-                        // Esperamos un momento para que el navegador asiente el layout
-                        setTimeout(() => {
-                            const rect = todasLasImgs[index].getBoundingClientRect();
-                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                            const targetY = rect.top + scrollTop - 80; // Compensar exactamente la navbar
-                            
-                            window.scrollTo({ top: targetY, behavior: 'instant' });
-                            activarGuardado();
-                        }, 600);
-                        return;
-                    }
-                }
-            }
-            activarGuardado();
-        } catch (e) { 
-            console.error(e); 
-            activarGuardado();
-        }
-    }
-
-    function activarGuardado() {
-        setTimeout(() => {
-            canSaveProgress = true;
-            console.log("Sistema de guardado listo.");
-        }, 1000);
-    }
-
-    // Detección estricta: ¿Qué imagen está tocando el borde superior?
-    function obtenerIndiceImagenVisible() {
-        const imagenes = document.querySelectorAll("#mangaPages img");
-        let indiceVisible = 0;
-        const navbarHeight = 85;
-
-        for (let i = 0; i < imagenes.length; i++) {
-            const rect = imagenes[i].getBoundingClientRect();
-            // Si el fondo de la imagen actual todavía no ha pasado la navbar, esta es la que vemos
-            if (rect.bottom > navbarHeight + 50) {
-                indiceVisible = i;
-                break;
-            }
-        }
-        return indiceVisible;
-    }
-
-    async function guardarProgreso() {
-        if (!canSaveProgress || !currentUser || !mangaId) return;
-
-        const imgIndex = obtenerIndiceImagenVisible();
-        try {
-            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-            const d = mangaSnap.data();
-            const datos = {
-                id: mangaId, title: d.title, chapter: numLimpio,
-                image: d.cover || d.image, 
-                imageIndex: imgIndex,
-                time: Date.now()
-            };
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                [`readingHistory.${mangaId}`]: datos
-            });
-        } catch(e) { console.error(e); }
-    }
-
-    window.addEventListener('scroll', () => {
-        if (!canSaveProgress) return;
-        clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(() => guardarProgreso(), 2000);
-    });
-
     loadReader();
   </script>
 </body>
