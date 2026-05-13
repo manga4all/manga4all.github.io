@@ -66,11 +66,12 @@
     let hasJumped = false;
     let mangaTipo = "1";
 
-    function limpiarNum(n) {
+    // Fix Syntax Error
+    function obtenerNumLimpio(n) {
         const p = parseFloat(n);
         return isNaN(p) ? n : p.toString();
     }
-    const numLimpio = limpiarNum(rawNumber);
+    const numLimpio = obtenerNumLimpio(rawNumber);
 
     document.title = `M4A | Cap. ${numLimpio}`;
 
@@ -78,7 +79,6 @@
         currentUser = user;
         if (!mangaId) return;
 
-        // Primero detectamos el tipo para no arruinar el flujo
         try {
             const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
             if (mangaSnap.exists()) {
@@ -113,16 +113,18 @@
           if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
           if (mangaTipo === "2") {
-              // MODO TIPO 2 (imgBB): Carga directa
+              // --- TIPO 2 (imgBB): Carga directa ---
               tomo.images.forEach(url => {
                   const img = document.createElement("img");
                   img.src = url;
                   cont.appendChild(img);
               });
+              // Para Tipo 2 saltamos por tiempo, no esperamos contadores
               if (shouldScroll) setTimeout(ejecutarSalto, 1200);
               else setTimeout(() => { canSave = true; }, 1500);
           } else {
-              // MODO TIPO 1 (Drive): LÓGICA QUE YA TE FUNCIONABA
+              // --- TIPO 1 (Drive): Lógica de lotes intacta ---
+              let loadedCounter = 0;
               const injectBatch = (startIndex) => {
                   const batchSize = 8;
                   for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
@@ -131,8 +133,8 @@
                       if (i > 10) img.loading = "lazy"; 
                       
                       img.onload = img.onerror = () => {
-                          imagesInDOM++;
-                          if (imagesInDOM === imagesTotalCount && shouldScroll && !hasJumped) {
+                          loadedCounter++;
+                          if (loadedCounter === imagesTotalCount && shouldScroll && !hasJumped) {
                               ejecutarSalto();
                           }
                       };
@@ -148,7 +150,7 @@
           }
         }
 
-        // Navegación
+        // Nav
         if (idx > 0) document.getElementById("prevBtnTop").href = document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else { document.getElementById("prevBtnTop").classList.add("disabled"); document.getElementById("prevBtnBottom").classList.add("disabled"); }
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
@@ -160,31 +162,29 @@
     async function ejecutarSalto() {
         if (hasJumped || !currentUser) return;
         
-        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-        if (userSnap.exists()) {
-            const history = userSnap.data().readingHistory;
-            const prog = history ? history[mangaId] : null;
+        try {
+            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+            if (userSnap.exists()) {
+                const history = userSnap.data().readingHistory;
+                const prog = history ? history[mangaId] : null;
 
-            if (prog && prog.chapter === numLimpio) {
-                const todas = document.querySelectorAll("#mangaPages img");
-                const targetIndex = prog.imageIndex || 0;
-                
-                if (todas[targetIndex]) {
-                    hasJumped = true;
-                    setTimeout(() => {
+                if (prog && prog.chapter === numLimpio) {
+                    const todas = document.querySelectorAll("#mangaPages img");
+                    const targetIndex = prog.imageIndex || 0;
+                    
+                    if (todas[targetIndex]) {
+                        hasJumped = true;
                         const rect = todas[targetIndex].getBoundingClientRect();
                         const pos = rect.top + window.pageYOffset - 85;
                         window.scrollTo({ top: pos, behavior: 'instant' });
-                        
-                        document.getElementById("resumeNotice").style.display = "none";
-                        setTimeout(() => { canSave = true; }, 1000);
-                    }, 500);
-                    return;
+                    }
                 }
             }
-        }
+        } catch(e) { console.error(e); }
+        
+        // SIEMPRE quitar el mensaje al terminar el intento de salto
         document.getElementById("resumeNotice").style.display = "none";
-        canSave = true;
+        setTimeout(() => { canSave = true; }, 1000);
     }
 
     function getVisibleIndex() {
