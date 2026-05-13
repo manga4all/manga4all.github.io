@@ -114,11 +114,20 @@
 
             if (items.length > 0) {
                 container.style.display = "block";
-                track.innerHTML = items.map(m => {
-                    // CORRECCIÓN: Pasamos el scrollPos en la URL para sincronización nube
+                
+                // CARGAMOS EL TIPO DE CADA MANGA PARA EL ENLACE
+                const htmlPromesas = items.map(async (m) => {
+                    let readerFile = "reader.html";
+                    try {
+                        const mSnap = await getDoc(doc(db, "mangas", m.id));
+                        if (mSnap.exists() && mSnap.data().tipo === "2") {
+                            readerFile = "ReaderBB.html";
+                        }
+                    } catch(e) {}
+
                     const pos = m.scrollPos || 0;
                     return `
-                        <a href="reader.html?manga=${m.id}&number=${m.chapter}&scroll=true&savedScroll=${pos}" class="history-item">
+                        <a href="${readerFile}?manga=${m.id}&number=${m.chapter}&scroll=true&savedScroll=${pos}" class="history-item">
                             <img src="${m.image}">
                             <div style="overflow: hidden;">
                                 <span style="color: #ff0055; font-weight: bold; font-size: 0.65rem; letter-spacing: 1px;">REANUDAR</span>
@@ -127,7 +136,10 @@
                             </div>
                         </a>
                     `;
-                }).join('');
+                });
+
+                const results = await Promise.all(htmlPromesas);
+                track.innerHTML = results.join('');
 
                 if (items.length > 3) {
                     document.getElementById("prevHist").style.display = "block";
