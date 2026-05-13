@@ -4,33 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="tabTitle">M4A | Capitulo ...</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/navbar.css">
+  
   <style>
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
-    body { background: #070707; color: white; margin: 0; padding-top: 75px; }
     
-    /* 2. BARRA FIJA ARRIBA (IGUAL QUE READER.HTML) */
+    /* 2. ESPACIO PARA NAVBAR GLOBAL (100px como en tus otras páginas) */
+    body { 
+        background: #070707; 
+        color: white; 
+        margin: 0; 
+        padding-top: 100px; 
+    }
+    
+    /* 3. LECTOR NAV FIJO (Debajo de la navbar global) */
     .reader-nav { 
         display: flex; 
         justify-content: center; 
         align-items: center; 
-        gap: 25px; /* Espaciado generoso solicitado */
+        gap: 25px; /* Espaciado que pediste (marcado en verde) */
         padding: 15px; 
         background: rgba(17, 17, 17, 0.95); 
         position: sticky; 
-        top: 75px; /* Se queda debajo de la main-navbar */
+        top: 100px; /* Pegado a la navbar de 100px */
         z-index: 1000; 
         backdrop-filter: blur(10px);
         border-bottom: 1px solid #1f1f1f;
     }
 
-    /* Botones con texto blanco y legible */
+    /* Botones legibles y con espacio */
     .btn-nav { 
         background: #ff0055; 
-        color: white !important; 
+        color: white !important; /* Texto blanco garantizado */
         padding: 10px 25px; 
         border-radius: 25px; 
         text-decoration: none; 
@@ -40,7 +49,7 @@
     }
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
 
-    /* Icono de lista */
+    /* Estilo botón lista */
     .list-btn {
         background: #1a1a1a;
         color: #ccc;
@@ -53,7 +62,13 @@
 
     #chapLabel { font-weight: 700; font-size: 1rem; min-width: 120px; text-align: center; }
 
-    .manga-pages-container { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; background: #000; }
+    .manga-pages-container { 
+        max-width: 850px; 
+        margin: 0 auto; 
+        display: flex; 
+        flex-direction: column; 
+        background: #000; 
+    }
     .manga-pages-container img { width: 100%; height: auto; display: block; margin-bottom: 2px; }
 
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
@@ -93,7 +108,7 @@
     const mangaId = params.get("manga");
     const chapterNum = params.get("number");
 
-    // 1. CORRECCIÓN TÍTULO PESTAÑA: M4A | Capitulo [N]
+    // Título de pestaña: M4A | Capitulo [N]
     document.title = `M4A | Capitulo ${chapterNum}`;
 
     async function loadChapter() {
