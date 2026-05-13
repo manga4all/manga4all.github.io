@@ -11,38 +11,14 @@
   <style>
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
     body { background: #070707; color: white; margin: 0; padding-top: 75px; }
-    
-    .reader-nav { 
-        display: flex; justify-content: center; align-items: center; gap: 15px; 
-        padding: 15px; background: rgba(17, 17, 17, 0.95); position: sticky; 
-        top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; 
-    }
-
-    .btn-nav { 
-        background: #ff0055; color: white; padding: 10px 25px; border-radius: 25px; 
-        text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; 
-    }
+    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; background: rgba(17, 17, 17, 0.95); position: sticky; top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; }
+    .btn-nav { background: #ff0055; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; }
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
-
     #chapterLabelTop, #chapterLabelBottom { font-weight: 600; min-width: 150px; text-align: center; }
-
-    #resumeNotice { 
-        display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; 
-        color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; 
-        margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; 
-        animation: pulse 2s infinite; 
-    }
+    #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-
-    .manga-pages-container { 
-        max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; 
-        min-height: 100vh; background: #000;
-    }
-    .manga-pages-container img { 
-        width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; 
-        min-height: 400px; 
-    }
-
+    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
+    .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
     .nav-bottom { position: static; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; }
@@ -90,7 +66,6 @@
     let hasJumped = false;
     let mangaTipo = "1";
 
-    // Función limpia para el número
     function limpiarNumero(n) {
         if (!n) return "";
         const p = parseFloat(n);
@@ -99,21 +74,8 @@
     const numLimpio = limpiarNumero(rawNumber);
     document.title = "M4A | Cap. " + numLimpio;
 
-    onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        if (mangaId) {
-            // Obtener el tipo de manga primero
-            try {
-                const mSnap = await getDoc(doc(db, "mangas", mangaId));
-                if (mSnap.exists()) {
-                    mangaTipo = String(mSnap.data().tipo || "1");
-                }
-            } catch(e) { console.error(e); }
-            loadReader();
-        }
-    });
-
-    async function loadReader() {
+    // 1. CARGA DE IMÁGENES INMEDIATA (No depende de Auth)
+    async function initReader() {
         if (!mangaId || !rawNumber) return;
 
         document.getElementById("chapterLabelTop").textContent = "Capítulo " + numLimpio;
@@ -121,17 +83,23 @@
         document.querySelectorAll(".list-btn").forEach(b => b.href = "manga.html?id=" + mangaId);
 
         try {
-            const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
-            const snap = await getDocs(q);
+            // Obtenemos el manga (para el tipo) y el capítulo
+            const [mSnap, tomoSnap] = await Promise.all([
+                getDoc(doc(db, "mangas", mangaId)),
+                getDocs(query(collection(db, "tomos"), where("mangaId", "==", mangaId)))
+            ]);
+
+            if (mSnap.exists()) mangaTipo = String(mSnap.data().tipo || "1");
+
             let caps = [];
-            snap.forEach(d => { 
+            tomoSnap.forEach(d => { 
                 let data = d.data(); 
                 data.norm = String(data.number).trim(); 
                 caps.push(data); 
             });
             caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
             
-            const idx = caps.findIndex(c => c.norm === rawNumber);
+            const idx = caps.findIndex(c => c.norm === numLimpio);
             const tomo = caps[idx];
 
             if (tomo && tomo.images) {
@@ -139,33 +107,30 @@
                 imagesTotalCount = tomo.images.length;
                 if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
+                // INYECCIÓN DE IMÁGENES
                 if (mangaTipo === "2") {
-                    // MODO imgBB: Rápido
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.src = url;
                         cont.appendChild(img);
                     });
-                    // Salto rápido para imgBB
-                    if (shouldScroll) setTimeout(ejecutarSalto, 1000);
+                    // En Tipo 2 habilitamos el salto casi de inmediato
+                    if (shouldScroll) setTimeout(intentarSalto, 1000);
                     else canSave = true;
                 } else {
-                    // MODO Drive: Por lotes (Tu receta original)
                     const injectBatch = (start) => {
-                        const batch = 8;
-                        for (let i = start; i < start + batch && i < imagesTotalCount; i++) {
+                        const batchSize = 8;
+                        for (let i = start; i < start + batchSize && i < imagesTotalCount; i++) {
                             const img = document.createElement("img");
                             img.src = tomo.images[i];
                             img.onload = img.onerror = () => {
                                 imagesLoadedCount++;
-                                if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
-                                    ejecutarSalto();
-                                }
+                                if (imagesLoadedCount === imagesTotalCount && shouldScroll) intentarSalto();
                             };
                             cont.appendChild(img);
                         }
-                        if (start + batch < imagesTotalCount) {
-                            setTimeout(() => injectBatch(start + batch), 400);
+                        if (start + batchSize < imagesTotalCount) {
+                            setTimeout(() => injectBatch(start + batchSize), 400);
                         } else if (!shouldScroll) {
                             setTimeout(() => { canSave = true; }, 1000);
                         }
@@ -184,8 +149,19 @@
         else { document.getElementById("nextBtnTop").textContent = "FIN"; document.getElementById("nextBtnTop").classList.add("disabled"); }
     }
 
-    async function ejecutarSalto() {
-        if (hasJumped || !currentUser) return;
+    // 2. MANEJO DE AUTH Y SALTO (Independiente de la carga)
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (shouldScroll && !hasJumped) intentarSalto();
+    });
+
+    async function intentarSalto() {
+        // Solo procedemos si ya tenemos usuario y el scroll es requerido
+        if (hasJumped || !shouldScroll) return;
+
+        // Si el usuario aún no carga, esperamos a la respuesta de Auth
+        if (!currentUser) return; 
+
         try {
             const userSnap = await getDoc(doc(db, "users", currentUser.uid));
             if (userSnap.exists()) {
@@ -203,7 +179,9 @@
                     }
                 }
             }
-        } catch(e) {}
+        } catch(e) { console.error("Error en salto:", e); }
+        
+        // Quitar mensaje pase lo que pase
         document.getElementById("resumeNotice").style.display = "none";
         setTimeout(() => { canSave = true; }, 1000);
     }
@@ -220,8 +198,8 @@
         if (!canSave || !currentUser) return;
         const index = getVisibleIndex();
         try {
-            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-            const d = mangaSnap.data();
+            const mSnap = await getDoc(doc(db, "mangas", mangaId));
+            const d = mSnap.data();
             const info = { id: mangaId, title: d.title, chapter: numLimpio, image: (d.cover || d.image), imageIndex: index, time: Date.now() };
             localStorage.setItem("manga_last_seen", JSON.stringify(info));
             await updateDoc(doc(db, "users", currentUser.uid), { ["readingHistory." + mangaId]: info });
@@ -233,6 +211,9 @@
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(guardar, 2000);
     });
+
+    // Arrancamos todo
+    initReader();
   </script>
   <script type="module" src="js/navbar.js"></script>
 </body>
