@@ -14,7 +14,6 @@
         .container { padding-top: 5px; padding-bottom: 5px; }
         .section-title { margin-top: 15px !important; margin-bottom: 15px !important; }
         
-        /* ESTILOS CARRUSEL "CONTINUAR LEYENDO" */
         .continue-wrapper { position: relative; display: flex; align-items: center; }
         .carousel-track { 
             display: flex; gap: 15px; overflow-x: auto; scroll-behavior: smooth; 
@@ -115,8 +114,8 @@
             if (items.length > 0) {
                 container.style.display = "block";
                 
-                // USAMOS UN BUCLE FOR PARA QUE ESPERE CORRECTAMENTE A FIREBASE
                 let htmlFinal = "";
+                // Usamos un bucle for tradicional para asegurar la sincronía de los tipos
                 for (const m of items) {
                     let readerFile = "reader.html"; // Por defecto Drive
                     try {
@@ -124,11 +123,10 @@
                         if (mSnap.exists() && String(mSnap.data().tipo) === "2") {
                             readerFile = "ReaderBB.html";
                         }
-                    } catch(e) { console.error(e); }
+                    } catch(e) {}
 
-                    // Usamos imageIndex que es lo que guarda el lector
+                    // Usamos imageIndex que es lo que guarda tu sistema
                     const pos = m.imageIndex || 0;
-                    
                     htmlFinal += `
                         <a href="${readerFile}?manga=${m.id}&number=${m.chapter}&scroll=true&savedScroll=${pos}" class="history-item">
                             <img src="${m.image}">
@@ -140,7 +138,6 @@
                         </a>
                     `;
                 }
-                
                 track.innerHTML = htmlFinal;
 
                 if (items.length > 3) {
