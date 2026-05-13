@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="tabTitle">M4A | Cargando...</title>
+  <title id="tabTitle">Manga 4 All</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -22,11 +22,17 @@
         background: #ff0055; color: white; padding: 10px 25px; border-radius: 25px; 
         text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; 
     }
-    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; background: rgba(17, 17, 17, 0.95); position: sticky; top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; }
-    .btn-nav { background: #ff0055; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; }
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
 
     #chapterLabelTop, #chapterLabelBottom { font-weight: 600; min-width: 150px; text-align: center; }
+
+    #resumeNotice { 
+        display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; 
+        color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; 
+        margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; 
+        animation: pulse 2s infinite; 
+    }
+    @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
 
     .manga-pages-container { 
         max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; 
@@ -34,7 +40,7 @@
     }
     .manga-pages-container img { 
         width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; 
-        min-height: 400px; /* Evita saltos de altura mientras carga */
+        min-height: 400px; /* Crucial para que el scroll funcione con Drive */
     }
 
     .list-btn { 
@@ -42,11 +48,6 @@
         text-decoration: none; font-size: 0.85rem; border: 1px solid #333; 
     }
 
-    #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
-    .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
-    .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
     .nav-bottom { position: static; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; }
   </style>
@@ -90,12 +91,11 @@
     let canSave = false;
     let imagesInDOM = 0;
     let imagesTotalCount = 0;
+    let hasJumped = false;
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // FIX: Nombre de la pestaña
-    // Título de pestaña restaurado
     document.title = `M4A | Cap. ${numLimpio}`;
 
     onAuthStateChanged(auth, (user) => {
@@ -116,74 +116,43 @@
         let caps = [];
         snap.forEach(d => { let data = d.data(); data.norm = String(data.number).trim(); caps.push(data); });
         caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-
+        
         const idx = caps.findIndex(c => c.norm === rawNumber);
         const tomo = caps[idx];
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
-          const totalImages = tomo.images.length;
-          
-          // --- MOTOR DE CARGA POR LOTES (FORZAR CARGA) ---
-          // Cargamos de 6 en 6 para que Google Drive no nos bloquee
-          let loadedCounter = 0;
-          
           imagesTotalCount = tomo.images.length;
+          
           if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
           const injectBatch = (startIndex) => {
-              const batchSize = 6;
-              for (let i = startIndex; i < startIndex + batchSize && i < totalImages; i++) {
               const batchSize = 8;
               for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
                   const img = document.createElement("img");
                   img.src = tomo.images[i];
-                  // No usamos lazy aquí para el primer lote, para asegurar la altura
-                  if (i > 10) img.loading = "lazy"; 
-                  
                   img.onload = img.onerror = () => {
-                      loadedCounter++;
-                      // Si terminamos un lote, o si ya cargaron todas, saltamos
-                      if (loadedCounter === totalImages && shouldScroll) {
+                      imagesInDOM++;
+                      // Solo saltamos cuando el contador llegue al total
+                      if (imagesInDOM === imagesTotalCount && shouldScroll && !hasJumped) {
                           ejecutarSalto();
                       }
-                  img.onload = () => {
-                      imagesInDOM++;
-                      if (imagesInDOM === imagesTotalCount && shouldScroll) ejecutarSalto();
                   };
                   cont.appendChild(img);
               }
-              // Si faltan más, esperamos un poco antes de pedir el siguiente lote a Google
-              if (startIndex + batchSize < totalImages) {
-                  setTimeout(() => injectBatch(startIndex + batchSize), 300);
               if (startIndex + batchSize < imagesTotalCount) {
                   setTimeout(() => injectBatch(startIndex + batchSize), 400);
               } else if (!shouldScroll) {
-                  setTimeout(() => { canSave = true; }, 1000);
+                  setTimeout(() => { canSave = true; }, 1500);
               }
           };
-
           injectBatch(0);
         }
 
         // Navegación
-        if (idx > 0) {
-            const p = caps[idx-1].number;
-            document.getElementById("prevBtnTop").href = document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${p}`;
-        } else {
-            document.getElementById("prevBtnTop").classList.add("disabled");
-            document.getElementById("prevBtnBottom").classList.add("disabled");
-        }
         if (idx > 0) document.getElementById("prevBtnTop").href = document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else { document.getElementById("prevBtnTop").classList.add("disabled"); document.getElementById("prevBtnBottom").classList.add("disabled"); }
 
-        if (idx < caps.length - 1) {
-            const n = caps[idx+1].number;
-            document.getElementById("nextBtnTop").href = document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${n}`;
-        } else {
-            document.getElementById("nextBtnTop").textContent = document.getElementById("nextBtnBottom").textContent = "FIN";
-            document.getElementById("nextBtnTop").classList.add("disabled");
-        }
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
         else { document.getElementById("nextBtnTop").textContent = document.getElementById("nextBtnBottom").textContent = "FIN"; document.getElementById("nextBtnTop").classList.add("disabled"); }
 
@@ -191,32 +160,33 @@
     }
 
     async function ejecutarSalto() {
-        if (!currentUser) { canSave = true; return; }
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-            const history = userDoc.data().readingHistory;
+        if (hasJumped || !currentUser) return;
+        
         const userSnap = await getDoc(doc(db, "users", currentUser.uid));
         if (userSnap.exists()) {
             const history = userSnap.data().readingHistory;
             const prog = history ? history[mangaId] : null;
+
             if (prog && prog.chapter === numLimpio) {
                 const todas = document.querySelectorAll("#mangaPages img");
                 const targetIndex = prog.imageIndex || 0;
+                
                 if (todas[targetIndex]) {
-                    const pos = todas[targetIndex].getBoundingClientRect().top + window.scrollY - 80;
-                    window.scrollTo({ top: pos, behavior: 'instant' });
+                    hasJumped = true;
+                    // Pequeña espera para que el navegador asiente las imágenes de Drive
                     setTimeout(() => {
                         const rect = todas[targetIndex].getBoundingClientRect();
                         const pos = rect.top + window.pageYOffset - 85;
                         window.scrollTo({ top: pos, behavior: 'instant' });
+                        
                         document.getElementById("resumeNotice").style.display = "none";
+                        // Activamos guardado para no sobrescribir con "0"
                         setTimeout(() => { canSave = true; }, 1000);
-                    }, 500);
+                    }, 600);
                     return;
                 }
             }
         }
-        setTimeout(() => { canSave = true; }, 1000);
         document.getElementById("resumeNotice").style.display = "none";
         canSave = true;
     }
@@ -232,14 +202,6 @@
     async function guardar() {
         if (!canSave || !currentUser) return;
         const index = getVisibleIndex();
-        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-        if (!mangaSnap.exists()) return;
-        const d = mangaSnap.data();
-        const info = {
-            id: mangaId, title: d.title, chapter: numLimpio,
-            image: d.cover || d.image, imageIndex: index, time: Date.now()
-        };
-        await updateDoc(doc(db, "users", currentUser.uid), { [`readingHistory.${mangaId}`]: info });
         try {
             const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
             const d = mangaSnap.data();
@@ -247,9 +209,7 @@
                 id: mangaId, title: d.title, chapter: numLimpio,
                 image: d.cover || d.image, imageIndex: index, time: Date.now()
             };
-            // GUARDA EN LOCAL (Para el botón de inicio)
             localStorage.setItem("manga_last_seen", JSON.stringify(info));
-            // GUARDA EN FIREBASE (Para sincronizar dispositivos)
             await updateDoc(doc(db, "users", currentUser.uid), { [`readingHistory.${mangaId}`]: info });
         } catch(e) { console.error(e); }
     }
