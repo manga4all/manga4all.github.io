@@ -55,30 +55,21 @@
 
     let currentUser = null;
     let canSave = false;
-    let processedImages = 0;
-    let totalImages = 0;
     let hasJumped = false;
-    let mangaTipo = 1; // Por defecto Tipo 1 (Drive)
 
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        if (!mangaId) return;
+    // Restauramos título
+    document.title = `M4A | Cap. ${numLimpio}`;
 
-        // --- PASO CLAVE: Detectar el tipo de manga antes de cargar nada ---
-        const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-        if (mangaSnap.exists()) {
-            mangaTipo = mangaSnap.data().tipo || 1; 
-        }
-        
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
         loadReader();
     });
 
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
-      document.title = `M4A | Cap. ${numLimpio}`;
       document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
       document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
       document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
@@ -95,46 +86,32 @@
 
         if (tomo && tomo.images) {
           const cont = document.getElementById("mangaPages");
-          totalImages = tomo.images.length;
           if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
-          if (mangaTipo === 2) {
-              // --- CARGA TIPO 2 (Directo/imgBB): Sin bloqueos ni esperas ---
-              tomo.images.forEach((url, i) => {
+          // CARGA UNIVERSAL (Funciona para Drive e imgBB)
+          const injectBatch = (startIndex) => {
+              const batchSize = 8;
+              for (let i = startIndex; i < startIndex + batchSize && i < tomo.images.length; i++) {
                   const img = document.createElement("img");
-                  img.src = url;
+                  img.src = tomo.images[i];
                   cont.appendChild(img);
-              });
-              // En Tipo 2, saltamos casi de inmediato porque los links no fallan
-              if (shouldScroll) {
-                  setTimeout(ejecutarSalto, 1000); 
-              } else {
+              }
+              
+              // Si terminamos de inyectar el primer bloque y hay que saltar, lo intentamos ya
+              if (startIndex === 0 && shouldScroll) {
+                  setTimeout(ejecutarSalto, 1200); 
+              }
+
+              if (startIndex + batchSize < tomo.images.length) {
+                  setTimeout(() => injectBatch(startIndex + batchSize), 400);
+              } else if (!shouldScroll) {
                   setTimeout(() => { canSave = true; }, 1500);
               }
-          } else {
-              // --- CARGA TIPO 1 (Drive): Carga por lotes para evitar bloqueos ---
-              const injectBatch = (startIndex) => {
-                  const batchSize = 6;
-                  for (let i = startIndex; i < startIndex + batchSize && i < totalImages; i++) {
-                      const img = document.createElement("img");
-                      img.onload = img.onerror = () => {
-                          processedImages++;
-                          if (processedImages >= totalImages && shouldScroll && !hasJumped) ejecutarSalto();
-                      };
-                      img.src = tomo.images[i];
-                      cont.appendChild(img);
-                  }
-                  if (startIndex + batchSize < totalImages) {
-                      setTimeout(() => injectBatch(startIndex + batchSize), 400);
-                  }
-              };
-              injectBatch(0);
-              // Seguro de vida para Drive
-              setTimeout(() => { if (shouldScroll && !hasJumped) ejecutarSalto(); }, 7000);
-          }
+          };
+          injectBatch(0);
         }
 
-        // Navegación
+        // Nav
         if (idx > 0) document.getElementById("prevBtnTop").href = document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else { document.getElementById("prevBtnTop").classList.add("disabled"); document.getElementById("prevBtnBottom").classList.add("disabled"); }
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
@@ -144,37 +121,41 @@
     }
 
     async function ejecutarSalto() {
-        if (hasJumped) return;
-        hasJumped = true;
-        if (!currentUser) { canSave = true; return; }
+        if (hasJumped || !currentUser) return;
         
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
         if (userDoc.exists()) {
             const history = userDoc.data().readingHistory;
             const prog = (history && history[mangaId]) ? history[mangaId] : null;
+
             if (prog && prog.chapter === numLimpio) {
                 const todas = document.querySelectorAll("#mangaPages img");
                 const targetIndex = prog.imageIndex || 0;
+                
                 if (todas[targetIndex]) {
-                    setTimeout(() => {
-                        const rect = todas[targetIndex].getBoundingClientRect();
-                        const pos = rect.top + window.pageYOffset - 85;
-                        window.scrollTo({ top: pos, behavior: 'instant' });
-                        document.getElementById("resumeNotice").style.display = "none";
-                        setTimeout(() => { canSave = true; }, 1000);
-                    }, 500);
-                    return;
+                    hasJumped = true;
+                    // Forzamos el salto a la posición del elemento
+                    const rect = todas[targetIndex].getBoundingClientRect();
+                    const pos = rect.top + window.pageYOffset - 85;
+                    window.scrollTo({ top: pos, behavior: 'instant' });
+                    
+                    document.getElementById("resumeNotice").style.display = "none";
+                    setTimeout(() => { canSave = true; }, 1000);
                 }
+            } else {
+                // Si no hay progreso para este capítulo, activamos guardado
+                document.getElementById("resumeNotice").style.display = "none";
+                canSave = true;
+                hasJumped = true;
             }
         }
-        document.getElementById("resumeNotice").style.display = "none";
-        canSave = true;
     }
 
     function getVisibleIndex() {
         const imgs = document.querySelectorAll("#mangaPages img");
         for (let i = 0; i < imgs.length; i++) {
-            if (imgs[i].getBoundingClientRect().bottom > 150) return i;
+            const b = imgs[i].getBoundingClientRect();
+            if (b.bottom > 150) return i;
         }
         return 0;
     }
