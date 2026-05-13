@@ -115,18 +115,21 @@
             if (items.length > 0) {
                 container.style.display = "block";
                 
-                // CARGAMOS EL TIPO DE CADA MANGA PARA EL ENLACE
-                const htmlPromesas = items.map(async (m) => {
-                    let readerFile = "reader.html";
+                // USAMOS UN BUCLE FOR PARA QUE ESPERE CORRECTAMENTE A FIREBASE
+                let htmlFinal = "";
+                for (const m of items) {
+                    let readerFile = "reader.html"; // Por defecto Drive
                     try {
                         const mSnap = await getDoc(doc(db, "mangas", m.id));
-                        if (mSnap.exists() && mSnap.data().tipo === "2") {
+                        if (mSnap.exists() && String(mSnap.data().tipo) === "2") {
                             readerFile = "ReaderBB.html";
                         }
-                    } catch(e) {}
+                    } catch(e) { console.error(e); }
 
-                    const pos = m.scrollPos || 0;
-                    return `
+                    // Usamos imageIndex que es lo que guarda el lector
+                    const pos = m.imageIndex || 0;
+                    
+                    htmlFinal += `
                         <a href="${readerFile}?manga=${m.id}&number=${m.chapter}&scroll=true&savedScroll=${pos}" class="history-item">
                             <img src="${m.image}">
                             <div style="overflow: hidden;">
@@ -136,10 +139,9 @@
                             </div>
                         </a>
                     `;
-                });
-
-                const results = await Promise.all(htmlPromesas);
-                track.innerHTML = results.join('');
+                }
+                
+                track.innerHTML = htmlFinal;
 
                 if (items.length > 3) {
                     document.getElementById("prevHist").style.display = "block";
