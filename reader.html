@@ -61,7 +61,7 @@
 
     let currentUser = null;
     let canSave = false;
-    let imagesLoadedCount = 0;
+    let imagesInDOM = 0;
     let imagesTotalCount = 0;
     let hasJumped = false;
     let mangaTipo = "1";
@@ -74,8 +74,20 @@
     const numLimpio = limpiarNumero(rawNumber);
     document.title = "M4A | Cap. " + numLimpio;
 
-    // 1. CARGA DE IMÁGENES INMEDIATA (No depende de Auth)
-    async function initReader() {
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        if (mangaId) {
+            try {
+                const mSnap = await getDoc(doc(db, "mangas", mangaId));
+                if (mSnap.exists()) {
+                    mangaTipo = String(mSnap.data().tipo || "1");
+                }
+            } catch(e) { console.error(e); }
+            loadReader();
+        }
+    });
+
+    async function loadReader() {
         if (!mangaId || !rawNumber) return;
 
         document.getElementById("chapterLabelTop").textContent = "Capítulo " + numLimpio;
@@ -83,54 +95,53 @@
         document.querySelectorAll(".list-btn").forEach(b => b.href = "manga.html?id=" + mangaId);
 
         try {
-            // Obtenemos el manga (para el tipo) y el capítulo
-            const [mSnap, tomoSnap] = await Promise.all([
-                getDoc(doc(db, "mangas", mangaId)),
-                getDocs(query(collection(db, "tomos"), where("mangaId", "==", mangaId)))
-            ]);
-
-            if (mSnap.exists()) mangaTipo = String(mSnap.data().tipo || "1");
-
+            const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
+            const snap = await getDocs(q);
             let caps = [];
-            tomoSnap.forEach(d => { 
+            snap.forEach(d => { 
                 let data = d.data(); 
                 data.norm = String(data.number).trim(); 
                 caps.push(data); 
             });
             caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
             
-            const idx = caps.findIndex(c => c.norm === numLimpio);
+            const idx = caps.findIndex(c => c.norm === rawNumber);
             const tomo = caps[idx];
 
             if (tomo && tomo.images) {
                 const cont = document.getElementById("mangaPages");
                 imagesTotalCount = tomo.images.length;
+                
                 if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
-                // INYECCIÓN DE IMÁGENES
                 if (mangaTipo === "2") {
+                    // --- MODO TIPO 2 (imgBB): IGUAL AL DIRECTORIO ---
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.src = url;
                         cont.appendChild(img);
                     });
-                    // En Tipo 2 habilitamos el salto casi de inmediato
-                    if (shouldScroll) setTimeout(intentarSalto, 1000);
+                    // Salto por tiempo, sin contadores que bloqueen
+                    if (shouldScroll) setTimeout(ejecutarSalto, 1200);
                     else canSave = true;
                 } else {
-                    const injectBatch = (start) => {
+                    // --- MODO TIPO 1 (Drive): TU RECETA ORIGINAL INTACTA ---
+                    let loadedCounter = 0;
+                    const injectBatch = (startIndex) => {
                         const batchSize = 8;
-                        for (let i = start; i < start + batchSize && i < imagesTotalCount; i++) {
+                        for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
                             const img = document.createElement("img");
                             img.src = tomo.images[i];
                             img.onload = img.onerror = () => {
-                                imagesLoadedCount++;
-                                if (imagesLoadedCount === imagesTotalCount && shouldScroll) intentarSalto();
+                                loadedCounter++;
+                                if (loadedCounter === imagesTotalCount && shouldScroll && !hasJumped) {
+                                    ejecutarSalto();
+                                }
                             };
                             cont.appendChild(img);
                         }
-                        if (start + batchSize < imagesTotalCount) {
-                            setTimeout(() => injectBatch(start + batchSize), 400);
+                        if (startIndex + batchSize < imagesTotalCount) {
+                            setTimeout(() => injectBatch(startIndex + batchSize), 400);
                         } else if (!shouldScroll) {
                             setTimeout(() => { canSave = true; }, 1000);
                         }
@@ -149,19 +160,8 @@
         else { document.getElementById("nextBtnTop").textContent = "FIN"; document.getElementById("nextBtnTop").classList.add("disabled"); }
     }
 
-    // 2. MANEJO DE AUTH Y SALTO (Independiente de la carga)
-    onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        if (shouldScroll && !hasJumped) intentarSalto();
-    });
-
-    async function intentarSalto() {
-        // Solo procedemos si ya tenemos usuario y el scroll es requerido
-        if (hasJumped || !shouldScroll) return;
-
-        // Si el usuario aún no carga, esperamos a la respuesta de Auth
-        if (!currentUser) return; 
-
+    async function ejecutarSalto() {
+        if (hasJumped || !currentUser) return;
         try {
             const userSnap = await getDoc(doc(db, "users", currentUser.uid));
             if (userSnap.exists()) {
@@ -179,9 +179,7 @@
                     }
                 }
             }
-        } catch(e) { console.error("Error en salto:", e); }
-        
-        // Quitar mensaje pase lo que pase
+        } catch(e) {}
         document.getElementById("resumeNotice").style.display = "none";
         setTimeout(() => { canSave = true; }, 1000);
     }
@@ -211,9 +209,6 @@
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(guardar, 2000);
     });
-
-    // Arrancamos todo
-    initReader();
   </script>
   <script type="module" src="js/navbar.js"></script>
 </body>
