@@ -66,125 +66,122 @@
     let hasJumped = false;
     let mangaTipo = "1";
 
-    // Fix Syntax Error
     function obtenerNumLimpio(n) {
         const p = parseFloat(n);
         return isNaN(p) ? n : p.toString();
     }
     const numLimpio = obtenerNumLimpio(rawNumber);
-
     document.title = `M4A | Cap. ${numLimpio}`;
 
-    onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        if (!mangaId) return;
-
-        try {
-            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-            if (mangaSnap.exists()) {
-                mangaTipo = String(mangaSnap.data().tipo || "1");
-            }
-        } catch(e) { console.error(e); }
-        
-        loadReader();
+    // 1. EL AUTH SOLO SIRVE PARA EL SCROLL, NO BLOQUEA LA CARGA
+    onAuthStateChanged(auth, (user) => { 
+        currentUser = user; 
+        if (shouldScroll && hasJumped === false && imagesInDOM > 0) {
+            ejecutarSalto();
+        }
     });
 
+    // 2. CARGA PRINCIPAL (Igual que en el directorio)
     async function loadReader() {
-      if (!mangaId || !rawNumber) return;
+        if (!mangaId || !rawNumber) return;
 
-      document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
-      document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
-      document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
+        document.getElementById("chapterLabelTop").textContent = `Capítulo ${numLimpio}`;
+        document.getElementById("chapterLabelBottom").textContent = `Capítulo ${numLimpio}`;
+        document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
 
-      try {
-        const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
-        const snap = await getDocs(q);
-        let caps = [];
-        snap.forEach(d => { let data = d.data(); data.norm = String(data.number).trim(); caps.push(data); });
-        caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-        
-        const idx = caps.findIndex(c => c.norm === rawNumber);
-        const tomo = caps[idx];
+        try {
+            // Obtener tipo de manga
+            const mSnap = await getDoc(doc(db, "mangas", mangaId));
+            if (mSnap.exists()) mangaTipo = String(mSnap.data().tipo || "1");
 
-        if (tomo && tomo.images) {
-          const cont = document.getElementById("mangaPages");
-          imagesTotalCount = tomo.images.length;
-          
-          if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
+            // Obtener capítulo
+            const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
+            const snap = await getDocs(q);
+            let caps = [];
+            snap.forEach(d => { let data = d.data(); data.norm = String(data.number).trim(); caps.push(data); });
+            caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
+            
+            const idx = caps.findIndex(c => c.norm === rawNumber);
+            const tomo = caps[idx];
 
-          if (mangaTipo === "2") {
-              // --- TIPO 2 (imgBB): Carga directa ---
-              tomo.images.forEach(url => {
-                  const img = document.createElement("img");
-                  img.src = url;
-                  cont.appendChild(img);
-              });
-              // Para Tipo 2 saltamos por tiempo, no esperamos contadores
-              if (shouldScroll) setTimeout(ejecutarSalto, 1200);
-              else setTimeout(() => { canSave = true; }, 1500);
-          } else {
-              // --- TIPO 1 (Drive): Lógica de lotes intacta ---
-              let loadedCounter = 0;
-              const injectBatch = (startIndex) => {
-                  const batchSize = 8;
-                  for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
-                      const img = document.createElement("img");
-                      img.src = tomo.images[i];
-                      if (i > 10) img.loading = "lazy"; 
-                      
-                      img.onload = img.onerror = () => {
-                          loadedCounter++;
-                          if (loadedCounter === imagesTotalCount && shouldScroll && !hasJumped) {
-                              ejecutarSalto();
-                          }
-                      };
-                      cont.appendChild(img);
-                  }
-                  if (startIndex + batchSize < imagesTotalCount) {
-                      setTimeout(() => injectBatch(startIndex + batchSize), 400);
-                  } else if (!shouldScroll) {
-                      setTimeout(() => { canSave = true; }, 1000);
-                  }
-              };
-              injectBatch(0);
-          }
-        }
+            if (tomo && tomo.images) {
+                const cont = document.getElementById("mangaPages");
+                imagesTotalCount = tomo.images.length;
+                if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
-        // Nav
+                // --- LÓGICA DE INYECCIÓN ---
+                if (mangaTipo === "2") {
+                    // MODO imgBB: Soltamos todo de golpe como en el directorio
+                    tomo.images.forEach(url => {
+                        const img = document.createElement("img");
+                        img.src = url;
+                        cont.appendChild(img);
+                    });
+                    imagesInDOM = imagesTotalCount; 
+                    
+                    // Si viene de "Continuar Leyendo", intentamos saltar tras un momento
+                    if (shouldScroll) setTimeout(ejecutarSalto, 1000);
+                    else canSave = true;
+
+                } else {
+                    // MODO DRIVE: Por lotes (Tu receta original)
+                    let loadedCounter = 0;
+                    const injectBatch = (startIndex) => {
+                        const batchSize = 8;
+                        for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
+                            const img = document.createElement("img");
+                            img.src = tomo.images[i];
+                            img.onload = img.onerror = () => {
+                                loadedCounter++;
+                                imagesInDOM = loadedCounter;
+                                if (loadedCounter === imagesTotalCount && shouldScroll) ejecutarSalto();
+                            };
+                            cont.appendChild(img);
+                        }
+                        if (startIndex + batchSize < imagesTotalCount) {
+                            setTimeout(() => injectBatch(startIndex + batchSize), 400);
+                        } else if (!shouldScroll) {
+                            setTimeout(() => { canSave = true; }, 1000);
+                        }
+                    };
+                    injectBatch(0);
+                }
+                setupNav(caps, idx);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function setupNav(caps, idx) {
         if (idx > 0) document.getElementById("prevBtnTop").href = document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else { document.getElementById("prevBtnTop").classList.add("disabled"); document.getElementById("prevBtnBottom").classList.add("disabled"); }
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
         else { document.getElementById("nextBtnTop").textContent = "FIN"; document.getElementById("nextBtnTop").classList.add("disabled"); }
-
-      } catch (e) { console.error(e); }
     }
 
     async function ejecutarSalto() {
         if (hasJumped || !currentUser) return;
         
-        try {
-            const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-            if (userSnap.exists()) {
-                const history = userSnap.data().readingHistory;
-                const prog = history ? history[mangaId] : null;
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if (userSnap.exists()) {
+            const history = userSnap.data().readingHistory;
+            const prog = history ? history[mangaId] : null;
 
-                if (prog && prog.chapter === numLimpio) {
-                    const todas = document.querySelectorAll("#mangaPages img");
-                    const targetIndex = prog.imageIndex || 0;
-                    
-                    if (todas[targetIndex]) {
-                        hasJumped = true;
-                        const rect = todas[targetIndex].getBoundingClientRect();
-                        const pos = rect.top + window.pageYOffset - 85;
-                        window.scrollTo({ top: pos, behavior: 'instant' });
-                    }
+            if (prog && prog.chapter === numLimpio) {
+                const todas = document.querySelectorAll("#mangaPages img");
+                const targetIndex = prog.imageIndex || 0;
+                
+                if (todas[targetIndex]) {
+                    hasJumped = true;
+                    const rect = todas[targetIndex].getBoundingClientRect();
+                    const pos = rect.top + window.pageYOffset - 85;
+                    window.scrollTo({ top: pos, behavior: 'instant' });
                 }
             }
-        } catch(e) { console.error(e); }
-        
-        // SIEMPRE quitar el mensaje al terminar el intento de salto
+        }
+        // Pase lo que pase, ocultamos el aviso y dejamos guardar
         document.getElementById("resumeNotice").style.display = "none";
-        setTimeout(() => { canSave = true; }, 1000);
+        canSave = true;
+        hasJumped = true;
     }
 
     function getVisibleIndex() {
@@ -201,10 +198,7 @@
         try {
             const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
             const d = mangaSnap.data();
-            const info = {
-                id: mangaId, title: d.title, chapter: numLimpio,
-                image: d.cover || d.image, imageIndex: index, time: Date.now()
-            };
+            const info = { id: mangaId, title: d.title, chapter: numLimpio, image: d.cover || d.image, imageIndex: index, time: Date.now() };
             localStorage.setItem("manga_last_seen", JSON.stringify(info));
             await updateDoc(doc(db, "users", currentUser.uid), { [`readingHistory.${mangaId}`]: info });
         } catch(e) { console.error(e); }
@@ -216,7 +210,7 @@
         window.saveTimer = setTimeout(guardar, 2000);
     });
 
+    loadReader();
   </script>
-  <script type="module" src="js/navbar.js"></script>
 </body>
 </html>
