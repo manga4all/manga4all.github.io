@@ -25,7 +25,9 @@
   </style>
 </head>
 <body>
+
   <div id="main-navbar"></div>
+
   <div class="reader-nav">
     <a href="#" id="listBtnTop" class="list-btn">☰ Lista</a>
     <a href="#" id="prevBtnTop" class="btn-nav">Anterior</a>
@@ -34,6 +36,7 @@
   </div>
 
   <div id="resumeNotice">Sincronizando tu progreso... En unos segundos te llevaremos a donde te quedaste.</div>
+
   <div class="manga-pages-container" id="mangaPages"></div>
 
   <div class="reader-nav nav-bottom">
@@ -42,6 +45,8 @@
     <span id="chapterLabelBottom">Capítulo...</span>
     <a href="#" id="nextBtnBottom" class="btn-nav">Siguiente</a>
   </div>
+
+  <footer>MANGA 4 ALL © 2026</footer>
 
   <script type="module">
     import { db } from "./js/firebase.js";
@@ -56,14 +61,34 @@
 
     let currentUser = null;
     let canSave = false;
-    let imagesLoaded = 0;
+    let imagesInDOM = 0;
     let imagesTotalCount = 0;
+    let hasJumped = false;
     let mangaTipo = "1";
 
-    const numLimpio = (n) => { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }(rawNumber);
+    function limpiarNum(n) {
+        const p = parseFloat(n);
+        return isNaN(p) ? n : p.toString();
+    }
+    const numLimpio = limpiarNum(rawNumber);
+
     document.title = `M4A | Cap. ${numLimpio}`;
 
-    // 1. CARGA INMEDIATA (Arranca sin esperar a nadie)
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        if (!mangaId) return;
+
+        // Primero detectamos el tipo para no arruinar el flujo
+        try {
+            const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
+            if (mangaSnap.exists()) {
+                mangaTipo = String(mangaSnap.data().tipo || "1");
+            }
+        } catch(e) { console.error(e); }
+        
+        loadReader();
+    });
+
     async function loadReader() {
       if (!mangaId || !rawNumber) return;
 
@@ -72,10 +97,6 @@
       document.querySelectorAll(".list-btn").forEach(b => b.href = `manga.html?id=${mangaId}`);
 
       try {
-        // Obtenemos los datos del manga para saber el TIPO
-        const mSnap = await getDoc(doc(db, "mangas", mangaId));
-        if (mSnap.exists()) mangaTipo = String(mSnap.data().tipo || "1");
-
         const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
         const snap = await getDocs(q);
         let caps = [];
@@ -91,49 +112,53 @@
           
           if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
-          // MOTOR DE CARGA UNIFICADO
-          const injectBatch = (startIndex) => {
-              const batchSize = 8;
-              for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
+          if (mangaTipo === "2") {
+              // MODO TIPO 2 (imgBB): Carga directa
+              tomo.images.forEach(url => {
                   const img = document.createElement("img");
-                  img.src = tomo.images[i];
-                  img.onload = img.onerror = () => {
-                      imagesLoaded++;
-                      // Solo saltamos si es TIPO 1 (Drive) y terminamos todas
-                      if (mangaTipo === "1" && imagesLoaded === imagesTotalCount && shouldScroll) {
-                          ejecutarSalto();
-                      }
-                  };
+                  img.src = url;
                   cont.appendChild(img);
-              }
-
-              if (startIndex + batchSize < imagesTotalCount) {
-                  setTimeout(() => injectBatch(startIndex + batchSize), 400);
-              } else {
-                  // Si es TIPO 2 (imgBB), no esperamos al onload pesado, saltamos en un tiempo fijo
-                  if (mangaTipo === "2" && shouldScroll) {
-                      setTimeout(ejecutarSalto, 1200);
-                  } else if (!shouldScroll) {
-                      setTimeout(() => { canSave = true; }, 1500);
+              });
+              if (shouldScroll) setTimeout(ejecutarSalto, 1200);
+              else setTimeout(() => { canSave = true; }, 1500);
+          } else {
+              // MODO TIPO 1 (Drive): LÓGICA QUE YA TE FUNCIONABA
+              const injectBatch = (startIndex) => {
+                  const batchSize = 8;
+                  for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
+                      const img = document.createElement("img");
+                      img.src = tomo.images[i];
+                      if (i > 10) img.loading = "lazy"; 
+                      
+                      img.onload = img.onerror = () => {
+                          imagesInDOM++;
+                          if (imagesInDOM === imagesTotalCount && shouldScroll && !hasJumped) {
+                              ejecutarSalto();
+                          }
+                      };
+                      cont.appendChild(img);
                   }
-              }
-          };
-
-          injectBatch(0);
-          setupNav(caps, idx);
+                  if (startIndex + batchSize < imagesTotalCount) {
+                      setTimeout(() => injectBatch(startIndex + batchSize), 400);
+                  } else if (!shouldScroll) {
+                      setTimeout(() => { canSave = true; }, 1000);
+                  }
+              };
+              injectBatch(0);
+          }
         }
-      } catch (e) { console.error(e); }
-    }
 
-    function setupNav(caps, idx) {
+        // Navegación
         if (idx > 0) document.getElementById("prevBtnTop").href = document.getElementById("prevBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx-1].number}`;
         else { document.getElementById("prevBtnTop").classList.add("disabled"); document.getElementById("prevBtnBottom").classList.add("disabled"); }
         if (idx < caps.length - 1) document.getElementById("nextBtnTop").href = document.getElementById("nextBtnBottom").href = `reader.html?manga=${mangaId}&number=${caps[idx+1].number}`;
         else { document.getElementById("nextBtnTop").textContent = "FIN"; document.getElementById("nextBtnTop").classList.add("disabled"); }
+
+      } catch (e) { console.error(e); }
     }
 
     async function ejecutarSalto() {
-        if (!currentUser || !shouldScroll) return;
+        if (hasJumped || !currentUser) return;
         
         const userSnap = await getDoc(doc(db, "users", currentUser.uid));
         if (userSnap.exists()) {
@@ -145,10 +170,12 @@
                 const targetIndex = prog.imageIndex || 0;
                 
                 if (todas[targetIndex]) {
+                    hasJumped = true;
                     setTimeout(() => {
                         const rect = todas[targetIndex].getBoundingClientRect();
                         const pos = rect.top + window.pageYOffset - 85;
                         window.scrollTo({ top: pos, behavior: 'instant' });
+                        
                         document.getElementById("resumeNotice").style.display = "none";
                         setTimeout(() => { canSave = true; }, 1000);
                     }, 500);
@@ -159,10 +186,6 @@
         document.getElementById("resumeNotice").style.display = "none";
         canSave = true;
     }
-
-    onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-    });
 
     function getVisibleIndex() {
         const imgs = document.querySelectorAll("#mangaPages img");
@@ -184,7 +207,7 @@
             };
             localStorage.setItem("manga_last_seen", JSON.stringify(info));
             await updateDoc(doc(db, "users", currentUser.uid), { [`readingHistory.${mangaId}`]: info });
-        } catch(e) {}
+        } catch(e) { console.error(e); }
     }
 
     window.addEventListener('scroll', () => {
@@ -193,7 +216,7 @@
         window.saveTimer = setTimeout(guardar, 2000);
     });
 
-    loadReader();
   </script>
+  <script type="module" src="js/navbar.js"></script>
 </body>
 </html>
