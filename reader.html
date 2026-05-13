@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="tabTitle">M4A | Cargando...</title>
+  <title id="tabTitle">Manga 4 All</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -17,8 +17,9 @@
     #chapterLabelTop, #chapterLabelBottom { font-weight: 600; min-width: 150px; text-align: center; }
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
-    .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 300px; }
+    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; }
+    /* min-height es CLAVE para que el scroll tenga a dónde ir antes de que carguen las fotos */
+    .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
     .nav-bottom { position: static; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; }
@@ -32,7 +33,7 @@
     <span id="chapterLabelTop">Cargando...</span>
     <a href="#" id="nextBtnTop" class="btn-nav">Siguiente</a>
   </div>
-  <div id="resumeNotice">Sincronizando tu progreso... En unos segundos te llevaremos a donde te quedaste.</div>
+  <div id="resumeNotice">Sincronizando tu progreso...</div>
   <div class="manga-pages-container" id="mangaPages"></div>
   <div class="reader-nav nav-bottom">
     <a href="#" id="listBtnBottom" class="list-btn">☰ Lista</a>
@@ -60,7 +61,6 @@
     function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
     const numLimpio = limpiarNum(rawNumber);
 
-    // Restauramos título
     document.title = `M4A | Cap. ${numLimpio}`;
 
     onAuthStateChanged(auth, (user) => {
@@ -80,7 +80,6 @@
         let caps = [];
         snap.forEach(d => { let data = d.data(); data.norm = String(data.number).trim(); caps.push(data); });
         caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-        
         const idx = caps.findIndex(c => c.norm === rawNumber);
         const tomo = caps[idx];
 
@@ -88,27 +87,20 @@
           const cont = document.getElementById("mangaPages");
           if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
 
-          // CARGA UNIVERSAL (Funciona para Drive e imgBB)
-          const injectBatch = (startIndex) => {
-              const batchSize = 8;
-              for (let i = startIndex; i < startIndex + batchSize && i < tomo.images.length; i++) {
-                  const img = document.createElement("img");
-                  img.src = tomo.images[i];
-                  cont.appendChild(img);
-              }
-              
-              // Si terminamos de inyectar el primer bloque y hay que saltar, lo intentamos ya
-              if (startIndex === 0 && shouldScroll) {
-                  setTimeout(ejecutarSalto, 1200); 
-              }
+          // Inyectamos todas las imágenes de Drive (Carga Progresiva)
+          tomo.images.forEach((url, i) => {
+            const img = document.createElement("img");
+            img.src = url;
+            cont.appendChild(img);
+          });
 
-              if (startIndex + batchSize < tomo.images.length) {
-                  setTimeout(() => injectBatch(startIndex + batchSize), 400);
-              } else if (!shouldScroll) {
-                  setTimeout(() => { canSave = true; }, 1500);
-              }
-          };
-          injectBatch(0);
+          // Si hay que saltar, esperamos a que Firebase nos dé la posición
+          if (shouldScroll) {
+              ejecutarSalto();
+          } else {
+              // Si es lectura nueva, activamos guardado después de un momento
+              setTimeout(() => { canSave = true; }, 2000);
+          }
         }
 
         // Nav
@@ -122,40 +114,51 @@
 
     async function ejecutarSalto() {
         if (hasJumped || !currentUser) return;
-        
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-            const history = userDoc.data().readingHistory;
-            const prog = (history && history[mangaId]) ? history[mangaId] : null;
 
-            if (prog && prog.chapter === numLimpio) {
-                const todas = document.querySelectorAll("#mangaPages img");
-                const targetIndex = prog.imageIndex || 0;
-                
-                if (todas[targetIndex]) {
-                    hasJumped = true;
-                    // Forzamos el salto a la posición del elemento
-                    const rect = todas[targetIndex].getBoundingClientRect();
-                    const pos = rect.top + window.pageYOffset - 85;
-                    window.scrollTo({ top: pos, behavior: 'instant' });
+        try {
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            if (userDoc.exists()) {
+                const history = userDoc.data().readingHistory;
+                const prog = (history && history[mangaId]) ? history[mangaId] : null;
+
+                if (prog && prog.chapter === numLimpio) {
+                    const targetIndex = prog.imageIndex || 0;
                     
-                    document.getElementById("resumeNotice").style.display = "none";
-                    setTimeout(() => { canSave = true; }, 1000);
+                    // Espera de seguridad para que el navegador "dibuje" las imágenes con su min-height
+                    setTimeout(() => {
+                        const todas = document.querySelectorAll("#mangaPages img");
+                        if (todas[targetIndex]) {
+                            const pos = todas[targetIndex].getBoundingClientRect().top + window.scrollY - 85;
+                            window.scrollTo({ top: pos, behavior: 'instant' });
+                            
+                            hasJumped = true;
+                            document.getElementById("resumeNotice").style.display = "none";
+                            // Activamos guardado solo después del salto
+                            setTimeout(() => { canSave = true; }, 1000);
+                        }
+                    }, 1500); // Tiempo suficiente para Drive
+                } else {
+                    activarGuardadoDirecto();
                 }
             } else {
-                // Si no hay progreso para este capítulo, activamos guardado
-                document.getElementById("resumeNotice").style.display = "none";
-                canSave = true;
-                hasJumped = true;
+                activarGuardadoDirecto();
             }
+        } catch (e) {
+            console.error(e);
+            activarGuardadoDirecto();
         }
+    }
+
+    function activarGuardadoDirecto() {
+        document.getElementById("resumeNotice").style.display = "none";
+        canSave = true;
+        hasJumped = true;
     }
 
     function getVisibleIndex() {
         const imgs = document.querySelectorAll("#mangaPages img");
         for (let i = 0; i < imgs.length; i++) {
-            const b = imgs[i].getBoundingClientRect();
-            if (b.bottom > 150) return i;
+            if (imgs[i].getBoundingClientRect().bottom > 150) return i;
         }
         return 0;
     }
@@ -165,8 +168,11 @@
         const index = getVisibleIndex();
         try {
             const mangaSnap = await getDoc(doc(db, "mangas", mangaId));
-            const d = mangaSnap.data();
-            const info = { id: mangaId, title: d.title, chapter: numLimpio, image: d.cover || d.image, imageIndex: index, time: Date.now() };
+            const info = { 
+                id: mangaId, title: mangaSnap.data().title, chapter: numLimpio, 
+                image: mangaSnap.data().cover || mangaSnap.data().image, 
+                imageIndex: index, time: Date.now() 
+            };
             localStorage.setItem("manga_last_seen", JSON.stringify(info));
             await updateDoc(doc(db, "users", currentUser.uid), { [`readingHistory.${mangaId}`]: info });
         } catch(e) { console.error(e); }
