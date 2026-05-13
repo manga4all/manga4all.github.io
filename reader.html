@@ -61,31 +61,12 @@
 
     let currentUser = null;
     let canSave = false;
-    let imagesInDOM = 0;
-    let imagesTotalCount = 0;
-    let hasJumped = false;
-    let mangaTipo = "1";
 
-    function limpiarNumero(n) {
-        if (!n) return "";
-        const p = parseFloat(n);
-        return isNaN(p) ? n : p.toString();
-    }
-    const numLimpio = limpiarNumero(rawNumber);
+    function limpiarNum(n) { const p = parseFloat(n); return isNaN(p) ? n : p.toString(); }
+    const numLimpio = limpiarNum(rawNumber);
     document.title = "M4A | Cap. " + numLimpio;
 
-    onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        if (mangaId) {
-            try {
-                const mSnap = await getDoc(doc(db, "mangas", mangaId));
-                if (mSnap.exists()) {
-                    mangaTipo = String(mSnap.data().tipo || "1");
-                }
-            } catch(e) { console.error(e); }
-            loadReader();
-        }
-    });
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
 
     async function loadReader() {
         if (!mangaId || !rawNumber) return;
@@ -95,6 +76,10 @@
         document.querySelectorAll(".list-btn").forEach(b => b.href = "manga.html?id=" + mangaId);
 
         try {
+            // 1. LEER EL TIPO PRIMERO
+            const mSnap = await getDoc(doc(db, "mangas", mangaId));
+            const tipo = mSnap.exists() ? String(mSnap.data().tipo || "1") : "1";
+
             const q = query(collection(db, "tomos"), where("mangaId", "==", mangaId));
             const snap = await getDocs(q);
             let caps = [];
@@ -105,43 +90,46 @@
             });
             caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
             
-            const idx = caps.findIndex(c => c.norm === rawNumber);
+            const idx = caps.findIndex(c => c.norm === numLimpio);
             const tomo = caps[idx];
 
             if (tomo && tomo.images) {
                 const cont = document.getElementById("mangaPages");
-                imagesTotalCount = tomo.images.length;
-                
-                if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
+                cont.innerHTML = ""; // QUITAMOS EL NEGRO INMEDIATAMENTE
 
-                if (mangaTipo === "2") {
-                    // --- MODO TIPO 2 (imgBB): IGUAL AL DIRECTORIO ---
-                    tomo.images.forEach((url) => {
+                if (tipo === "2") {
+                    // --- MODO TIPO 2 (imgBB): CARGA DIRECTA ---
+                    tomo.images.forEach(url => {
                         const img = document.createElement("img");
                         img.src = url;
                         cont.appendChild(img);
                     });
-                    // Salto por tiempo, sin contadores que bloqueen
-                    if (shouldScroll) setTimeout(ejecutarSalto, 1200);
-                    else canSave = true;
+                    // Quitamos cualquier aviso y habilitamos guardado
+                    document.getElementById("resumeNotice").style.display = "none";
+                    canSave = true; 
+                    
+                    // Si el usuario quiere salto después, lo haremos, pero las imágenes YA ESTÁN AHÍ
+                    if (shouldScroll) setTimeout(ejecutarSalto, 1000);
+
                 } else {
-                    // --- MODO TIPO 1 (Drive): TU RECETA ORIGINAL INTACTA ---
-                    let loadedCounter = 0;
-                    const injectBatch = (startIndex) => {
+                    // --- MODO DRIVE: TU RECETA QUE YA SIRVE ---
+                    let loaded = 0;
+                    const total = tomo.images.length;
+                    if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
+                    
+                    const injectBatch = (start) => {
                         const batchSize = 8;
-                        for (let i = startIndex; i < startIndex + batchSize && i < imagesTotalCount; i++) {
+                        for (let i = start; i < start + batchSize && i < total; i++) {
                             const img = document.createElement("img");
                             img.src = tomo.images[i];
                             img.onload = img.onerror = () => {
-                                loadedCounter++;
-                                if (loadedCounter === imagesTotalCount && shouldScroll && !hasJumped) {
-                                    ejecutarSalto();
-                                }
+                                loaded++;
+                                if (loaded === total && shouldScroll) ejecutarSalto();
                             };
                             cont.appendChild(img);
                         }
-                        if (startIndex + batchSize < imagesTotalCount) {
-                            setTimeout(() => injectBatch(startIndex + batchSize), 400);
+                        if (start + batchSize < total) {
+                            setTimeout(() => injectBatch(start + batchSize), 400);
                         } else if (!shouldScroll) {
                             setTimeout(() => { canSave = true; }, 1000);
                         }
@@ -161,54 +149,47 @@
     }
 
     async function ejecutarSalto() {
-        if (hasJumped || !currentUser) return;
+        if (!currentUser) return;
         try {
             const userSnap = await getDoc(doc(db, "users", currentUser.uid));
             if (userSnap.exists()) {
                 const history = userSnap.data().readingHistory;
                 const prog = history ? history[mangaId] : null;
-
                 if (prog && prog.chapter === numLimpio) {
                     const todas = document.querySelectorAll("#mangaPages img");
-                    const targetIndex = prog.imageIndex || 0;
-                    if (todas[targetIndex]) {
-                        hasJumped = true;
-                        const rect = todas[targetIndex].getBoundingClientRect();
-                        const pos = rect.top + window.pageYOffset - 85;
+                    const target = prog.imageIndex || 0;
+                    if (todas[target]) {
+                        const pos = todas[target].getBoundingClientRect().top + window.pageYOffset - 85;
                         window.scrollTo({ top: pos, behavior: 'instant' });
                     }
                 }
             }
         } catch(e) {}
         document.getElementById("resumeNotice").style.display = "none";
-        setTimeout(() => { canSave = true; }, 1000);
+        canSave = true;
     }
 
-    function getVisibleIndex() {
-        const imgs = document.querySelectorAll("#mangaPages img");
-        for (let i = 0; i < imgs.length; i++) {
-            if (imgs[i].getBoundingClientRect().bottom > 150) return i;
-        }
-        return 0;
-    }
-
-    async function guardar() {
-        if (!canSave || !currentUser) return;
-        const index = getVisibleIndex();
-        try {
-            const mSnap = await getDoc(doc(db, "mangas", mangaId));
-            const d = mSnap.data();
-            const info = { id: mangaId, title: d.title, chapter: numLimpio, image: (d.cover || d.image), imageIndex: index, time: Date.now() };
-            localStorage.setItem("manga_last_seen", JSON.stringify(info));
-            await updateDoc(doc(db, "users", currentUser.uid), { ["readingHistory." + mangaId]: info });
-        } catch(e) {}
-    }
-
+    // Guardar progreso al hacer scroll manual
     window.addEventListener('scroll', () => {
-        if (!canSave) return;
+        if (!canSave || !currentUser) return;
         clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(guardar, 2000);
+        window.saveTimer = setTimeout(async () => {
+            const imgs = document.querySelectorAll("#mangaPages img");
+            let index = 0;
+            for (let i = 0; i < imgs.length; i++) {
+                if (imgs[i].getBoundingClientRect().bottom > 150) { index = i; break; }
+            }
+            try {
+                const mSnap = await getDoc(doc(db, "mangas", mangaId));
+                const d = mSnap.data();
+                const info = { id: mangaId, title: d.title, chapter: numLimpio, image: (d.cover || d.image), imageIndex: index, time: Date.now() };
+                localStorage.setItem("manga_last_seen", JSON.stringify(info));
+                await updateDoc(doc(db, "users", currentUser.uid), { ["readingHistory." + mangaId]: info });
+            } catch(e) {}
+        }, 2000);
     });
+
+    loadReader();
   </script>
   <script type="module" src="js/navbar.js"></script>
 </body>
