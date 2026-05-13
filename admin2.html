@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>M4A - Uploader Persistente</title>
+  <title>M4A - Uploader Profesional</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
-    /* ... (Mantenemos tu estilo original) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
     body { background: #070707; color: white; display: flex; min-height: 100vh; }
     .sidebar { width: 260px; background: #111; border-right: 1px solid #1f1f1f; padding: 20px; position: fixed; height: 100vh; }
@@ -23,9 +22,9 @@
     .primary-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; background: #ff0055; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1rem; margin-top: 10px; }
     .primary-btn:disabled { background: #444; cursor: not-allowed; }
     #downloadBtn { background: #0088ff; margin-top: 15px; display: block; text-align: center; text-decoration: none; }
-    #uploadLog { background: #000; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 0.8rem; margin-top: 25px; height: 300px; overflow-y: auto; border: 1px solid #222; color: #0f0; }
+    #uploadLog { background: #000; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 0.8rem; margin-top: 25px; height: 350px; overflow-y: auto; border: 1px solid #222; color: #0f0; }
     .status-card { background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 20px; }
-    .danger-btn { background: #444; color: #ff4444; font-size: 0.7rem; padding: 5px; cursor: pointer; border: none; margin-top: 10px; border-radius: 5px; }
+    .danger-btn { background: #444; color: #ff4444; font-size: 0.7rem; padding: 8px; cursor: pointer; border: none; margin-top: 10px; border-radius: 8px; width: 100%; }
   </style>
 </head>
 <body>
@@ -33,35 +32,33 @@
   <aside class="sidebar">
     <h2>Manga 4 All</h2>
     <div style="background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #ff0055;">
-        <p style="font-size: 0.75rem; color: #ff0055; font-weight: bold; text-align: center;">PROTECCIÓN DE DATOS</p>
-        <p style="font-size: 0.7rem; color: #777; text-align: center; margin-top: 5px;">Los links se guardan automáticamente tras cada capítulo.</p>
+        <p style="font-size: 0.75rem; color: #ff0055; font-weight: bold; text-align: center;">MODO INDUSTRIAL</p>
+        <p style="font-size: 0.7rem; color: #777; text-align: center; margin-top: 5px;">Filtrado de imágenes activado.</p>
     </div>
-    <button class="danger-btn" onclick="clearCache()">🗑️ BORRAR MEMORIA DE SUBIDA</button>
+    <button class="danger-btn" onclick="clearCache()">🗑️ BORRAR MEMORIA ACTUAL</button>
   </aside>
 
   <main class="main-content">
     <div class="admin-container">
         <div class="tab-content">
-            <h1>📄 Uploader Anti-Fallos</h1>
+            <h1>📄 Uploader Multi-Capítulo</h1>
             
-            <div class="status-card" id="cacheStatus">
-                No hay sesiones previas guardadas.
-            </div>
+            <div class="status-card" id="cacheStatus">Cargando...</div>
 
             <div class="input-group">
                 <label>Nombre del Manga</label>
-                <input type="text" id="mangaTitle" placeholder="Ej: One Piece">
+                <input type="text" id="mangaTitle" placeholder="Nombre para las fotos">
             </div>
 
             <div class="input-group">
-                <label>Seleccionar Carpeta</label>
+                <label>Seleccionar Carpeta del Manga</label>
                 <input type="file" id="folderInput" webkitdirectory directory multiple>
             </div>
 
-            <button class="primary-btn" id="startProcess">🚀 INICIAR / CONTINUAR SUBIDA</button>
-            <a id="downloadBtn" class="primary-btn">📥 DESCARGAR JSON (HASTA DONDE VAYA)</a>
+            <button class="primary-btn" id="startProcess">🚀 INICIAR SUBIDA</button>
+            <a id="downloadBtn" class="primary-btn">📥 DESCARGAR JSON</a>
 
-            <div id="uploadLog">Esperando inicio...</div>
+            <div id="uploadLog">Listo para empezar.</div>
         </div>
     </div>
   </main>
@@ -69,33 +66,34 @@
   <script type="module">
     const IMGBB_API_KEY = "83edde6fcaeaf68780eae9957ff1eb1b";
     const delay = ms => new Promise(res => setTimeout(res, ms));
+    const validExtensions = ['jpg', 'jpeg', 'png', 'webp'];
 
     let finalJsonData = [];
 
-    // 1. CARGAR MEMORIA AL ABRIR
     window.onload = () => {
         const saved = localStorage.getItem("uploader_cache");
         if (saved) {
             finalJsonData = JSON.parse(saved);
             actualizarBotonDescarga();
-            document.getElementById('cacheStatus').innerHTML = `<span style="color:#0f0">Rescatado: ${finalJsonData.length} capítulos en memoria. Si vuelves a iniciar, saltará los que ya tengan links.</span>`;
+            document.getElementById('cacheStatus').innerHTML = `<span style="color:#0f0">Rescatado: ${finalJsonData.length} capítulos en memoria.</span>`;
+        } else {
+            document.getElementById('cacheStatus').textContent = "Sin sesiones previas.";
         }
     };
 
     window.clearCache = () => {
-        if(confirm("¿Seguro? Se borrarán los links guardados en este navegador.")){
+        if(confirm("¿Seguro? Se perderán los links que no hayas descargado.")){
             localStorage.removeItem("uploader_cache");
             location.reload();
         }
     };
 
     function actualizarBotonDescarga() {
-        const title = document.getElementById('mangaTitle').value || "manga_completo";
+        const title = document.getElementById('mangaTitle').value || "manga_links";
         const jsonString = JSON.stringify(finalJsonData, null, 2);
         const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
         const dlBtn = document.getElementById('downloadBtn');
-        dlBtn.href = url;
+        dlBtn.href = URL.createObjectURL(blob);
         dlBtn.download = `${title.replace(/\s+/g,'_')}.json`;
     }
 
@@ -109,37 +107,49 @@
             const resData = await response.json();
 
             if (response.status === 429) {
-                log.innerHTML += `<br><span style="color:yellow">⚠️ Límite imgBB. Esperando 30s...</span>`;
+                log.innerHTML += `<br><span style="color:yellow">⚠️ Límite imgBB (429). Esperando 30s...</span>`;
                 await delay(30000);
                 return uploadToImgBB(file, customName, log);
             }
-            if (!response.ok) throw new Error(resData.error.message);
+
+            if (!response.ok) {
+                // Si el error es 400 (Bad Request), probablemente no es una imagen válida
+                if(response.status === 400) {
+                    log.innerHTML += `<br><span style="color:orange">⚠️ Archivo saltado (Error 400: ${resData.error.message})</span>`;
+                    return null; 
+                }
+                throw new Error(resData.error.message);
+            }
             return resData.data.url;
         } catch (err) {
-            log.innerHTML += `<br><span>🔄 Error de red, reintentando...</span>`;
+            log.innerHTML += `<br><span>🔄 Reintentando en 5s...</span>`;
             await delay(5000);
             return uploadToImgBB(file, customName, log);
         }
     }
 
     document.getElementById('startProcess').onclick = async function() {
-        const title = document.getElementById('mangaTitle').value.trim();
+        const titleInput = document.getElementById('mangaTitle').value.trim();
         const files = Array.from(document.getElementById('folderInput').files);
         const log = document.getElementById('uploadLog');
 
-        if (!title || files.length === 0) return alert("Datos incompletos.");
-
+        if (!titleInput || files.length === 0) return alert("Pon el nombre y selecciona carpeta.");
+        
+        const title = titleInput.replace(/[^a-z0-9]/gi, '_'); // Limpiar nombre
         this.disabled = true;
         log.innerHTML = `=== PROCESANDO ===<br>`;
 
-        // Agrupar
+        // 1. AGRUPAR Y FILTRAR SOLO IMÁGENES
         const chaptersMap = {};
         files.forEach(file => {
-            const pathParts = file.webkitRelativePath.split('/');
-            if (pathParts.length >= 2) {
-                const folder = pathParts[pathParts.length - 2];
-                if (!chaptersMap[folder]) chaptersMap[folder] = [];
-                chaptersMap[folder].push(file);
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (validExtensions.includes(ext)) {
+                const pathParts = file.webkitRelativePath.split('/');
+                if (pathParts.length >= 2) {
+                    const folder = pathParts[pathParts.length - 2];
+                    if (!chaptersMap[folder]) chaptersMap[folder] = [];
+                    chaptersMap[folder].push(file);
+                }
             }
         });
 
@@ -147,36 +157,44 @@
             parseFloat(a.replace(/^\D+/g, '')) - parseFloat(b.replace(/^\D+/g, ''))
         );
 
+        if(chapterFolders.length === 0) {
+            alert("No se encontraron imágenes válidas en la carpeta seleccionada.");
+            this.disabled = false;
+            return;
+        }
+
         for (let folderName of chapterFolders) {
             const capNumber = folderName.replace(/^\D+/g, '') || folderName;
 
-            // COMPROBAR SI YA ESTÁ EN MEMORIA
+            // Saltar si ya lo tenemos
             if (finalJsonData.some(c => c.capitulo === capNumber)) {
-                log.innerHTML += `<span style="color:#555">⏭️ Cap ${capNumber} ya está en memoria. Saltando...</span><br>`;
+                log.innerHTML += `<span style="color:#666">⏭️ Cap ${capNumber} ya subido.</span><br>`;
                 continue;
             }
 
-            log.innerHTML += `<span style="color:cyan">🚀 Subiendo Cap ${capNumber}...</span> `;
+            log.innerHTML += `<span style="color:cyan">🚀 Cap ${capNumber}:</span> `;
             const chapterFiles = chaptersMap[folderName].sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
             
             let chapterLinks = [];
             for (let i = 0; i < chapterFiles.length; i++) {
                 const smartName = `${title}_C${capNumber}_P${i+1}`;
                 const url = await uploadToImgBB(chapterFiles[i], smartName, log);
-                chapterLinks.push(url);
-                log.innerHTML += `.`;
-                log.scrollTop = log.scrollHeight;
+                if (url) {
+                    chapterLinks.push(url);
+                    log.innerHTML += `.`;
+                    log.scrollTop = log.scrollHeight;
+                }
             }
 
-            // GUARDAR CAPÍTULO Y ACTUALIZAR CACHÉ
-            finalJsonData.push({ capitulo: capNumber, links: chapterLinks });
-            localStorage.setItem("uploader_cache", JSON.stringify(finalJsonData));
-            actualizarBotonDescarga(); // El botón siempre tiene lo último
-
-            log.innerHTML += ` <span style="color:#0f0">OK</span><br>`;
+            if(chapterLinks.length > 0) {
+                finalJsonData.push({ capitulo: capNumber, links: chapterLinks });
+                localStorage.setItem("uploader_cache", JSON.stringify(finalJsonData));
+                actualizarBotonDescarga();
+                log.innerHTML += ` <span style="color:#0f0">OK (${chapterLinks.length} págs)</span><br>`;
+            }
         }
 
-        alert("¡Todo listo!");
+        alert("¡Proceso Finalizado!");
         this.disabled = false;
     };
   </script>
