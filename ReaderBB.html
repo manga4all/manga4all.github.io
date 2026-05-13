@@ -4,22 +4,75 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="tabTitle">M4A | Capitulo ...</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="css/navbar.css">
+  
   <style>
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
-    body { background: #070707; color: white; margin: 0; padding-top: 75px; }
-    .reader-nav { 
-        display: flex; justify-content: center; align-items: center; gap: 25px; 
-        padding: 15px; background: rgba(17, 17, 17, 0.95); position: sticky; 
-        top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; 
+    
+    /* 1. ESTRUCTURA IDÉNTICA A READER.HTML */
+    body { 
+        background: #070707; 
+        color: white; 
+        margin: 0; 
+        padding-top: 75px; /* Medida original */
     }
-    .btn-nav { background: #ff0055; color: white !important; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: 700; font-size: 0.9rem; transition: 0.3s; }
+    
+    .reader-nav { 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        gap: 25px; 
+        padding: 15px; 
+        background: rgba(17, 17, 17, 0.95); 
+        position: sticky; 
+        top: 75px; /* Pegado a la navbar */
+        z-index: 1000; 
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #1f1f1f;
+    }
+
+    .btn-nav { 
+        background: #ff0055; 
+        color: white !important; 
+        padding: 10px 25px; 
+        border-radius: 25px; 
+        text-decoration: none; 
+        font-weight: 700; 
+        font-size: 0.9rem; 
+        transition: 0.3s;
+    }
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
-    .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 18px; border-radius: 12px; text-decoration: none; font-size: 1.1rem; border: 1px solid #333; }
+
+    .list-btn {
+        background: #1a1a1a;
+        color: #ccc;
+        padding: 10px 18px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 1.1rem;
+        border: 1px solid #333;
+    }
+
     #chapLabel { font-weight: 700; font-size: 1rem; min-width: 120px; text-align: center; }
-    .manga-pages-container { max-width: 850px; margin: 0 auto; display: flex; flex-direction: column; background: #000; min-height: 100vh; }
+
+    .manga-pages-container { 
+        max-width: 850px; 
+        margin: 0 auto; 
+        display: flex; 
+        flex-direction: column; 
+        background: #000; 
+    }
     .manga-pages-container img { width: 100%; height: auto; display: block; margin-bottom: 2px; }
+
+    /* Aviso de carga/salto */
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 10px; text-align: center; font-weight: 600; font-size: 0.85rem; }
+
+    footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -33,9 +86,13 @@
     <a href="#" id="nextBtn" class="btn-nav">Siguiente</a>
   </div>
 
-  <div id="resumeNotice">Reanudando donde te quedaste...</div>
+  <div id="resumeNotice">Sincronizando progreso...</div>
 
   <div class="manga-pages-container" id="mangaPages"></div>
+
+  <footer>MANGA 4 ALL © 2026</footer>
+
+  <script type="module" src="js/navbar.js"></script>
 
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -65,11 +122,13 @@
 
     document.title = `M4A | Capitulo ${chapterNum}`;
 
-    // Detectar usuario y disparar el salto si ya cargaron las fotos
     onAuthStateChanged(auth, (user) => {
         currentUser = user;
-        if (shouldScroll && !hasJumped && document.querySelectorAll("#mangaPages img").length > 0) {
-            ejecutarSalto();
+        if (shouldScroll && !hasJumped) {
+            // Si las imágenes ya están ahí, intentamos saltar
+            if (document.querySelectorAll("#mangaPages img").length > 0) {
+                ejecutarSalto();
+            }
         }
     });
 
@@ -109,13 +168,13 @@
                 if (idx < caps.length - 1) document.getElementById("nextBtn").href = `ReaderBB.html?manga=${mangaId}&number=${caps[idx+1].number}`;
                 else document.getElementById("nextBtn").textContent = "FIN";
 
-                // SI VIENE DE CONTINUAR LEYENDO
+                // LÓGICA DE SALTO
                 if (shouldScroll) {
                     document.getElementById("resumeNotice").style.display = "block";
-                    // Pequeño delay para que el navegador "renderice" las imágenes antes de saltar
-                    setTimeout(ejecutarSalto, 800);
+                    // Esperamos a que el navegador procese las imágenes inyectadas
+                    setTimeout(ejecutarSalto, 600);
                 } else {
-                    setTimeout(() => { canSave = true; }, 2000);
+                    setTimeout(() => { canSave = true; }, 1500);
                 }
             }
         } catch (e) { console.error(e); }
@@ -130,30 +189,26 @@
                 const history = userSnap.data().readingHistory;
                 const prog = history ? history[mangaId] : null;
 
-                // Solo saltamos si el capítulo guardado es el mismo que estamos viendo
                 if (prog && parseFloat(prog.chapter) === parseFloat(chapterNum)) {
                     const todas = document.querySelectorAll("#mangaPages img");
                     const targetIndex = prog.imageIndex || 0;
                     
                     if (todas[targetIndex]) {
                         hasJumped = true;
-                        // Calculamos posición restando la altura de las navbars (aprox 140px)
                         const rect = todas[targetIndex].getBoundingClientRect();
-                        const pos = rect.top + window.pageYOffset - 140;
-                        
+                        const pos = rect.top + window.pageYOffset - 140; // Compensación de navbar
                         window.scrollTo({ top: pos, behavior: 'instant' });
                     }
                 }
             }
-        } catch(e) { console.error("Error en salto:", e); }
+        } catch(e) {}
         
-        // Ocultar aviso y habilitar guardado
         document.getElementById("resumeNotice").style.display = "none";
         setTimeout(() => { canSave = true; }, 1000);
         hasJumped = true;
     }
 
-    // --- LÓGICA DE GUARDADO ---
+    // --- GUARDAR PROGRESO ---
     function getVisibleIndex() {
         const imgs = document.querySelectorAll("#mangaPages img");
         for (let i = 0; i < imgs.length; i++) {
@@ -171,12 +226,8 @@
                 const mSnap = await getDoc(doc(db, "mangas", mangaId));
                 const d = mSnap.data();
                 const info = { 
-                    id: mangaId, 
-                    title: d.title, 
-                    chapter: chapterNum, 
-                    image: (d.cover || d.image), 
-                    imageIndex: index, 
-                    time: Date.now() 
+                    id: mangaId, title: d.title, chapter: chapterNum, 
+                    image: (d.cover || d.image), imageIndex: index, time: Date.now() 
                 };
                 localStorage.setItem("manga_last_seen", JSON.stringify(info));
                 await updateDoc(doc(db, "users", currentUser.uid), { ["readingHistory." + mangaId]: info });
@@ -186,6 +237,5 @@
 
     loadChapter();
   </script>
-  <script type="module" src="js/navbar.js"></script>
 </body>
 </html>
