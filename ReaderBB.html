@@ -8,38 +8,39 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="css/navbar.css">
   
   <style>
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
     
-    /* 2. ESPACIO PARA NAVBAR GLOBAL (100px como en tus otras páginas) */
+    /* 1. BODY IDÉNTICO AL ORIGINAL (75px) */
     body { 
         background: #070707; 
         color: white; 
         margin: 0; 
-        padding-top: 100px; 
+        padding-top: 75px; 
     }
     
-    /* 3. LECTOR NAV FIJO (Debajo de la navbar global) */
+    /* 2. READER NAV FIJO A 75px (Como el original) */
     .reader-nav { 
         display: flex; 
         justify-content: center; 
         align-items: center; 
-        gap: 25px; /* Espaciado que pediste (marcado en verde) */
+        gap: 25px; /* El espacio que pediste en verde */
         padding: 15px; 
         background: rgba(17, 17, 17, 0.95); 
         position: sticky; 
-        top: 100px; /* Pegado a la navbar de 100px */
+        top: 75px; /* Pegado justo donde termina la navbar original */
         z-index: 1000; 
         backdrop-filter: blur(10px);
         border-bottom: 1px solid #1f1f1f;
     }
 
-    /* Botones legibles y con espacio */
+    /* Botones con texto blanco y legible */
     .btn-nav { 
         background: #ff0055; 
-        color: white !important; /* Texto blanco garantizado */
+        color: white !important; 
         padding: 10px 25px; 
         border-radius: 25px; 
         text-decoration: none; 
@@ -88,6 +89,8 @@
   <div class="manga-pages-container" id="mangaPages"></div>
 
   <footer>MANGA 4 ALL © 2026</footer>
+
+  <script type="module" src="js/navbar.js"></script>
 
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
@@ -151,6 +154,5 @@
     }
     loadChapter();
   </script>
-  <script type="module" src="js/navbar.js"></script>
 </body>
 </html>
