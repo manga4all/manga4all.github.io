@@ -134,6 +134,7 @@
     let allChapters = [];
     let itemsToShow = 20;
     let isDescending = true;
+    let mangaTipo = "1"; // Variable para guardar el tipo de manga
 
     // --- LÓGICA DE FAVORITOS ---
     onAuthStateChanged(auth, async (user) => {
@@ -179,6 +180,7 @@
         const mangaSnap = await getDoc(mangaRef);
         if (mangaSnap.exists()) {
           const manga = mangaSnap.data();
+          mangaTipo = String(manga.tipo || "1"); // GUARDAMOS EL TIPO
           document.title = manga.title + " | Manga 4 All";
           document.getElementById("mangaTitle").textContent = manga.title;
           document.getElementById("mangaDescription").textContent = manga.description;
@@ -204,10 +206,13 @@
       const visibleChapters = allChapters.slice(0, itemsToShow);
       chaptersGrid.innerHTML = "";
       
+      // DETERMINAMOS EL ARCHIVO DEL LECTOR
+      const lectorFile = (mangaTipo === "2") ? "ReaderBB.html" : "reader.html";
+
       visibleChapters.forEach((tomo) => {
         const numeroLimpio = parseFloat(tomo.number);
         chaptersGrid.innerHTML += `
-          <a class="chapter-row-item" href="reader.html?manga=${mangaId}&number=${tomo.number}">
+          <a class="chapter-row-item" href="${lectorFile}?manga=${mangaId}&number=${tomo.number}">
             <div class="chapter-row-left">
               <img src="${tomo.cover}" class="chapter-row-img" alt="Cap ${numeroLimpio}">
               <div style="display: flex; flex-direction: column;">
