@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>M4A - Uploader V6.2 (Hard Reset Fix)</title>
+  <title>M4A - Uploader Industrial V6.3</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
@@ -12,7 +12,7 @@
     .main-content { flex: 1; margin-left: 280px; padding: 40px; display: flex; justify-content: center; }
     .admin-container { width: 100%; max-width: 850px; }
     .tab-content { background: #111; padding: 35px; border-radius: 20px; border: 1px solid #1f1f1f; }
-    h1 { font-size: 1.4rem; margin-bottom: 20px; color: #fff; }
+    h1 { font-size: 1.4rem; margin-bottom: 10px; color: #fff; }
     .status-card { background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #333; margin-bottom: 20px; font-size: 0.85rem; border-left: 4px solid #ff0055; }
     .input-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #00d4ff; font-weight: bold; }
@@ -23,7 +23,7 @@
     #downloadBtn { background: #0088ff; margin-top: 15px; display: none; text-align: center; text-decoration: none; }
     #uploadLog { background: #000; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 0.75rem; margin-top: 20px; height: 300px; overflow-y: auto; border: 1px solid #222; color: #0f0; line-height: 1.4; }
     .danger-btn { background: #ff4444; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; transition: 0.3s; }
-    .danger-btn:hover { background: #cc0000; }
+    .detected-caps { background: #000; padding: 10px; border-radius: 8px; border: 1px solid #333; font-size: 0.75rem; color: #aaa; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -31,44 +31,38 @@
   <aside class="sidebar">
     <h2>Manga 4 All</h2>
     <div style="background: #1a1a1a; padding: 15px; border-radius: 10px; border: 1px solid #00d4ff;">
-        <p style="font-size: 0.7rem; color: #00d4ff; font-weight: bold; text-align: center;">MODO INDUSTRIAL V6.2</p>
+        <p style="font-size: 0.7rem; color: #00d4ff; font-weight: bold; text-align: center;">MODO INDUSTRIAL V6.3</p>
     </div>
-    
-    <p style="font-size: 0.65rem; color: #555; margin-top: 20px; text-align: center;">USA ESTO ANTES DE UNA SERIE NUEVA:</p>
-    <button class="danger-btn" onclick="hardReset()">🗑️ REINICIAR (LIMPIAR TODO)</button>
+    <button class="danger-btn" onclick="hardReset()">🗑️ REINICIAR TODO</button>
   </aside>
 
   <main class="main-content">
     <div class="admin-container">
         <div class="tab-content">
-            <h1>📄 Uploader Multi-Key (Anti-Conflicto)</h1>
+            <h1>📄 Uploader (Cero Conflictos)</h1>
             
-            <div id="cacheStatus" class="status-card">Cargando memoria...</div>
+            <div id="cacheStatus" class="status-card">Listo.</div>
 
             <div class="input-group">
-                <label>1. Cargar JSON Anterior (Solo si vas a completar un manga)</label>
-                <input type="file" id="jsonInput" accept=".json">
-            </div>
-
-            <div class="input-group">
-                <label>2. API Keys (Una por línea)</label>
+                <label>1. API Keys (Una por línea)</label>
                 <textarea id="keysInput"></textarea>
             </div>
 
             <div class="input-group">
-                <label>3. Nombre del Manga (Obligatorio)</label>
-                <input type="text" id="mangaTitle">
+                <label>2. Nombre del Manga</label>
+                <input type="text" id="mangaTitle" placeholder="Poner nombre aquí">
             </div>
 
             <div class="input-group">
-                <label>4. Carpeta del Manga</label>
+                <label>3. Seleccionar Carpeta del Manga</label>
                 <input type="file" id="folderInput" webkitdirectory directory multiple>
+                <div id="detectionPreview" class="detected-caps">Ningún archivo seleccionado.</div>
             </div>
 
-            <button class="primary-btn" id="startProcess">🚀 INICIAR SUBIDA</button>
+            <button class="primary-btn" id="startProcess" disabled>🚀 INICIAR SUBIDA</button>
             <a id="downloadBtn" class="primary-btn">📥 DESCARGAR JSON</a>
 
-            <div id="uploadLog">Esperando instrucciones...</div>
+            <div id="uploadLog">Selecciona una carpeta para empezar.</div>
         </div>
     </div>
   </main>
@@ -76,48 +70,65 @@
   <script type="module">
     const delay = ms => new Promise(res => setTimeout(res, ms));
     const validExts = ['jpg', 'jpeg', 'png', 'webp'];
-    const CACHE_KEY = "M4A_INDUSTRIAL_DB"; // Llave única para evitar confusiones
+    const CACHE_KEY = "M4A_V63_STABLE";
     
     let finalJsonData = [];
     let apiKeys = [];
     let currentKeyIndex = 0;
+    let chaptersMap = {};
 
-    // --- CARGA INICIAL ---
     window.onload = () => {
         const saved = localStorage.getItem(CACHE_KEY);
         if (saved) {
             finalJsonData = JSON.parse(saved);
             actualizarBoton();
-            document.getElementById('cacheStatus').innerHTML = `<span style="color:#ff0055">⚠️ Memoria: ${finalJsonData.length} capítulos detectados. Si vas a subir un MANGA NUEVO, pulsa REINICIAR.</span>`;
-        } else {
-            document.getElementById('cacheStatus').innerHTML = `<span style="color:#0f0">✅ Memoria Limpia. Listo para serie nueva.</span>`;
+            document.getElementById('cacheStatus').innerHTML = `<span style="color:#ff0055">⚠️ Memoria: ${finalJsonData.length} capítulos guardados.</span>`;
         }
         const lastKeys = localStorage.getItem("last_api_keys");
         if(lastKeys) document.getElementById('keysInput').value = lastKeys;
     };
 
-    // --- REINICIO TOTAL ---
     window.hardReset = () => {
-        if(confirm("¿Estás seguro? Se borrará TODO el progreso guardado. Hazlo solo si ya descargaste tu JSON anterior.")){
-            localStorage.removeItem(CACHE_KEY);
-            localStorage.removeItem("uploader_cache_v6");
-            localStorage.removeItem("uploader_cache_v61");
-            finalJsonData = [];
+        if(confirm("¿Borrar todo? Hazlo solo si vas a empezar un manga nuevo.")) {
+            localStorage.clear();
             location.reload();
         }
     };
 
-    document.getElementById('jsonInput').onchange = function(e) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                finalJsonData = JSON.parse(event.target.result);
-                localStorage.setItem(CACHE_KEY, JSON.stringify(finalJsonData));
-                actualizarBoton();
-                document.getElementById('cacheStatus').innerHTML = `<span style="color:#0f0">✅ JSON Importado: ${finalJsonData.length} capítulos listos.</span>`;
-            } catch (err) { alert("JSON inválido."); }
-        };
-        reader.readAsText(e.target.files[0]);
+    // --- DETECCIÓN DE CAPÍTULOS MEJORADA ---
+    document.getElementById('folderInput').onchange = function(e) {
+        const files = Array.from(e.target.files);
+        chaptersMap = {};
+        const preview = document.getElementById('detectionPreview');
+        
+        files.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (validExts.includes(ext)) {
+                const pathParts = file.webkitRelativePath.split('/');
+                
+                // Si la imagen está en una subcarpeta (ej: Manga/Cap 01/01.jpg)
+                // pathParts[0] es el nombre del manga (Kou-2...), lo ignoramos.
+                let folderName = "1"; // Default
+                if (pathParts.length > 2) {
+                    folderName = pathParts[pathParts.length - 2];
+                }
+
+                if (!chaptersMap[folderName]) chaptersMap[folderName] = [];
+                chaptersMap[folderName].push(file);
+            }
+        });
+
+        const sortedNames = Object.keys(chaptersMap).sort((a, b) => 
+            (parseFloat(a.replace(/^\D+/g, '')) || 0) - (parseFloat(b.replace(/^\D+/g, '')) || 0)
+        );
+
+        if (sortedNames.length > 0) {
+            preview.innerHTML = `✅ Detectados <b>${sortedNames.length} capítulos</b>: ${sortedNames.join(', ')}`;
+            document.getElementById('startProcess').disabled = false;
+        } else {
+            preview.innerHTML = `❌ No se encontraron imágenes válidas.`;
+            document.getElementById('startProcess').disabled = true;
+        }
     };
 
     function actualizarBoton() {
@@ -159,62 +170,48 @@
     document.getElementById('startProcess').onclick = async function() {
         const rawKeys = document.getElementById('keysInput').value.trim();
         const titleRaw = document.getElementById('mangaTitle').value.trim();
-        const files = Array.from(document.getElementById('folderInput').files);
         const log = document.getElementById('uploadLog');
 
-        if (!rawKeys || !titleRaw || files.length === 0) return alert("Faltan datos.");
+        if (!rawKeys || !titleRaw) return alert("Faltan datos.");
         
         apiKeys = rawKeys.split('\n').map(k => k.trim()).filter(k => k !== "");
         localStorage.setItem("last_api_keys", rawKeys);
         
         const title = titleRaw.replace(/[^a-z0-9]/gi, '_');
         this.disabled = true;
-        log.innerHTML = `=== INICIANDO SUBIDA: ${title} ===<br>`;
+        log.innerHTML = `=== INICIANDO SUBIDA ===<br>`;
 
-        const chaptersMap = {};
-        files.forEach(file => {
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (validExts.includes(ext)) {
-                const pathParts = file.webkitRelativePath.split('/');
-                if (pathParts.length >= 2) {
-                    const folder = pathParts[pathParts.length - 2];
-                    if (!chaptersMap[folder]) chaptersMap[folder] = [];
-                    chaptersMap[folder].push(file);
-                }
-            }
-        });
+        const sortedFolders = Object.keys(chaptersMap).sort((a, b) => 
+            (parseFloat(a.replace(/^\D+/g, '')) || 0) - (parseFloat(b.replace(/^\D+/g, '')) || 0)
+        );
 
-        const chapterFolders = Object.keys(chaptersMap).sort((a, b) => parseFloat(a.replace(/^\D+/g, '')) - parseFloat(b.replace(/^\D+/g, '')));
+        for (let folderName of sortedFolders) {
+            const numCap = parseFloat(folderName.replace(/^\D+/g, '')) || folderName;
 
-        for (let folderName of chapterFolders) {
-            const folderCapNum = parseFloat(folderName.replace(/^\D+/g, '')) || folderName;
-
-            // BUSQUEDA EN LA MEMORIA ACTUAL
-            const yaExiste = finalJsonData.some(c => parseFloat(c.capitulo) === folderCapNum);
-
-            if (yaExiste) {
-                log.innerHTML += `<span style="color:#555">⏭️ Cap ${folderCapNum} saltado (Ya está en la lista).</span><br>`;
+            // Verificar si el capítulo ya existe en la memoria
+            if (finalJsonData.some(c => parseFloat(c.capitulo) === numCap)) {
+                log.innerHTML += `<span style="color:#555">⏭️ Cap ${numCap} saltado (Ya subido).</span><br>`;
                 continue;
             }
 
-            log.innerHTML += `<span style="color:cyan">🚀 Cap ${folderCapNum}:</span> `;
+            log.innerHTML += `<span style="color:cyan">🚀 Cap ${numCap}:</span> `;
             const chapterFiles = chaptersMap[folderName].sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true}));
             let links = [];
             
             for (let file of chapterFiles) {
-                const url = await uploadToImgBB(file, `${title}_C${folderCapNum}`, log);
+                const url = await uploadToImgBB(file, `${title}_C${numCap}`, log);
                 if (url) { links.push(url); log.innerHTML += `.`; log.scrollTop = log.scrollHeight; }
             }
             
             if (links.length > 0) {
-                finalJsonData.push({ capitulo: String(folderCapNum), links: links });
+                finalJsonData.push({ capitulo: String(numCap), links: links });
                 finalJsonData.sort((a, b) => parseFloat(a.capitulo) - parseFloat(b.capitulo));
                 localStorage.setItem(CACHE_KEY, JSON.stringify(finalJsonData));
                 actualizarBoton();
                 log.innerHTML += ` <span style="color:#0f0">OK</span><br>`;
             }
         }
-        alert("¡Proceso terminado!");
+        alert("¡Todo listo!");
         this.disabled = false;
     };
   </script>
