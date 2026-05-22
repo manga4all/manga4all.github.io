@@ -21,7 +21,7 @@
         padding-top: 75px; 
     }
     
-    /* 🟢 MODIFICADO: Añadida la transición suave para ocultar la barra al bajar */
+    /* Barra de navegación superior dinámica */
     .reader-nav { 
         display: flex; 
         justify-content: center; 
@@ -37,12 +37,11 @@
         transition: transform 0.3s ease;
     }
 
-    /* 🟢 CLASE NUEVA: Desplaza la barra superior fuera de la pantalla */
     .reader-nav.nav-hide {
         transform: translateY(-180px);
     }
 
-    /* 🟢 MODIFICADO: Bloqueo estricto para que la barra inferior nunca se oculte */
+    /* Barra de navegación inferior estática */
     .nav-bottom { 
         position: static !important; 
         transform: none !important;
@@ -76,7 +75,7 @@
 
     .chap-label { font-weight: 700; font-size: 1rem; min-width: 120px; text-align: center; }
 
-    /* 🟢 MODIFICADO: Reducido de 850px a 700px para lograr el zoom negativo y ver la página completa */
+    /* Contenedor optimizado para zoom cómodo de lectura */
     .manga-pages-container { 
         max-width: 700px; 
         margin: 0 auto; 
@@ -145,7 +144,6 @@
     let imagesTotalCount = 0;
     let esUltimoCapitulo = false;
 
-    // Control de desplazamiento e interfaz superior
     let lastScrollTop = 0;
     const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
 
@@ -189,6 +187,7 @@
                 cont.innerHTML = "";
                 imagesTotalCount = tomo.images.length;
 
+                // 📦 INTEGRIDAD PROTEGIDA: Carga masiva nativa síncrona exclusiva para imgBB
                 tomo.images.forEach(url => {
                     const img = document.createElement("img");
                     img.src = url;
@@ -261,7 +260,6 @@
         return imgs.length - 1;
     }
 
-    /* 🟢 EXTRAÍDO Y CORREGIDO: Función de guardado síncrona/aislada para evitar pérdidas de datos */
     async function guardar() {
         if (!canSave || !currentUser) return;
         const index = getVisibleIndex();
@@ -287,11 +285,9 @@
         } catch(e) { console.error("Error al guardar progreso:", e); }
     }
 
-    /* 🟢 MODIFICADO: Manejo independiente de scroll (Ocultamiento superior + Auto-guardado secuencial) */
     window.addEventListener('scroll', () => {
         let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
         
-        // Control de visibilidad del navbar superior
         if (currentScroll > 120) {
             if (currentScroll > lastScrollTop) {
                 if (topNavbarElement) topNavbarElement.classList.add("nav-hide");
@@ -303,10 +299,24 @@
         }
         lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 
-        // Disparador del temporizador de guardado
         if (!canSave || !currentUser) return;
         clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(guardar, 2000);
+        
+        // 🟢 MODIFICADO: Ventana reducida a 300ms para asegurar guardado casi instantáneo en pausas
+        window.saveTimer = setTimeout(guardar, 300);
+    });
+
+    // 🟢 NUEVO INTEGRANTE (INTERCEPTOR DE SALIDAS): Fuerza el guardado inmediato si haces clic en cualquier link o en el Navbar
+    document.addEventListener("click", async (e) => {
+        const link = e.target.closest("a");
+        if (!link || !link.href || link.getAttribute("href") === "#" || link.href.startsWith("javascript:") || link.classList.contains("disabled")) return;
+        
+        if (canSave && currentUser) {
+            e.preventDefault();
+            const destino = link.href;
+            await guardar(); // Esperamos a que la base de datos confirme la escritura antes de saltar de página
+            window.location.href = destino;
+        }
     });
 
     loadChapter();
