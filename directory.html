@@ -49,7 +49,7 @@
       box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
     }
 
-    /* 🟢 GARANTÍA DE RENDERIZADO: Estilos para proteger las tarjetas, el Botón de Leer y el Tooltip */
+    /* GARANTÍA DE RENDERIZADO: Estilos para proteger las tarjetas, el Botón de Leer y el Tooltip */
     .manga-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -233,7 +233,10 @@
     let masterMangasArray = [];
     let processedMangasArray = [];
     let currentPage = 1;
-    const itemsPerPage = 50;
+    
+    // 🟢 EL CAMBIO SOLICITADO: Ajustado de 50 a 60 para filas perfectas de 6
+    const itemsPerPage = 60; 
+    
     let currentGenreFilter = "Todos";
     let currentSortOrder = "asc";
 
@@ -325,9 +328,7 @@
                     <img src="${coverImg}" alt="${manga.title}" loading="lazy">
                 </a>
                 <h3>${manga.title || "Manga Sin Título"}</h3>
-                
                 <a href="${linkUrl}" class="read-btn">Leer</a>
-                
                 <div class="manga-tooltip">
                     <h4>${manga.title || "Sin título"}</h4>
                     <p>${synopsis}</p>
@@ -380,7 +381,6 @@
         container.appendChild(nextBtn);
     }
 
-    // Vinculación segura de los eventos onclick nativos del archivo HTML
     window.sortAlphabetical = function(order) {
         currentSortOrder = order;
         currentPage = 1; 
