@@ -48,6 +48,44 @@
       border-color: #ff0055;
       box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
     }
+
+    /* 🔢 ESTILOS NUEVOS PARA LA PAGINACIÓN INDUSTRIAL (SIN ALTERAR TU DISEÑO) */
+    .pagination-layout {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin: 40px 0;
+      flex-wrap: wrap;
+    }
+    .page-nav-btn {
+      background: #111;
+      color: #fff;
+      border: 1px solid #222;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: 0.3s;
+    }
+    .page-nav-btn:hover:not(:disabled) {
+      border-color: #ff0055;
+      color: #ff0055;
+    }
+    .page-nav-btn.active {
+      background: #ff0055;
+      border-color: #ff0055;
+      color: white;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
+    }
+    .page-nav-btn:disabled {
+      background: #070707;
+      color: #444;
+      border-color: #111;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -77,17 +115,209 @@
             <span class="filter-label">Filtrar por Género</span>
             <div id="genre-container" class="filter-options">
                 <button class="filter-btn active" onclick="filterByGenre('Todos')">Todos</button>
-                </div>
+            </div>
         </div>
     </aside>
 
     <div id="directory-grid" class="manga-grid">
         </div>
+
+    <div id="pagination-container" class="pagination-layout"></div>
   </main>
 
   <footer>Manga 4 All © 2026</footer>
 
-  <script type="module" src="js/directory.js"></script>
-  
+  <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
+        authDomain: "manga4all-f520f.firebaseapp.com",
+        projectId: "manga4all-f520f",
+        storageBucket: "manga4all-f520f.firebasestorage.app",
+        appId: "1:372561836700:web:cbb295bda656abd2ea0b59"
+    };
+
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    const db = getFirestore(app);
+
+    // Estados Globales de Carga de Datos
+    let masterMangasArray = [];
+    let processedMangasArray = [];
+    let currentPage = 1;
+    const itemsPerPage = 50;
+    let currentGenreFilter = "Todos";
+    let currentSortOrder = "asc";
+
+    async function loadDirectoryData() {
+        const grid = document.getElementById("directory-grid");
+        grid.innerHTML = "<p style='color: #777; grid-column: 1/-1; text-align: center; padding: 20px;'>Cargando biblioteca...</p>";
+        
+        try {
+            const snap = await getDocs(collection(db, "mangas"));
+            masterMangasArray = [];
+            let genresSet = new Set();
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                masterMangasArray.push({ id: doc.id, ...data });
+                
+                // Mapeo dinámico de géneros para autogenerar tus botones sin errores manuales
+                if (data.genres) {
+                    if (Array.isArray(data.genres)) {
+                        data.genres.forEach(g => genresSet.add(g.trim()));
+                    } else if (typeof data.genres === 'string') {
+                        data.genres.split(',').forEach(g => genresSet.add(g.trim()));
+                    }
+                }
+            });
+
+            buildDynamicGenreFilters(Array.from(genresSet).sort());
+            processAndRenderEcosystem();
+
+        } catch (error) {
+            console.error("Error al cargar directorio:", error);
+            grid.innerHTML = "<p style='color: #ff0055; grid-column: 1/-1; text-align: center;'>Error al conectar con la base de datos.</p>";
+        }
+    }
+
+    function buildDynamicGenreFilters(genres) {
+        const container = document.getElementById("genre-container");
+        container.innerHTML = `<button class="filter-btn active" onclick="filterByGenre('Todos')">Todos</button>`;
+        genres.forEach(g => {
+            if (g) {
+                container.innerHTML += `<button class="filter-btn" onclick="filterByGenre('${g}')">${g}</button>`;
+            }
+        });
+    }
+
+    function processAndRenderEcosystem() {
+        // 1. Filtrado lógico
+        if (currentGenreFilter === "Todos") {
+            processedMangasArray = [...masterMangasArray];
+        } else {
+            processedMangasArray = masterMangasArray.filter(m => {
+                if (!m.genres) return false;
+                if (Array.isArray(m.genres)) return m.genres.includes(currentGenreFilter);
+                return m.genres.toLowerCase().includes(currentGenreFilter.toLowerCase());
+            });
+        }
+
+        // 2. Ordenamiento alfabético estricto (A-Z / Z-A)
+        processedMangasArray.sort((a, b) => {
+            const titleA = (a.title || "").trim().toLowerCase();
+            const titleB = (b.title || "").trim().toLowerCase();
+            return currentSortOrder === "asc" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+        });
+
+        renderSegmentedPage();
+    }
+
+    function renderSegmentedPage() {
+        const grid = document.getElementById("directory-grid");
+        grid.innerHTML = "";
+
+        if (processedMangasArray.length === 0) {
+            grid.innerHTML = "<p style='color: #777; grid-column: 1/-1; text-align: center; padding: 20px;'>No se encontraron mangas en esta sección.</p>";
+            renderPaginationControls(0);
+            return;
+        }
+
+        // Segmentación exacta de 50 en 50
+        const start = (currentPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pageItems = processedMangasArray.slice(start, end);
+
+        pageItems.forEach(manga => {
+            const card = document.createElement("a");
+            card.href = `manga.html?id=${manga.id}`;
+            card.style.textDecoration = "none";
+            card.innerHTML = `
+                <div style="background: #111; border: 1px solid #1f1f1f; border-radius: 10px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; height: 100%;">
+                    <img src="${manga.cover || manga.image || 'img/no-cover.png'}" style="width: 100%; aspect-ratio: 3/4; object-fit: cover;" alt="${manga.title}" loading="lazy">
+                    <h3 style="color: white; font-size: 0.85rem; padding: 12px; margin: 0; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${manga.title || "Manga Sin Título"}</h3>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        renderPaginationControls(processedMangasArray.length);
+    }
+
+    function renderPaginationControls(totalItems) {
+        const container = document.getElementById("pagination-container");
+        container.innerHTML = "";
+        
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (totalPages <= 1) return; // Ocultar controles si no superamos los 50 mangas
+
+        // Botón Anterior
+        const prevBtn = document.createElement("button");
+        prevBtn.className = "page-nav-btn";
+        prevBtn.textContent = "« Anterior";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.onclick = () => { currentPage--; renderSegmentedPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+        container.appendChild(prevBtn);
+
+        // Estructuración dinámica inteligente de páginas vecinas
+        for (let i = 1; i <= totalPages; i++) {
+            if (totalPages > 6 && Math.abs(currentPage - i) > 1 && i !== 1 && i !== totalPages) {
+                if (i === 2 || i === totalPages - 1) {
+                    const dots = document.createElement("span");
+                    dots.style.color = "#444";
+                    dots.style.padding = "0 4px";
+                    dots.textContent = "...";
+                    container.appendChild(dots);
+                }
+                continue;
+            }
+
+            const btn = document.createElement("button");
+            btn.className = `page-nav-btn ${i === currentPage ? 'active' : ''}`;
+            btn.textContent = i;
+            btn.onclick = () => { currentPage = i; renderSegmentedPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+            container.appendChild(btn);
+        }
+
+        // Botón Siguiente
+        const nextBtn = document.createElement("button");
+        nextBtn.className = "page-nav-btn";
+        nextBtn.textContent = "Siguiente »";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.onclick = () => { currentPage++; renderSegmentedPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+        container.appendChild(nextBtn);
+    }
+
+    // 🟢 ENLACES AL OBJETO WINDOW: Evita que el HTML lance errores al pulsar los botones
+    window.sortAlphabetical = function(order) {
+        currentSortOrder = order;
+        currentPage = 1; 
+        
+        const group = document.querySelector(".filter-group");
+        if (group) {
+            const btns = group.querySelectorAll(".filter-btn");
+            btns.forEach(b => b.classList.remove("active"));
+            if (order === 'asc' && btns[0]) btns[0].classList.add("active");
+            if (order === 'desc' && btns[1]) btns[1].classList.add("active");
+        }
+        processAndRenderEcosystem();
+    };
+
+    window.filterByGenre = function(genre) {
+        currentGenreFilter = genre;
+        currentPage = 1; 
+
+        const btns = document.querySelectorAll("#genre-container .filter-btn");
+        btns.forEach(b => {
+            if (b.textContent.trim().toLowerCase() === genre.toLowerCase()) b.classList.add("active");
+            else b.classList.remove("active");
+        });
+        processAndRenderEcosystem();
+    };
+
+    // Ejecución inicial limpia
+    loadDirectoryData();
+  </script>
 </body>
 </html>
