@@ -21,6 +21,7 @@
         padding-top: 75px; 
     }
     
+    /* 🟢 MODIFICADO: Añadida la transición suave para ocultar la barra al bajar */
     .reader-nav { 
         display: flex; 
         justify-content: center; 
@@ -33,14 +34,22 @@
         z-index: 1000; 
         backdrop-filter: blur(10px);
         border-bottom: 1px solid #1f1f1f;
+        transition: transform 0.3s ease;
     }
 
-    /* Navegación inferior estática */
+    /* 🟢 CLASE NUEVA: Desplaza la barra superior fuera de la pantalla */
+    .reader-nav.nav-hide {
+        transform: translateY(-180px);
+    }
+
+    /* 🟢 MODIFICADO: Bloqueo estricto para que la barra inferior nunca se oculte */
     .nav-bottom { 
-        position: static; 
+        position: static !important; 
+        transform: none !important;
         border-top: 1px solid #1f1f1f; 
         margin-top: 20px; 
         padding-bottom: 50px; 
+        transition: none !important;
     }
 
     .btn-nav { 
@@ -67,14 +76,15 @@
 
     .chap-label { font-weight: 700; font-size: 1rem; min-width: 120px; text-align: center; }
 
+    /* 🟢 MODIFICADO: Reducido de 850px a 700px para lograr el zoom negativo y ver la página completa */
     .manga-pages-container { 
-        max-width: 850px; 
+        max-width: 700px; 
         margin: 0 auto; 
         display: flex; 
         flex-direction: column; 
         background: #000; 
     }
-    .manga-pages-container img { width: 100%; height: auto; display: block; margin-bottom: 2px; }
+    .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; }
 
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 10px; text-align: center; font-weight: 600; font-size: 0.85rem; }
 
@@ -110,7 +120,6 @@
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-    // Agregamos deleteField para la limpieza del historial
     import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -136,6 +145,10 @@
     let imagesTotalCount = 0;
     let esUltimoCapitulo = false;
 
+    // Control de desplazamiento e interfaz superior
+    let lastScrollTop = 0;
+    const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
+
     document.title = `M4A | Capitulo ${chapterNum}`;
 
     onAuthStateChanged(auth, (user) => {
@@ -148,7 +161,6 @@
     async function loadChapter() {
         if (!mangaId || !chapterNum) return;
         
-        // Setup labels y links de lista
         const labels = [document.getElementById("chapLabelTop"), document.getElementById("chapLabelBottom")];
         labels.forEach(l => l.textContent = "Capitulo " + chapterNum);
         
@@ -170,7 +182,6 @@
             const idx = caps.findIndex(c => parseFloat(c.number) === target);
             const tomo = caps[idx];
 
-            // Detectar si es el último capítulo
             esUltimoCapitulo = (idx === caps.length - 1);
 
             if (tomo && tomo.images) {
@@ -184,7 +195,6 @@
                     cont.appendChild(img);
                 });
 
-                // Configurar Navegación sincronizada
                 setupNav(caps, idx);
 
                 if (shouldScroll) {
@@ -246,42 +256,61 @@
     function getVisibleIndex() {
         const imgs = document.querySelectorAll("#mangaPages img");
         for (let i = 0; i < imgs.length; i++) {
-            if (imgs[i].getBoundingClientRect().bottom > 160) return i;
+            if (imgs[i].getBoundingClientRect().bottom > 200) return i;
         }
         return imgs.length - 1;
     }
 
+    /* 🟢 EXTRAÍDO Y CORREGIDO: Función de guardado síncrona/aislada para evitar pérdidas de datos */
+    async function guardar() {
+        if (!canSave || !currentUser) return;
+        const index = getVisibleIndex();
+        try {
+            const userRef = doc(db, "users", currentUser.uid);
+
+            if (esUltimoCapitulo && index >= (imagesTotalCount - 1)) {
+                await updateDoc(userRef, {
+                    ["readingHistory." + mangaId]: deleteField()
+                });
+                const local = JSON.parse(localStorage.getItem("manga_last_seen"));
+                if (local && local.id === mangaId) localStorage.removeItem("manga_last_seen");
+            } else {
+                const mSnap = await getDoc(doc(db, "mangas", mangaId));
+                const d = mSnap.data();
+                const info = { 
+                    id: mangaId, title: d.title, chapter: chapterNum, 
+                    image: (d.cover || d.image), imageIndex: index, time: Date.now() 
+                };
+                localStorage.setItem("manga_last_seen", JSON.stringify(info));
+                await updateDoc(userRef, { ["readingHistory." + mangaId]: info });
+            }
+        } catch(e) { console.error("Error al guardar progreso:", e); }
+    }
+
+    /* 🟢 MODIFICADO: Manejo independiente de scroll (Ocultamiento superior + Auto-guardado secuencial) */
     window.addEventListener('scroll', () => {
+        let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Control de visibilidad del navbar superior
+        if (currentScroll > 120) {
+            if (currentScroll > lastScrollTop) {
+                if (topNavbarElement) topNavbarElement.classList.add("nav-hide");
+            } else {
+                if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
+            }
+        } else {
+            if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
+        }
+        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+
+        // Disparador del temporizador de guardado
         if (!canSave || !currentUser) return;
         clearTimeout(window.saveTimer);
-        window.saveTimer = setTimeout(async () => {
-            const index = getVisibleIndex();
-            try {
-                const userRef = doc(db, "users", currentUser.uid);
-
-                // LÓGICA DE LIMPIEZA: Si es el último cap y última imagen
-                if (esUltimoCapitulo && index >= (imagesTotalCount - 1)) {
-                    await updateDoc(userRef, {
-                        ["readingHistory." + mangaId]: deleteField()
-                    });
-                    const local = JSON.parse(localStorage.getItem("manga_last_seen"));
-                    if (local && local.id === mangaId) localStorage.removeItem("manga_last_seen");
-                } else {
-                    // Guardado normal
-                    const mSnap = await getDoc(doc(db, "mangas", mangaId));
-                    const d = mSnap.data();
-                    const info = { 
-                        id: mangaId, title: d.title, chapter: chapterNum, 
-                        image: (d.cover || d.image), imageIndex: index, time: Date.now() 
-                    };
-                    localStorage.setItem("manga_last_seen", JSON.stringify(info));
-                    await updateDoc(userRef, { ["readingHistory." + mangaId]: info });
-                }
-            } catch(e) {}
-        }, 2000);
+        window.saveTimer = setTimeout(guardar, 2000);
     });
 
     loadChapter();
   </script>
+  <script type="module" src="js/navbar.js"></script>
 </body>
 </html>
