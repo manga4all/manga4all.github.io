@@ -11,17 +11,43 @@
   <style>
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
     body { background: #070707; color: white; margin: 0; padding-top: 75px; }
-    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; background: rgba(17, 17, 17, 0.95); position: sticky; top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; }
+    
+    /* 🟢 MODIFICADO: Añadida transición suave para ocultar/mostrar la barra */
+    .reader-nav { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      gap: 15px; 
+      padding: 15px; 
+      background: rgba(17, 17, 17, 0.95); 
+      position: sticky; 
+      top: 75px; 
+      z-index: 1000; 
+      backdrop-filter: blur(10px); 
+      border-bottom: 1px solid #1f1f1f; 
+      transition: transform 0.3s ease; 
+    }
+    
+    /* 🟢 CLASE NUEVA: Desplaza la barra hacia arriba fuera de la pantalla */
+    .reader-nav.nav-hide {
+      transform: translateY(-180px);
+    }
+    
     .btn-nav { background: #ff0055; color: white; padding: 10px 25px; border-radius: 25px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; }
     .btn-nav.disabled { background: #222 !important; color: #555 !important; pointer-events: none; opacity: 0.6; }
     #chapterLabelTop, #chapterLabelBottom { font-weight: 600; min-width: 150px; text-align: center; }
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
+    
+    /* 🟢 MODIFICADO: Ajustado el max-width de 850px a 700px para el efecto de alejamiento */
+    .manga-pages-container { max-width: 700px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
     .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
+    
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
-    .nav-bottom { position: static; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; }
+    
+    /* 🟢 MODIFICADO: Se fuerza a que la barra inferior mantenga siempre su posición y no se oculte */
+    .nav-bottom { position: static !important; transform: none !important; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; transition: none !important; }
   </style>
 </head>
 <body>
@@ -50,7 +76,6 @@
 
   <script type="module">
     import { db } from "./js/firebase.js";
-    // Añadimos deleteField para poder limpiar el historial
     import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 
@@ -66,7 +91,11 @@
     let imagesLoadedCount = 0;
     let hasJumped = false;
     let mangaTipo = "1";
-    let esUltimoCapitulo = false; // Bandera para detectar fin de serie
+    let esUltimoCapitulo = false;
+
+    // Control de desplazamiento para ocultar barra superior
+    let lastScrollTop = 0;
+    const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
 
     function limpiarNumero(n) {
         if (!n) return "";
@@ -100,7 +129,6 @@
             const idx = caps.findIndex(c => c.norm === numLimpio);
             const tomo = caps[idx];
 
-            // Verificamos si es el último capítulo
             if (idx === caps.length - 1) esUltimoCapitulo = true;
 
             if (tomo && tomo.images) {
@@ -148,7 +176,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // Corregido: Sincronización total de botones arriba y abajo
     function setupNav(caps, idx) {
         const prevBtns = [document.getElementById("prevBtnTop"), document.getElementById("prevBtnBottom")];
         const nextBtns = [document.getElementById("nextBtnTop"), document.getElementById("nextBtnBottom")];
@@ -165,7 +192,7 @@
             nextBtns.forEach(btn => {
                 btn.textContent = "FIN";
                 btn.classList.add("disabled");
-                btn.href = "#"; // Evita scroll al inicio
+                btn.href = "#";
             });
         }
     }
@@ -214,27 +241,21 @@
         return imgs.length - 1;
     }
 
-    // Corregido: Limpieza de historial al terminar
     async function guardar() {
         if (!canSave || !currentUser) return;
         const index = getVisibleIndex();
         
         try {
             const userRef = doc(db, "users", currentUser.uid);
-            
-            // Si es el último capítulo y estamos en la última imagen, borramos
             if (esUltimoCapitulo && index >= (imagesTotalCount - 1)) {
                 await updateDoc(userRef, {
                     ["readingHistory." + mangaId]: deleteField()
                 });
-                
-                // Limpiar LocalStorage
                 const local = JSON.parse(localStorage.getItem("manga_last_seen"));
                 if (local && local.id === mangaId) {
                     localStorage.removeItem("manga_last_seen");
                 }
             } else {
-                // Guardado normal
                 const mSnap = await getDoc(doc(db, "mangas", mangaId));
                 const d = mSnap.data();
                 const info = { id: mangaId, title: d.title, chapter: numLimpio, image: (d.cover || d.image), imageIndex: index, time: Date.now() };
@@ -244,7 +265,25 @@
         } catch(e) {}
     }
 
+    // 🟢 MODIFICADO: Evento Scroll unificado con detección de dirección para ocultar/mostrar la barra
     window.addEventListener('scroll', () => {
+        let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (currentScroll > 120) {
+            if (currentScroll > lastScrollTop) {
+                // Scrolling DOWN -> Ocultar barra superior
+                if (topNavbarElement) topNavbarElement.classList.add("nav-hide");
+            } else {
+                // Scrolling UP -> Mostrar barra superior
+                if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
+            }
+        } else {
+            // Cerca del tope superior -> Mostrar siempre
+            if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
+        }
+        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+
+        // Mantener la ejecución del temporizador de guardado original
         if (!canSave) return;
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(guardar, 2000);
