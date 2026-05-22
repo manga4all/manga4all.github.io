@@ -5,31 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resultados de búsqueda | M4A</title>
   <link rel="stylesheet" href="css/style.css?v=15">
+  <link rel="stylesheet" href="css/navbar.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   
   <style>
-    /* 🔴 ARREGLO CRÍTICO: Forzar que el avatar del usuario no se desborde a tamaño gigante */
-    #main-navbar img, 
-    .navbar img, 
-    [class*="avatar"], 
-    [class*="perfil"] {
-      width: 40px !important;
-      height: 40px !important;
-      border-radius: 50% !important;
-      object-fit: cover !important;
-      display: inline-block !important;
-      vertical-align: middle !important;
-      margin-left: 10px;
-    }
-
-    /* Asegurar aislamiento del contenedor principal */
+    /* Asegurar que el contenedor principal respete el espacio del navbar fijo */
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 40px 20px;
-      clear: both;
     }
 
     /* Maquetación limpia para la cuadrícula de resultados */
@@ -40,10 +26,10 @@
       margin-top: 25px;
     }
 
-    /* Evitar desbordes horizontales raros en la página */
+    /* Fondo base de la página */
     body {
-      overflow-x: hidden;
       background-color: #070707;
+      color: white;
     }
   </style>
 </head>
