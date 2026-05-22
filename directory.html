@@ -49,7 +49,96 @@
       box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
     }
 
-    /* 🔢 ESTILOS NUEVOS PARA LA PAGINACIÓN INDUSTRIAL (SIN ALTERAR TU DISEÑO) */
+    /* 🟢 GARANTÍA DE RENDERIZADO: Estilos para proteger las tarjetas, el Botón de Leer y el Tooltip */
+    .manga-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 25px;
+      margin-top: 20px;
+    }
+    .manga-card {
+      position: relative;
+      background: #111;
+      border: 1px solid #1f1f1f;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      transition: 0.3s;
+    }
+    .manga-card:hover {
+      border-color: #ff0055;
+      transform: translateY(-5px);
+    }
+    .manga-card img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      border-radius: 10px 10px 0 0;
+    }
+    .manga-card h3 {
+      color: white;
+      font-size: 0.85rem;
+      padding: 12px 12px 6px 12px;
+      margin: 0;
+      font-weight: 600;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Botón de Leer Dedicado */
+    .read-btn {
+      display: block;
+      background: #ff0055;
+      color: white;
+      text-align: center;
+      padding: 8px;
+      margin: 0 12px 12px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    .read-btn:hover {
+      background: #cc0044;
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+    }
+
+    /* Tooltip Flotante para la Descripción */
+    .manga-tooltip {
+      position: absolute;
+      bottom: 105%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      width: 240px;
+      background: #161616;
+      border: 1px solid #333;
+      border-left: 3px solid #ff0055;
+      color: #bbb;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      z-index: 99;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+    }
+    .manga-tooltip h4 {
+      color: white;
+      margin-bottom: 5px;
+      font-size: 0.85rem;
+    }
+    .manga-card:hover .manga-tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Controles de la Paginación Inferior */
     .pagination-layout {
       display: flex;
       justify-content: center;
@@ -78,7 +167,6 @@
       background: #ff0055;
       border-color: #ff0055;
       color: white;
-      box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);
     }
     .page-nav-btn:disabled {
       background: #070707;
@@ -142,7 +230,6 @@
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const db = getFirestore(app);
 
-    // Estados Globales de Carga de Datos
     let masterMangasArray = [];
     let processedMangasArray = [];
     let currentPage = 1;
@@ -163,7 +250,6 @@
                 const data = doc.data();
                 masterMangasArray.push({ id: doc.id, ...data });
                 
-                // Mapeo dinámico de géneros para autogenerar tus botones sin errores manuales
                 if (data.genres) {
                     if (Array.isArray(data.genres)) {
                         data.genres.forEach(g => genresSet.add(g.trim()));
@@ -177,7 +263,7 @@
             processAndRenderEcosystem();
 
         } catch (error) {
-            console.error("Error al cargar directorio:", error);
+            console.error("Error al cargar el directorio:", error);
             grid.innerHTML = "<p style='color: #ff0055; grid-column: 1/-1; text-align: center;'>Error al conectar con la base de datos.</p>";
         }
     }
@@ -193,7 +279,6 @@
     }
 
     function processAndRenderEcosystem() {
-        // 1. Filtrado lógico
         if (currentGenreFilter === "Todos") {
             processedMangasArray = [...masterMangasArray];
         } else {
@@ -204,7 +289,6 @@
             });
         }
 
-        // 2. Ordenamiento alfabético estricto (A-Z / Z-A)
         processedMangasArray.sort((a, b) => {
             const titleA = (a.title || "").trim().toLowerCase();
             const titleB = (b.title || "").trim().toLowerCase();
@@ -219,24 +303,34 @@
         grid.innerHTML = "";
 
         if (processedMangasArray.length === 0) {
-            grid.innerHTML = "<p style='color: #777; grid-column: 1/-1; text-align: center; padding: 20px;'>No se encontraron mangas en esta sección.</p>";
+            grid.innerHTML = "<p style='color: #777; grid-column: 1/-1; text-align: center; padding: 20px;'>No se encontraron mangas.</p>";
             renderPaginationControls(0);
             return;
         }
 
-        // Segmentación exacta de 50 en 50
         const start = (currentPage - 1) * itemsPerPage;
         const end = start + itemsPerPage;
         const pageItems = processedMangasArray.slice(start, end);
 
         pageItems.forEach(manga => {
-            const card = document.createElement("a");
-            card.href = `manga.html?id=${manga.id}`;
-            card.style.textDecoration = "none";
+            const card = document.createElement("div");
+            card.className = "manga-card";
+            
+            const linkUrl = `manga.html?id=${manga.id}`;
+            const coverImg = manga.cover || manga.image || 'img/no-cover.png';
+            const synopsis = manga.description || manga.synopsis || 'Sin descripción disponible por el momento.';
+
             card.innerHTML = `
-                <div style="background: #111; border: 1px solid #1f1f1f; border-radius: 10px; overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; height: 100%;">
-                    <img src="${manga.cover || manga.image || 'img/no-cover.png'}" style="width: 100%; aspect-ratio: 3/4; object-fit: cover;" alt="${manga.title}" loading="lazy">
-                    <h3 style="color: white; font-size: 0.85rem; padding: 12px; margin: 0; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${manga.title || "Manga Sin Título"}</h3>
+                <a href="${linkUrl}">
+                    <img src="${coverImg}" alt="${manga.title}" loading="lazy">
+                </a>
+                <h3>${manga.title || "Manga Sin Título"}</h3>
+                
+                <a href="${linkUrl}" class="read-btn">Leer</a>
+                
+                <div class="manga-tooltip">
+                    <h4>${manga.title || "Sin título"}</h4>
+                    <p>${synopsis}</p>
                 </div>
             `;
             grid.appendChild(card);
@@ -250,9 +344,8 @@
         container.innerHTML = "";
         
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-        if (totalPages <= 1) return; // Ocultar controles si no superamos los 50 mangas
+        if (totalPages <= 1) return;
 
-        // Botón Anterior
         const prevBtn = document.createElement("button");
         prevBtn.className = "page-nav-btn";
         prevBtn.textContent = "« Anterior";
@@ -260,7 +353,6 @@
         prevBtn.onclick = () => { currentPage--; renderSegmentedPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
         container.appendChild(prevBtn);
 
-        // Estructuración dinámica inteligente de páginas vecinas
         for (let i = 1; i <= totalPages; i++) {
             if (totalPages > 6 && Math.abs(currentPage - i) > 1 && i !== 1 && i !== totalPages) {
                 if (i === 2 || i === totalPages - 1) {
@@ -280,7 +372,6 @@
             container.appendChild(btn);
         }
 
-        // Botón Siguiente
         const nextBtn = document.createElement("button");
         nextBtn.className = "page-nav-btn";
         nextBtn.textContent = "Siguiente »";
@@ -289,18 +380,16 @@
         container.appendChild(nextBtn);
     }
 
-    // 🟢 ENLACES AL OBJETO WINDOW: Evita que el HTML lance errores al pulsar los botones
+    // Vinculación segura de los eventos onclick nativos del archivo HTML
     window.sortAlphabetical = function(order) {
         currentSortOrder = order;
         currentPage = 1; 
         
-        const group = document.querySelector(".filter-group");
-        if (group) {
-            const btns = group.querySelectorAll(".filter-btn");
-            btns.forEach(b => b.classList.remove("active"));
-            if (order === 'asc' && btns[0]) btns[0].classList.add("active");
-            if (order === 'desc' && btns[1]) btns[1].classList.add("active");
-        }
+        const btns = document.querySelectorAll(".filter-section .filter-group:first-child .filter-btn");
+        btns.forEach(b => b.classList.remove("active"));
+        if (order === 'asc' && btns[0]) btns[0].classList.add("active");
+        if (order === 'desc' && btns[1]) btns[1].classList.add("active");
+        
         processAndRenderEcosystem();
     };
 
@@ -316,7 +405,6 @@
         processAndRenderEcosystem();
     };
 
-    // Ejecución inicial limpia
     loadDirectoryData();
   </script>
 </body>
