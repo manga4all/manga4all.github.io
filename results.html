@@ -8,6 +8,44 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* 🔴 ARREGLO CRÍTICO: Forzar que el avatar del usuario no se desborde a tamaño gigante */
+    #main-navbar img, 
+    .navbar img, 
+    [class*="avatar"], 
+    [class*="perfil"] {
+      width: 40px !important;
+      height: 40px !important;
+      border-radius: 50% !important;
+      object-fit: cover !important;
+      display: inline-block !important;
+      vertical-align: middle !important;
+      margin-left: 10px;
+    }
+
+    /* Asegurar aislamiento del contenedor principal */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      clear: both;
+    }
+
+    /* Maquetación limpia para la cuadrícula de resultados */
+    .manga-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 30px;
+      margin-top: 25px;
+    }
+
+    /* Evitar desbordes horizontales raros en la página */
+    body {
+      overflow-x: hidden;
+      background-color: #070707;
+    }
+  </style>
 </head>
 <body>
 
@@ -18,7 +56,7 @@
   <main class="container">
     <h1 class="section-title" id="search-title">Resultados para: ...</h1>
     <div id="results-grid" class="manga-grid">
-        </div>
+      </div>
   </main>
 
   <footer>Manga 4 All © 2026</footer>
