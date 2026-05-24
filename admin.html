@@ -238,7 +238,7 @@
             const coverRaw = document.getElementById('editCover').value;
             const coverFinal = formatDriveThumbnail(coverRaw, "w1000");
             
-            await updateDoc(doc(db, "mangas", id), {
+            await updateDoc(doc(doc(db, "mangas", id)), {
                 title: document.getElementById('editTitle').value,
                 description: document.getElementById('editDesc').value,
                 cover: coverFinal,
@@ -322,13 +322,47 @@
             stat.innerHTML = "✅ Limpio.";
         };
 
-        // GÉNEROS
+        // 🟢 ACCIÓN DE AÑADIR GÉNEROS EXTRABLES EN EL MANEJO INMEDIATO
+        document.getElementById('addGenreBtn').onclick = async () => {
+            const input = document.getElementById('newGenreName');
+            const nombreStr = input.value.trim();
+            if(!nombreStr) return alert("Escribe un nombre de género válido");
+            try {
+                await addDoc(collection(db, "generos"), { nombre: nombreStr });
+                input.value = "";
+            } catch(err) { console.error("Error al añadir género:", err); }
+        };
+
+        // GÉNEROS ACTUALIZADOS EN TIEMPO REAL CON CONTROL DE VISOR INTERNO
         onSnapshot(collection(db, "generos"), (snap) => {
-            const gens = snap.docs.map(d => d.data().nombre).sort();
+            const docsData = snap.docs.map(d => ({ id: d.id, nombre: d.data().nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+            const gens = docsData.map(d => d.nombre);
+
             ['genresGrid', 'editGenresGrid'].forEach(id => {
                 const c = document.getElementById(id);
                 if(c) c.innerHTML = gens.map(g => `<label class="genre-item"><input type="checkbox" class="genre-checkbox-${id}" value="${g}"> ${g}</label>`).join('');
             });
+
+            // 🟢 NUEVO: Pintar las etiquetas dentro del visor de configuración de la pestaña
+            const display = document.getElementById('genreListDisplay');
+            if(display) {
+                display.innerHTML = docsData.map(item => `
+                    <div style="background: #1a1a1a; padding: 8px 15px; border-radius: 20px; border: 1px solid #333; display: flex; align-items: center; gap: 10px; font-size: 0.85rem;">
+                        <span>${item.nombre}</span>
+                        <span class="delete-genre-x" data-id="${item.id}" style="color: #ff0055; cursor: pointer; font-weight: bold; font-size: 1rem;">×</span>
+                    </div>
+                `).join('');
+
+                // Enlace dinámico síncrono para eliminar géneros haciendo clic en la "×"
+                display.querySelectorAll('.delete-genre-x').forEach(btn => {
+                    btn.onclick = async (e) => {
+                        const deleteId = e.target.getAttribute('data-id');
+                        if(confirm(`¿Seguro que quieres borrar el género?`)) {
+                            await deleteDoc(doc(db, "generos", deleteId));
+                        }
+                    };
+                });
+            }
         });
 
         window.addEventListener('refreshSelector', async () => {
