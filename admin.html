@@ -233,12 +233,13 @@
             }
         };
 
+        // 🟢 CORREGIDO: Eliminado el doble doc() que congelaba la actualización
         document.getElementById('updateMangaBtn').onclick = async () => {
             const id = document.getElementById('editMangaSelector').value;
             const coverRaw = document.getElementById('editCover').value;
             const coverFinal = formatDriveThumbnail(coverRaw, "w1000");
             
-            await updateDoc(doc(doc(db, "mangas", id)), {
+            await updateDoc(doc(db, "mangas", id), {
                 title: document.getElementById('editTitle').value,
                 description: document.getElementById('editDesc').value,
                 cover: coverFinal,
@@ -322,7 +323,7 @@
             stat.innerHTML = "✅ Limpio.";
         };
 
-        // 🟢 ACCIÓN DE AÑADIR GÉNEROS EXTRABLES EN EL MANEJO INMEDIATO
+        // ACCIÓN DE AÑADIR GÉNEROS
         document.getElementById('addGenreBtn').onclick = async () => {
             const input = document.getElementById('newGenreName');
             const nombreStr = input.value.trim();
@@ -333,7 +334,7 @@
             } catch(err) { console.error("Error al añadir género:", err); }
         };
 
-        // GÉNEROS ACTUALIZADOS EN TIEMPO REAL CON CONTROL DE VISOR INTERNO
+        // GÉNEROS EN TIEMPO REAL
         onSnapshot(collection(db, "generos"), (snap) => {
             const docsData = snap.docs.map(d => ({ id: d.id, nombre: d.data().nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
             const gens = docsData.map(d => d.nombre);
@@ -343,7 +344,6 @@
                 if(c) c.innerHTML = gens.map(g => `<label class="genre-item"><input type="checkbox" class="genre-checkbox-${id}" value="${g}"> ${g}</label>`).join('');
             });
 
-            // 🟢 NUEVO: Pintar las etiquetas dentro del visor de configuración de la pestaña
             const display = document.getElementById('genreListDisplay');
             if(display) {
                 display.innerHTML = docsData.map(item => `
@@ -353,7 +353,6 @@
                     </div>
                 `).join('');
 
-                // Enlace dinámico síncrono para eliminar géneros haciendo clic en la "×"
                 display.querySelectorAll('.delete-genre-x').forEach(btn => {
                     btn.onclick = async (e) => {
                         const deleteId = e.target.getAttribute('data-id');
