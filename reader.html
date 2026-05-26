@@ -12,6 +12,7 @@
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
     body { background: #070707; color: white; margin: 0; padding-top: 75px; }
     
+    /* 🟢 MODIFICADO: Añadida transición suave para ocultar/mostrar la barra */
     .reader-nav { 
       display: flex; 
       justify-content: center; 
@@ -27,6 +28,7 @@
       transition: transform 0.3s ease; 
     }
     
+    /* 🟢 CLASE NUEVA: Desplaza la barra hacia arriba fuera de la pantalla */
     .reader-nav.nav-hide {
       transform: translateY(-180px);
     }
@@ -37,12 +39,14 @@
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
     
+    /* 🟢 MODIFICADO: Ajustado el max-width de 850px a 700px para el efecto de alejamiento */
     .manga-pages-container { max-width: 700px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
     .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
     
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
     
+    /* 🟢 MODIFICADO: Se fuerza a que la barra inferior mantenga siempre su posición y no se oculte */
     .nav-bottom { position: static !important; transform: none !important; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; transition: none !important; }
   </style>
 </head>
@@ -89,8 +93,12 @@
     let mangaTipo = "1";
     let esUltimoCapitulo = false;
 
+    // Control de desplazamiento para ocultar barra superior
     let lastScrollTop = 0;
     const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
+
+    // CORRECCIÓN DE CACHÉ DE NAVEGADOR PARA SOLUCIONAR R2
+    const cacheBuster = "?v=" + Date.now();
 
     function limpiarNumero(n) {
         if (!n) return "";
@@ -104,7 +112,6 @@
         if (!mangaId || !rawNumber) return;
 
         document.getElementById("chapterLabelTop").textContent = "Capítulo " + numLimpio;
-        document.getElementById("chapterLabelBottom").textContent = "Capítulo " + numLoptio; // Corregido typo menor visual
         document.getElementById("chapterLabelBottom").textContent = "Capítulo " + numLimpio;
         document.querySelectorAll(".list-btn").forEach(b => b.href = "manga.html?id=" + mangaId);
 
@@ -134,9 +141,8 @@
                 if (mangaTipo === "2") {
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
-                        // 🟢 CAMBIO AQUÍ: Saltarse la protección de cabeceras de origen de R2
-                        img.referrerPolicy = "no-referrer";
-                        img.src = url;
+                        img.crossOrigin = "anonymous"; // Permite solicitudes CORS dinámicas limpias
+                        img.src = url.includes("r2.cloudflarestorage.com") || url.includes("r2.dev") ? url + cacheBuster : url;
                         cont.appendChild(img);
                     });
                     
@@ -152,9 +158,9 @@
                         const batch = 8;
                         for (let i = start; i < start + batch && i < imagesTotalCount; i++) {
                             const img = document.createElement("img");
-                            // 🟢 CAMBIO AQUÍ: Saltarse la protección de cabeceras de origen de R2
-                            img.referrerPolicy = "no-referrer";
-                            img.src = tomo.images[i];
+                            img.crossOrigin = "anonymous"; // Permite solicitudes CORS dinámicas limpias
+                            const finalUrl = tomo.images[i];
+                            img.src = finalUrl.includes("r2.cloudflarestorage.com") || finalUrl.includes("r2.dev") ? finalUrl + cacheBuster : finalUrl;
                             img.onload = img.onerror = () => {
                                 imagesLoadedCount++;
                                 if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
@@ -265,20 +271,25 @@
         } catch(e) {}
     }
 
+    // 🟢 MODIFICADO: Evento Scroll unificado con detección de dirección para ocultar/mostrar la barra
     window.addEventListener('scroll', () => {
         let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
         
         if (currentScroll > 120) {
             if (currentScroll > lastScrollTop) {
+                // Scrolling DOWN -> Ocultar barra superior
                 if (topNavbarElement) topNavbarElement.classList.add("nav-hide");
             } else {
+                // Scrolling UP -> Mostrar barra superior
                 if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
             }
         } else {
+            // Cerca del tope superior -> Mostrar siempre
             if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
         }
         lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 
+        // Mantener la ejecución del temporizador de guardado original
         if (!canSave) return;
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(guardar, 2000);
