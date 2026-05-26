@@ -139,7 +139,12 @@
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
-                        img.crossOrigin = "anonymous";
+                        
+                        // 🟢 Aplica la cabecera CORS únicamente a Cloudflare R2
+                        if (url.includes("r2.dev")) {
+                            img.crossOrigin = "anonymous";
+                        }
+                        
                         img.src = url;
                         cont.appendChild(img);
                     });
@@ -157,7 +162,12 @@
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
-                        img.crossOrigin = "anonymous";
+                        
+                        // 🟢 Aplica la cabecera CORS únicamente a Cloudflare R2
+                        if (url.includes("r2.dev")) {
+                            img.crossOrigin = "anonymous";
+                        }
+                        
                         img.src = url;
                         
                         img.onload = img.onerror = () => {
@@ -267,7 +277,7 @@
         } catch(e) {}
     }
 
-    // 🟢 MODIFICADO: Evento Scroll unificado con detección de dirección para ocultar/mostrar la barra
+    // Evento Scroll unificado con detección de dirección para ocultar/mostrar la barra
     window.addEventListener('scroll', () => {
         let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
         
