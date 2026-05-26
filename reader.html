@@ -140,8 +140,8 @@
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
                         
-                        // 🟢 Aplica la cabecera CORS únicamente a Cloudflare R2
-                        if (url.includes("r2.dev")) {
+                        // 🟢 Lógica selectiva inversa: Si no contiene dominios de Google, activa CORS para R2
+                        if (!url.includes("drive.google.com") && !url.includes("googleusercontent.com")) {
                             img.crossOrigin = "anonymous";
                         }
                         
@@ -163,8 +163,8 @@
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
                         
-                        // 🟢 Aplica la cabecera CORS únicamente a Cloudflare R2
-                        if (url.includes("r2.dev")) {
+                        // 🟢 Lógica selectiva inversa: Si no contiene dominios de Google, activa CORS para R2
+                        if (!url.includes("drive.google.com") && !url.includes("googleusercontent.com")) {
                             img.crossOrigin = "anonymous";
                         }
                         
