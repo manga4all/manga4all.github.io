@@ -97,9 +97,6 @@
     let lastScrollTop = 0;
     const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
 
-    // CORRECCIÓN DE CACHÉ DE NAVEGADOR PARA SOLUCIONAR R2
-    const cacheBuster = "?v=" + Date.now();
-
     function limpiarNumero(n) {
         if (!n) return "";
         const p = parseFloat(n);
@@ -141,8 +138,8 @@
                 if (mangaTipo === "2") {
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
-                        img.crossOrigin = "anonymous"; // Permite solicitudes CORS dinámicas limpias
-                        img.src = url.includes("r2.cloudflarestorage.com") || url.includes("r2.dev") ? url + cacheBuster : url;
+                        img.referrerPolicy = "no-referrer"; // Soluciona Cloudflare R2 sin tocar la URL
+                        img.src = url;
                         cont.appendChild(img);
                     });
                     
@@ -158,9 +155,8 @@
                         const batch = 8;
                         for (let i = start; i < start + batch && i < imagesTotalCount; i++) {
                             const img = document.createElement("img");
-                            img.crossOrigin = "anonymous"; // Permite solicitudes CORS dinámicas limpias
-                            const finalUrl = tomo.images[i];
-                            img.src = finalUrl.includes("r2.cloudflarestorage.com") || finalUrl.includes("r2.dev") ? finalUrl + cacheBuster : finalUrl;
+                            img.referrerPolicy = "no-referrer"; // Soluciona Cloudflare R2 sin tocar la URL
+                            img.src = tomo.images[i];
                             img.onload = img.onerror = () => {
                                 imagesLoadedCount++;
                                 if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
