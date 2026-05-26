@@ -139,12 +139,6 @@
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
-                        
-                        // 🟢 Lógica selectiva inversa: Si no contiene dominios de Google, activa CORS para R2
-                        if (!url.includes("drive.google.com") && !url.includes("googleusercontent.com")) {
-                            img.crossOrigin = "anonymous";
-                        }
-                        
                         img.src = url;
                         cont.appendChild(img);
                     });
@@ -158,16 +152,10 @@
                 } else {
                     if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
                     
-                    // Renderizado directo unificado para evitar bloqueos asíncronos y pantallas negras
+                    // Renderizado directo unificado sin bloqueos de cabeceras CORS o crossOrigin
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
-                        
-                        // 🟢 Lógica selectiva inversa: Si no contiene dominios de Google, activa CORS para R2
-                        if (!url.includes("drive.google.com") && !url.includes("googleusercontent.com")) {
-                            img.crossOrigin = "anonymous";
-                        }
-                        
                         img.src = url;
                         
                         img.onload = img.onerror = () => {
