@@ -138,7 +138,7 @@
                 if (mangaTipo === "2") {
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
-                        img.referrerPolicy = "no-referrer"; // Soluciona Cloudflare R2 sin tocar la URL
+                        img.referrerPolicy = "no-referrer";
                         img.src = url;
                         cont.appendChild(img);
                     });
@@ -151,27 +151,25 @@
                     }
                 } else {
                     if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
-                    const injectBatch = (start) => {
-                        const batch = 8;
-                        for (let i = start; i < start + batch && i < imagesTotalCount; i++) {
-                            const img = document.createElement("img");
-                            img.referrerPolicy = "no-referrer"; // Soluciona Cloudflare R2 sin tocar la URL
-                            img.src = tomo.images[i];
-                            img.onload = img.onerror = () => {
-                                imagesLoadedCount++;
-                                if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
-                                    ejecutarSalto();
-                                }
-                            };
-                            cont.appendChild(img);
-                        }
-                        if (start + batch < imagesTotalCount) {
-                            setTimeout(() => injectBatch(start + batch), 400);
-                        } else if (!shouldScroll) {
-                            setTimeout(() => { canSave = true; }, 1000);
-                        }
-                    };
-                    injectBatch(0);
+                    
+                    // Renderizado directo unificado para evitar bloqueos asíncronos y pantallas negras
+                    tomo.images.forEach((url) => {
+                        const img = document.createElement("img");
+                        img.referrerPolicy = "no-referrer";
+                        img.src = url;
+                        
+                        img.onload = img.onerror = () => {
+                            imagesLoadedCount++;
+                            if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
+                                ejecutarSalto();
+                            }
+                        };
+                        cont.appendChild(img);
+                    });
+
+                    if (!shouldScroll) {
+                        setTimeout(() => { canSave = true; }, 1000);
+                    }
                 }
             }
             setupNav(caps, idx);
