@@ -11,7 +11,9 @@
   <style>
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
     body { background: #070707; color: white; margin: 0; padding-top: 75px; }
+    .reader-nav { display: flex; justify-content: center; align-items: center; gap: 15px; padding: 15px; background: rgba(17, 17, 17, 0.95); position: sticky; top: 75px; z-index: 1000; backdrop-filter: blur(10px); border-bottom: 1px solid #1f1f1f; }
     
+    /* 🟢 MODIFICADO: Añadida transición suave para ocultar/mostrar la barra */
     .reader-nav { 
       display: flex; 
       justify-content: center; 
@@ -27,6 +29,7 @@
       transition: transform 0.3s ease; 
     }
     
+    /* 🟢 CLASE NUEVA: Desplaza la barra hacia arriba fuera de la pantalla */
     .reader-nav.nav-hide {
       transform: translateY(-180px);
     }
@@ -36,13 +39,17 @@
     #chapterLabelTop, #chapterLabelBottom { font-weight: 600; min-width: 150px; text-align: center; }
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+    .manga-pages-container { max-width: 850px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
     
+    /* 🟢 MODIFICADO: Ajustado el max-width de 850px a 700px para el efecto de alejamiento */
     .manga-pages-container { max-width: 700px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
     .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
     
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
+    .nav-bottom { position: static; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; }
     
+    /* 🟢 MODIFICADO: Se fuerza a que la barra inferior mantenga siempre su posición y no se oculte */
     .nav-bottom { position: static !important; transform: none !important; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; transition: none !important; }
   </style>
 </head>
@@ -88,8 +95,8 @@
     let hasJumped = false;
     let mangaTipo = "1";
     let esUltimoCapitulo = false;
-    let capituloDbTextoOriginal = ""; // Guardará el formato exacto de la base de datos (ej: "1.00")
 
+    // Control de desplazamiento para ocultar barra superior
     let lastScrollTop = 0;
     const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
 
@@ -117,47 +124,42 @@
             let caps = [];
             snap.forEach(d => { 
                 let data = d.data(); 
-                data.normVera = parseFloat(data.number); 
+                data.norm = String(data.number).trim(); 
                 caps.push(data); 
             });
             caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
-            
+
+            // 🟢 ÚNICO CAMBIO REALIZADO: Búsqueda matemática para emparejar "1.00" con "1" o viceversa
             const targetNum = parseFloat(rawNumber);
-            const idx = caps.findIndex(c => c.normVera === targetNum);
+            const idx = caps.findIndex(c => parseFloat(c.number) === targetNum);
             const tomo = caps[idx];
 
             if (idx === caps.length - 1) esUltimoCapitulo = true;
 
-            if (tomo) {
-                // 🟢 CLAVE: Preservamos la cadena exacta del documento ("1.00" o "1") para guardarlo tal cual en el historial
-                capituloDbTextoOriginal = String(tomo.number).trim();
+            if (tomo && tomo.images) {
+                const cont = document.getElementById("mangaPages");
+                imagesTotalCount = tomo.images.length;
 
-                if (tomo.images) {
-                    const cont = document.getElementById("mangaPages");
-                    imagesTotalCount = tomo.images.length;
-                    
-                    if (mangaTipo === "2") {
-                        tomo.images.forEach((url) => {
-                            const img = document.createElement("img");
-                            img.referrerPolicy = "no-referrer";
-                            img.src = url;
-                            cont.appendChild(img);
-                        });
-                        
-                        if (!shouldScroll) {
-                            canSave = true;
-                        } else {
-                            document.getElementById("resumeNotice").style.display = "block";
-                            if (currentUser) ejecutarSalto();
-                        }
+                if (mangaTipo === "2") {
+                    tomo.images.forEach((url) => {
+                        const img = document.createElement("img");
+                        img.src = url;
+                        cont.appendChild(img);
+                    });
+
+                    if (!shouldScroll) {
+                        canSave = true;
                     } else {
-                        if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
-                        
-                        tomo.images.forEach((url) => {
+                        document.getElementById("resumeNotice").style.display = "block";
+                        if (currentUser) ejecutarSalto();
+                    }
+                } else {
+                    if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
+                    const injectBatch = (start) => {
+                        const batch = 8;
+                        for (let i = start; i < start + batch && i < imagesTotalCount; i++) {
                             const img = document.createElement("img");
-                            img.referrerPolicy = "no-referrer";
-                            img.src = url;
-                            
+                            img.src = tomo.images[i];
                             img.onload = img.onerror = () => {
                                 imagesLoadedCount++;
                                 if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
@@ -165,12 +167,14 @@
                                 }
                             };
                             cont.appendChild(img);
-                        });
-
-                        if (!shouldScroll) {
+                        }
+                        if (start + batch < imagesTotalCount) {
+                            setTimeout(() => injectBatch(start + batch), 400);
+                        } else if (!shouldScroll) {
                             setTimeout(() => { canSave = true; }, 1000);
                         }
-                    }
+                    };
+                    injectBatch(0);
                 }
             }
             setupNav(caps, idx);
@@ -193,7 +197,7 @@
             nextBtns.forEach(btn => {
                 btn.textContent = "FIN";
                 btn.classList.add("disabled");
-                btn.href = "#";
+                btn.href = "#"; 
             });
         }
     }
@@ -213,8 +217,7 @@
                 const history = userSnap.data().readingHistory;
                 const prog = history ? history[mangaId] : null;
 
-                // 🟢 Comparación matemática inmune a formatos de texto para activar el salto interno
-                if (prog && parseFloat(prog.chapter) === parseFloat(rawNumber)) {
+                if (prog && prog.chapter === numLimpio) {
                     const todas = document.querySelectorAll("#mangaPages img");
                     const targetIndex = prog.imageIndex || 0;
                     if (todas[targetIndex]) {
@@ -246,13 +249,15 @@
     async function guardar() {
         if (!canSave || !currentUser) return;
         const index = getVisibleIndex();
-        
+
         try {
             const userRef = doc(db, "users", currentUser.uid);
+            
             if (esUltimoCapitulo && index >= (imagesTotalCount - 1)) {
                 await updateDoc(userRef, {
                     ["readingHistory." + mangaId]: deleteField()
                 });
+                
                 const local = JSON.parse(localStorage.getItem("manga_last_seen"));
                 if (local && local.id === mangaId) {
                     localStorage.removeItem("manga_last_seen");
@@ -260,19 +265,7 @@
             } else {
                 const mSnap = await getDoc(doc(db, "mangas", mangaId));
                 const d = mSnap.data();
-                
-                // 🟢 SOLUCIÓN DEFINITIVA: Guardamos en Firebase el formato exacto que espera tu base de datos de tomos.
-                // Si el manga es de R2 guardará "1.00", si es de Drive guardará "1". Así "Seguir leyendo" abrirá el enlace perfecto.
-                const capParaHistorial = capituloDbTextoOriginal || String(rawNumber);
-                
-                const info = { 
-                    id: mangaId, 
-                    title: d.title, 
-                    chapter: capParaHistorial, 
-                    image: (d.cover || d.image), 
-                    imageIndex: index, 
-                    time: Date.now() 
-                };
+                const info = { id: mangaId, title: d.title, chapter: numLimpio, image: (d.cover || d.image), imageIndex: index, time: Date.now() };
                 localStorage.setItem("manga_last_seen", JSON.stringify(info));
                 await updateDoc(userRef, { ["readingHistory." + mangaId]: info });
             }
