@@ -121,12 +121,15 @@
             let caps = [];
             snap.forEach(d => { 
                 let data = d.data(); 
-                data.norm = String(data.number).trim(); 
+                // Normalización numérica para evitar fallos de emparejamiento con decimales
+                data.normVera = parseFloat(data.number); 
                 caps.push(data); 
             });
             caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
             
-            const idx = caps.findIndex(c => c.norm === numLimpio);
+            // Búsqueda del índice basada en el valor numérico absoluto
+            const targetNum = parseFloat(rawNumber);
+            const idx = caps.findIndex(c => c.normVera === targetNum);
             const tomo = caps[idx];
 
             if (idx === caps.length - 1) esUltimoCapitulo = true;
@@ -152,7 +155,7 @@
                 } else {
                     if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
                     
-                    // Renderizado directo unificado sin bloqueos de cabeceras CORS o crossOrigin
+                    // Renderizado directo estable sin alteración de cabeceras CORS
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
