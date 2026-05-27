@@ -12,7 +12,6 @@
     * { font-family: 'Poppins', sans-serif !important; box-sizing: border-box; }
     body { background: #070707; color: white; margin: 0; padding-top: 75px; }
     
-    /* 🟢 MODIFICADO: Añadida transición suave para ocultar/mostrar la barra */
     .reader-nav { 
       display: flex; 
       justify-content: center; 
@@ -28,7 +27,6 @@
       transition: transform 0.3s ease; 
     }
     
-    /* 🟢 CLASE NUEVA: Desplaza la barra hacia arriba fuera de la pantalla */
     .reader-nav.nav-hide {
       transform: translateY(-180px);
     }
@@ -39,14 +37,12 @@
     #resumeNotice { display: none; background: rgba(255, 0, 85, 0.1); border: 1px solid #ff0055; color: #ff0055; padding: 15px; text-align: center; border-radius: 10px; margin: 10px auto; max-width: 850px; font-weight: 600; font-size: 0.9rem; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
     
-    /* 🟢 MODIFICADO: Ajustado el max-width de 850px a 700px para el efecto de alejamiento */
     .manga-pages-container { max-width: 700px; margin: 20px auto; display: flex; flex-direction: column; min-height: 100vh; background: #000; }
     .manga-pages-container img { width: 100%; height: auto; display: block; background: #000; margin-bottom: 2px; min-height: 400px; }
     
     .list-btn { background: #1a1a1a; color: #ccc; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-size: 0.85rem; border: 1px solid #333; }
     footer { text-align: center; padding: 40px; color: #444; font-size: 0.8rem; }
     
-    /* 🟢 MODIFICADO: Se fuerza a que la barra inferior mantenga siempre su posición y no se oculte */
     .nav-bottom { position: static !important; transform: none !important; border-top: 1px solid #1f1f1f; margin-top: 20px; padding-bottom: 50px; transition: none !important; }
   </style>
 </head>
@@ -93,7 +89,6 @@
     let mangaTipo = "1";
     let esUltimoCapitulo = false;
 
-    // Control de desplazamiento para ocultar barra superior
     let lastScrollTop = 0;
     const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
 
@@ -121,13 +116,11 @@
             let caps = [];
             snap.forEach(d => { 
                 let data = d.data(); 
-                // Normalización numérica para evitar fallos de emparejamiento con decimales
                 data.normVera = parseFloat(data.number); 
                 caps.push(data); 
             });
             caps.sort((a, b) => parseFloat(a.number) - parseFloat(b.number));
             
-            // Búsqueda del índice basada en el valor numérico absoluto
             const targetNum = parseFloat(rawNumber);
             const idx = caps.findIndex(c => c.normVera === targetNum);
             const tomo = caps[idx];
@@ -155,7 +148,6 @@
                 } else {
                     if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
                     
-                    // Renderizado directo estable sin alteración de cabeceras CORS
                     tomo.images.forEach((url) => {
                         const img = document.createElement("img");
                         img.referrerPolicy = "no-referrer";
@@ -215,7 +207,8 @@
                 const history = userSnap.data().readingHistory;
                 const prog = history ? history[mangaId] : null;
 
-                if (prog && prog.chapter === numLimpio) {
+                // 🟢 MODIFICADO: Comparamos el capítulo guardado convirtiendo ambos valores a Float para evitar desajustes
+                if (prog && parseFloat(prog.chapter) === parseFloat(rawNumber)) {
                     const todas = document.querySelectorAll("#mangaPages img");
                     const targetIndex = prog.imageIndex || 0;
                     if (todas[targetIndex]) {
@@ -261,32 +254,37 @@
             } else {
                 const mSnap = await getDoc(doc(db, "mangas", mangaId));
                 const d = mSnap.data();
-                const info = { id: mangaId, title: d.title, chapter: numLimpio, image: (d.cover || d.image), imageIndex: index, time: Date.now() };
+                
+                // 🟢 MODIFICADO: Guardamos el número de capítulo exactamente como viene en la URL actual (ej. "1.00")
+                // para mantener la consistencia con las redirecciones y enlaces de las tarjetas del index/manga.html
+                const info = { 
+                    id: mangaId, 
+                    title: d.title, 
+                    chapter: String(rawNumber), 
+                    image: (d.cover || d.image), 
+                    imageIndex: index, 
+                    time: Date.now() 
+                };
                 localStorage.setItem("manga_last_seen", JSON.stringify(info));
                 await updateDoc(userRef, { ["readingHistory." + mangaId]: info });
             }
         } catch(e) {}
     }
 
-    // Evento Scroll unificado con detección de dirección para ocultar/mostrar la barra
     window.addEventListener('scroll', () => {
         let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
         
         if (currentScroll > 120) {
             if (currentScroll > lastScrollTop) {
-                // Scrolling DOWN -> Ocultar barra superior
                 if (topNavbarElement) topNavbarElement.classList.add("nav-hide");
             } else {
-                // Scrolling UP -> Mostrar barra superior
                 if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
             }
         } else {
-            // Cerca del tope superior -> Mostrar siempre
             if (topNavbarElement) topNavbarElement.classList.remove("nav-hide");
         }
         lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 
-        // Mantener la ejecución del temporizador de guardado original
         if (!canSave) return;
         clearTimeout(window.saveTimer);
         window.saveTimer = setTimeout(guardar, 2000);
