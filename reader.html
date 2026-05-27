@@ -88,6 +88,7 @@
     let hasJumped = false;
     let mangaTipo = "1";
     let esUltimoCapitulo = false;
+    let capituloDbTextoOriginal = ""; // Guardará el formato exacto de la base de datos (ej: "1.00")
 
     let lastScrollTop = 0;
     const topNavbarElement = document.querySelector(".reader-nav:not(.nav-bottom)");
@@ -127,43 +128,48 @@
 
             if (idx === caps.length - 1) esUltimoCapitulo = true;
 
-            if (tomo && tomo.images) {
-                const cont = document.getElementById("mangaPages");
-                imagesTotalCount = tomo.images.length;
-                
-                if (mangaTipo === "2") {
-                    tomo.images.forEach((url) => {
-                        const img = document.createElement("img");
-                        img.referrerPolicy = "no-referrer";
-                        img.src = url;
-                        cont.appendChild(img);
-                    });
-                    
-                    if (!shouldScroll) {
-                        canSave = true;
-                    } else {
-                        document.getElementById("resumeNotice").style.display = "block";
-                        if (currentUser) ejecutarSalto();
-                    }
-                } else {
-                    if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
-                    
-                    tomo.images.forEach((url) => {
-                        const img = document.createElement("img");
-                        img.referrerPolicy = "no-referrer";
-                        img.src = url;
-                        
-                        img.onload = img.onerror = () => {
-                            imagesLoadedCount++;
-                            if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
-                                ejecutarSalto();
-                            }
-                        };
-                        cont.appendChild(img);
-                    });
+            if (tomo) {
+                // 🟢 CLAVE: Preservamos la cadena exacta del documento ("1.00" o "1") para guardarlo tal cual en el historial
+                capituloDbTextoOriginal = String(tomo.number).trim();
 
-                    if (!shouldScroll) {
-                        setTimeout(() => { canSave = true; }, 1000);
+                if (tomo.images) {
+                    const cont = document.getElementById("mangaPages");
+                    imagesTotalCount = tomo.images.length;
+                    
+                    if (mangaTipo === "2") {
+                        tomo.images.forEach((url) => {
+                            const img = document.createElement("img");
+                            img.referrerPolicy = "no-referrer";
+                            img.src = url;
+                            cont.appendChild(img);
+                        });
+                        
+                        if (!shouldScroll) {
+                            canSave = true;
+                        } else {
+                            document.getElementById("resumeNotice").style.display = "block";
+                            if (currentUser) ejecutarSalto();
+                        }
+                    } else {
+                        if (shouldScroll) document.getElementById("resumeNotice").style.display = "block";
+                        
+                        tomo.images.forEach((url) => {
+                            const img = document.createElement("img");
+                            img.referrerPolicy = "no-referrer";
+                            img.src = url;
+                            
+                            img.onload = img.onerror = () => {
+                                imagesLoadedCount++;
+                                if (imagesLoadedCount === imagesTotalCount && shouldScroll) {
+                                    ejecutarSalto();
+                                }
+                            };
+                            cont.appendChild(img);
+                        });
+
+                        if (!shouldScroll) {
+                            setTimeout(() => { canSave = true; }, 1000);
+                        }
                     }
                 }
             }
@@ -207,7 +213,7 @@
                 const history = userSnap.data().readingHistory;
                 const prog = history ? history[mangaId] : null;
 
-                // 🟢 MODIFICADO: Comparamos el capítulo guardado convirtiendo ambos valores a Float para evitar desajustes
+                // 🟢 Comparación matemática inmune a formatos de texto para activar el salto interno
                 if (prog && parseFloat(prog.chapter) === parseFloat(rawNumber)) {
                     const todas = document.querySelectorAll("#mangaPages img");
                     const targetIndex = prog.imageIndex || 0;
@@ -255,12 +261,14 @@
                 const mSnap = await getDoc(doc(db, "mangas", mangaId));
                 const d = mSnap.data();
                 
-                // 🟢 MODIFICADO: Guardamos el número de capítulo exactamente como viene en la URL actual (ej. "1.00")
-                // para mantener la consistencia con las redirecciones y enlaces de las tarjetas del index/manga.html
+                // 🟢 SOLUCIÓN DEFINITIVA: Guardamos en Firebase el formato exacto que espera tu base de datos de tomos.
+                // Si el manga es de R2 guardará "1.00", si es de Drive guardará "1". Así "Seguir leyendo" abrirá el enlace perfecto.
+                const capParaHistorial = capituloDbTextoOriginal || String(rawNumber);
+                
                 const info = { 
                     id: mangaId, 
                     title: d.title, 
-                    chapter: String(rawNumber), 
+                    chapter: capParaHistorial, 
                     image: (d.cover || d.image), 
                     imageIndex: index, 
                     time: Date.now() 
