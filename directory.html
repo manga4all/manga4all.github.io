@@ -265,6 +265,36 @@
             buildDynamicGenreFilters(Array.from(genresSet).sort());
             processAndRenderEcosystem();
 
+            // ======================================================================
+            // AGREGADO: CÓDIGO DE GENERACIÓN AUTOMÁTICA DE SITEMAP
+            // ======================================================================
+            if (masterMangasArray.length > 0) {
+                let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+                xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+                
+                // URLs estáticas principales
+                xml += `  <url><loc>https://manga4all.github.io/</loc></url>\n`;
+                xml += `  <url><loc>https://manga4all.github.io/directorio.html</loc></url>\n`;
+                
+                // Generar dinámicamente las URLs de los más de 200 mangas usando sus IDs reales de Firebase
+                masterMangasArray.forEach(manga => {
+                    if (manga.id) {
+                        xml += `  <url><loc>https://manga4all.github.io/manga.html?id=${manga.id}</loc></url>\n`;
+                    }
+                });
+                
+                xml += `</urlset>`;
+                
+                // Crear descarga del sitemap.xml en el navegador
+                const blob = new Blob([xml], { type: 'text/xml' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'sitemap.xml';
+                link.click();
+                console.log("¡Sitemap generado y descargado con " + masterMangasArray.length + " mangas!");
+            }
+            // ======================================================================
+
         } catch (error) {
             console.error("Error al cargar el directorio:", error);
             grid.innerHTML = "<p style='color: #ff0055; grid-column: 1/-1; text-align: center;'>Error al conectar con la base de datos.</p>";
