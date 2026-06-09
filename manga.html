@@ -181,10 +181,27 @@
         if (mangaSnap.exists()) {
           const manga = mangaSnap.data();
           mangaTipo = String(manga.tipo || "1"); // GUARDAMOS EL TIPO
-          document.title = manga.title + " | Manga 4 All";
+          
+          // 1. Título dinámico adaptado para motores de búsqueda (SEO)
+          document.title = `Leer ${manga.title} Online en Español | Manga 4 All`;
           document.getElementById("mangaTitle").textContent = manga.title;
           document.getElementById("mangaDescription").textContent = manga.description;
-          document.getElementById("mangaCover").src = manga.cover;
+          
+          // 2. Alt de imagen dinámico para indexación en Google Imágenes
+          const imgCover = document.getElementById("mangaCover");
+          imgCover.src = manga.cover;
+          imgCover.alt = `Portada del manga ${manga.title}`;
+          
+          // 3. Generación inyectada de Meta Descripción para los fragmentos de búsqueda
+          let metaDesc = document.querySelector('meta[name="description"]');
+          if (!metaDesc) {
+              metaDesc = document.createElement('meta');
+              metaDesc.name = "description";
+              document.head.appendChild(metaDesc);
+          }
+          const briefSynopsis = manga.description ? manga.description.substring(0, 140) : 'Disfruta de este manga online.';
+          metaDesc.content = `Lee el manga ${manga.title} gratis y online en español. Sinopsis: ${briefSynopsis}...`;
+
           if (manga.genres) document.getElementById("mangaGenres").textContent = manga.genres.join(" • ");
         }
 
