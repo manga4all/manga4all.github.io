@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manga4All - Consola de Admin Pro</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1600.0.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     body { background: #070707; color: white; display: flex; min-height: 100vh; }
@@ -124,6 +125,8 @@
                     <div class="genres-grid" id="editGenresGrid"></div>
                 </div>
                 <button class="primary-btn" id="updateMangaBtn">Guardar Cambios</button>
+                
+                <button class="primary-btn" id="deleteMangaBtn" style="background: #700; margin-top: 15px; border: 1px solid #a00;">🗑️ Eliminar Manga y Archivos (R2)</button>
             </div>
             <div id="editStatus"></div>
         </div>
@@ -181,6 +184,9 @@
     const ADMIN_EMAIL = "brian.ag.cd2@gmail.com";
     let listenersReady = false;
 
+    // ⚠️ CONFIGURACIÓN DE TU NOMBRE DE BUCKET DE CLOUDFLARE R2
+    const CLOUDFLARE_R2_BUCKET = "mangas"; 
+
     onAuthStateChanged(auth, (user) => {
         if (user && user.email === ADMIN_EMAIL) {
             document.getElementById('login-overlay').style.display = "none";
@@ -233,7 +239,6 @@
             }
         };
 
-        // 🟢 CORREGIDO: Eliminado el doble doc() que congelaba la actualización
         document.getElementById('updateMangaBtn').onclick = async () => {
             const id = document.getElementById('editMangaSelector').value;
             const coverRaw = document.getElementById('editCover').value;
@@ -247,6 +252,90 @@
             });
             document.getElementById('editStatus').style.display = "block";
             document.getElementById('editStatus').innerHTML = "✅ Actualizado correctamente.";
+        };
+
+        // 🟢 NUEVO: ACCIÓN ACCESIBLE PARA EL BOTÓN DE ELIMINAR TODO (FIREBASE + CLOUDFLARE R2)
+        document.getElementById('deleteMangaBtn').onclick = async () => {
+            const id = document.getElementById('editMangaSelector').value;
+            if (!id) return;
+
+            if (!confirm("🚨 ¡ATENCIÓN, BRIAN! 🚨\n¿Estás completamente seguro de borrar este manga?\n\nEsta acción eliminará:\n1. El Manga en Firebase.\n2. Todos sus Capítulos en Firebase.\n3. Todas las imágenes físicas dentro de Cloudflare R2 para ahorrar espacio.\n\nEsto NO se puede deshacer.")) return;
+
+            const stat = document.getElementById('editStatus');
+            stat.style.display = "block";
+            stat.innerHTML = "⏳ Extrayendo lista de capítulos e imágenes...";
+
+            try {
+                // 1. Conseguir todos los capítulos (tomos) que pertenecen a este manga
+                const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", id)));
+                let r2KeysToDelete = [];
+                let tomosIds = [];
+
+                ts.forEach(tDoc => {
+                    tomosIds.push(tDoc.id);
+                    const tData = tDoc.data();
+                    if (tData.images && Array.isArray(tData.images)) {
+                        tData.images.forEach(url => {
+                            if (url && typeof url === 'string') {
+                                // Evitamos procesar enlaces antiguos de drive o imgbb
+                                if (!url.includes("drive.google.com") && !url.includes("ibb.co") && !url.includes("i.ibb.co")) {
+                                    try {
+                                        // Extrae la ruta/key limpia borrando el dominio base
+                                        const cleanPath = new URL(url).pathname.substring(1);
+                                        if (cleanPath) r2KeysToDelete.push({ Key: decodeURIComponent(cleanPath) });
+                                    } catch(urlErr) { console.error("Error leyendo URL:", url); }
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // 2. Si se detectaron imágenes de Cloudflare R2, las eliminamos físicamente
+                if (r2KeysToDelete.length > 0) {
+                    stat.innerHTML = `⏳ Eliminando ${r2KeysToDelete.length} imágenes físicas de Cloudflare R2...`;
+
+                    const s3 = new AWS.S3({
+                        accessKeyId: "0e4e88b2df58b54a03010222f04eccbe",
+                        secretAccessKey: "bb9dcc6931e16c11a4bc5a757d941caf0da4e80d867fe79d15e82ea816cd0861",
+                        endpoint: "https://6133b2307af086fbeb5e9ff61701b338.r2.cloudflarestorage.com",
+                        signatureVersion: 'v4',
+                        s3ForcePathStyle: true
+                    });
+
+                    // S3 borra objetos en bloques máximos de 1000 por petición
+                    for (let i = 0; i < r2KeysToDelete.length; i += 1000) {
+                        const chunk = r2KeysToDelete.slice(i, i + 1000);
+                        await new Promise((resolve, reject) => {
+                            s3.deleteObjects({
+                                Bucket: CLOUDFLARE_R2_BUCKET,
+                                Delete: { Objects: chunk }
+                            }, (err, data) => {
+                                if (err) reject(err);
+                                else resolve(data);
+                            });
+                        });
+                    }
+                }
+
+                // 3. Borrar los capítulos de Firestore
+                stat.innerHTML = "⏳ Eliminando capítulos de la base de datos...";
+                for (let tId of tomosIds) {
+                    await deleteDoc(doc(db, "tomos", tId));
+                }
+
+                // 4. Borrar el manga principal de Firestore
+                stat.innerHTML = "⏳ Eliminando ficha principal del manga...";
+                await deleteDoc(doc(db, "mangas", id));
+
+                // 5. Reiniciar interfaz limpia
+                stat.innerHTML = "✅ Manga, capítulos y almacenamiento físico de Cloudflare R2 eliminados con éxito.";
+                document.getElementById('editForm').style.display = "none";
+                window.dispatchEvent(new CustomEvent('refreshSelector'));
+
+            } catch(err) {
+                console.error("Fallo general durante la purga:", err);
+                stat.innerHTML = "❌ Error en la purga: " + err.message + ". Verifica si las reglas CORS de tu bucket R2 permiten solicitudes DELETE.";
+            }
         };
 
         // REPARAR GLOBAL
