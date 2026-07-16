@@ -180,15 +180,19 @@ onAuthStateChanged(auth, async (user) => {
                 if (targetPhoto.startsWith('http')) {
                     userImg = targetPhoto;
                 } else {
-                    // Limpiamos cualquier barra o punto inicial para evitar duplicación, y aplicamos el prefix
+                    // Limpiamos los puntos o barras iniciales
                     const cleanPath = targetPhoto.replace(/^(\.\.\/|\.\/|\/)/, '');
-                    userImg = `${prefix}${cleanPath}`;
+                    
+                    // SOLUCIÓN CLAVE: Si estamos en páginas de manga, retrocedemos una carpeta.
+                    // Si estamos en la raíz, usamos la ruta limpia directa.
+                    userImg = isInMangaFolder ? `../${cleanPath}` : cleanPath;
                 }
             }
         } catch (e) {
             console.error("Error al obtener foto:", e);
             if (user.photoURL) {
-                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${prefix}${user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '')}`;
+                const cleanFallbackPath = user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '');
+                userImg = user.photoURL.startsWith('http') ? user.photoURL : (isInMangaFolder ? `../${cleanFallbackPath}` : cleanFallbackPath);
             }
         }
         
