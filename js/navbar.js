@@ -16,16 +16,20 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Inyectar HTML
+// 🛠️ DETECCIÓN ESTRUCTURAL DE CARPETA SUBDIRECTORIO
+const isInMangaFolder = window.location.pathname.includes('/manga/');
+const prefix = isInMangaFolder ? '../' : '';
+
+// Inyectar HTML con prefijos corregidos dinámicamente
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
     navContainer.innerHTML = `
         <nav class="main-navbar">
             <div class="nav-left">
-                <a href="index.html" class="nav-logo">MANGA 4 ALL</a>
+                <a href="${prefix}index.html" class="nav-logo">MANGA 4 ALL</a>
                 <div class="nav-main-links">
-                    <a href="index.html">Inicio</a>
-                    <a href="directory.html">Directorio</a>
+                    <a href="${prefix}index.html">Inicio</a>
+                    <a href="${prefix}directory.html">Directorio</a>
                 </div>
             </div>
             <div class="nav-search-container">
@@ -94,29 +98,34 @@ window.openAuth = () => document.getElementById('authModal').style.display = 'fl
 const closeBtn = document.getElementById('closeM');
 if(closeBtn) closeBtn.onclick = () => document.getElementById('authModal').style.display = 'none';
 
-mainBtn.onclick = async () => {
-    const email = document.getElementById('logEmail').value.trim();
-    const pass = document.getElementById('logPass').value;
-    const name = document.getElementById('logName').value.trim();
-    const errorEl = document.getElementById('errLog');
-    errorEl.innerText = "";
+if (mainBtn) {
+    mainBtn.onclick = async () => {
+        const email = document.getElementById('logEmail').value.trim();
+        const pass = document.getElementById('logPass').value;
+        const name = document.getElementById('logName').value.trim();
+        const errorEl = document.getElementById('errLog');
+        errorEl.innerText = "";
 
-    try {
-        if (isRegisterMode) {
-            if(!name) throw new Error("Por favor ingresa tu nombre");
-            const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-            await updateProfile(userCred.user, { displayName: name });
-        } else {
-            await signInWithEmailAndPassword(auth, email, pass);
+        try {
+            if (isRegisterMode) {
+                if(!name) throw new Error("Por favor ingresa tu nombre");
+                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(userCred.user, { displayName: name });
+            } else {
+                await signInWithEmailAndPassword(auth, email, pass);
+            }
+        } catch (error) {
+            errorEl.innerText = "Error: " + error.message;
         }
-    } catch (error) {
-        errorEl.innerText = "Error: " + error.message;
-    }
-};
+    };
+}
 
-document.getElementById('doGoogleLogin').onclick = () => {
-    signInWithPopup(auth, provider).catch(() => document.getElementById('errLog').innerText = "Error con Google");
-};
+const googleBtn = document.getElementById('doGoogleLogin');
+if (googleBtn) {
+    googleBtn.onclick = () => {
+        signInWithPopup(auth, provider).catch(() => document.getElementById('errLog').innerText = "Error con Google");
+    };
+}
 
 function setupLogout() {
     const btn = document.getElementById('logout');
@@ -154,16 +163,26 @@ onAuthStateChanged(auth, async (user) => {
         if(modal) modal.style.display = 'none';
         
         // --- BUSCAMOS LA FOTO EN FIRESTORE ---
-        let userImg = 'img/default-user.png';
+        let defaultUserPath = `${prefix}img/default-user.png`;
+        let userImg = defaultUserPath;
         try {
             const userSnap = await getDoc(doc(db, "users", user.uid));
             if (userSnap.exists()) {
                 const userData = userSnap.data();
                 // Prioridad a la de Firestore, luego Google, luego default
-                userImg = userData.photoURL || user.photoURL || 'img/default-user.png';
+                let targetPhoto = userData.photoURL || user.photoURL;
+                if (targetPhoto) {
+                    userImg = targetPhoto.startsWith('http') ? targetPhoto : `${prefix}${targetPhoto}`;
+                } else {
+                    userImg = defaultUserPath;
+                }
             }
         } catch (e) {
-            userImg = user.photoURL || 'img/default-user.png';
+            if (user.photoURL) {
+                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${prefix}${user.photoURL}`;
+            } else {
+                userImg = defaultUserPath;
+            }
         }
         
         area.innerHTML = `
@@ -174,7 +193,7 @@ onAuthStateChanged(auth, async (user) => {
             </div>
         `;
         
-        document.getElementById('goToProfile').onclick = () => window.location.href = 'perfil.html';
+        document.getElementById('goToProfile').onclick = () => window.location.href = `${prefix}perfil.html`;
         setupLogout();
     } else {
         area.innerHTML = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
@@ -187,7 +206,7 @@ if(searchBtn) {
     searchBtn.onkeypress = (e) => {
         if(e.key === 'Enter') {
             const q = e.target.value.trim();
-            if(q) window.location.href = `results.html?q=${encodeURIComponent(q)}`;
+            if(q) window.location.href = `${prefix}results.html?q=${encodeURIComponent(q)}`;
         }
     };
 }
