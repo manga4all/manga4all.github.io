@@ -179,7 +179,7 @@
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght=300;400;600;700&display=swap" rel="stylesheet">
   
 <link rel="stylesheet" href="css/navbar.css">
 
@@ -240,7 +240,6 @@
     let currentGenreFilter = "Todos";
     let currentSortOrder = "asc";
 
-    // Función idéntica para emparejar Slugs SEO perfectamente
     function generateSlug(text) {
         return text ? text.toString().toLowerCase().trim()
             .replace(/\s+/g, '-')
@@ -264,7 +263,6 @@
                 const data = doc.data();
                 masterMangasArray.push({ id: doc.id, ...data });
                 
-                // Inyectamos enlaces HTML reales en el div oculto para que el bot de Google los indexe al instante
                 if (data.title) {
                     const slug = generateSlug(data.title);
                     seoContainer.innerHTML += `<a href="manga/${slug}.html">Leer ${data.title}</a>`;
@@ -335,8 +333,9 @@
             const card = document.createElement("div");
             card.className = "manga-card";
             
-            // 🟢 CORRECCIÓN MAESTRA: Apuntamos directamente al archivo original dinámico que lee bien Firebase
-            const linkUrl = `manga.html?id=${manga.id}`;
+            // 🟢 MODIFICADO DEFINITIVAMENTE: Apunta directo al archivo estático en su directorio
+            const slug = generateSlug(manga.title);
+            const linkUrl = `manga/${slug}.html`;
             
             const coverImg = manga.cover || manga.image || 'img/no-cover.png';
             const synopsis = manga.description || manga.synopsis || 'Sin descripción disponible por el momento.';
