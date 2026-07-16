@@ -152,7 +152,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO MODIFICADO SOLO PARA LA IMAGEN
+// ESTADO DEL USUARIO TOTALMENTE SANITIZADO PARA SUBDIRECTORIOS
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -162,32 +162,35 @@ onAuthStateChanged(auth, async (user) => {
         const modal = document.getElementById('authModal');
         if(modal) modal.style.display = 'none';
         
-        // --- BUSCAMOS LA FOTO EN FIRESTORE ---
-        let defaultUserPath = `${prefix}img/default-user.png`;
-        let userImg = defaultUserPath;
+        // Imagen por defecto absoluta de internet para evitar fallos de carpetas locales
+        const absoluteFallback = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        let userImg = absoluteFallback;
+        
         try {
             const userSnap = await getDoc(doc(db, "users", user.uid));
+            let targetPhoto = null;
+            
             if (userSnap.exists()) {
                 const userData = userSnap.data();
-                // Prioridad a la de Firestore, luego Google, luego default
-                let targetPhoto = userData.photoURL || user.photoURL;
-                if (targetPhoto) {
-                    userImg = targetPhoto.startsWith('http') ? targetPhoto : `${prefix}${targetPhoto}`;
-                } else {
-                    userImg = defaultUserPath;
-                }
+                targetPhoto = userData.photoURL || user.photoURL;
+            } else {
+                targetPhoto = user.photoURL;
+            }
+            
+            if (targetPhoto) {
+                // Si la imagen es externa (Google/FB) se usa tal cual, si es local se le pone el prefijo limpio
+                userImg = targetPhoto.startsWith('http') ? targetPhoto : `${prefix}${targetPhoto.replace(/^\.\.\//, '')}`;
             }
         } catch (e) {
+            console.error("Error resolviendo avatar:", e);
             if (user.photoURL) {
-                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${prefix}${user.photoURL}`;
-            } else {
-                userImg = defaultUserPath;
+                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${prefix}${user.photoURL.replace(/^\.\.\//, '')}`;
             }
         }
         
         area.innerHTML = `
             <div class="user-capsule" id="goToProfile" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
-                <img src="${userImg}" alt="p" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                <img src="${userImg}" alt="Perfil" onerror="this.onerror=null; this.src='${absoluteFallback}';">
                 <span style="font-size:0.85rem; font-weight:bold; color:white;">${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
                 <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:10px; text-decoration:underline;">Salir</button>
             </div>
