@@ -1,15 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leer ${title} Online en Español | Manga 4 All</title>
-  <meta name="description" content="Lee el manga ${title} gratis y online en español. Sinopsis: ${miniSynopsis}...">
+  <title>Leer Osananajimi ga Hisabisa ni Saikai Shitara Otagai Kyonyuu ni Natteta Online en Español | Manga 4 All</title>
+  <meta name="description" content="Lee el manga Osananajimi ga Hisabisa ni Saikai Shitara Otagai Kyonyuu ni Natteta gratis y online en español. Sinopsis: Un reencuentro de la infancia masivo sorprende a dos mejores amigos varones que pasan años sin verse y, al encontrarse de nuevo en la prepar...">
   
-  <!-- Open Graph Protocol para redes sociales -->
-  <meta property="og:title" content="Leer ${title} Online en Español | Manga 4 All">
-  <meta property="og:description" content="${miniSynopsis}...">
-  <meta property="og:image" content="${cover}">
+  <meta property="og:title" content="Leer Osananajimi ga Hisabisa ni Saikai Shitara Otagai Kyonyuu ni Natteta Online en Español | Manga 4 All">
+  <meta property="og:description" content="Un reencuentro de la infancia masivo sorprende a dos mejores amigos varones que pasan años sin verse y, al encontrarse de nuevo en la prepar...">
+  <meta property="og:image" content="https://drive.google.com/thumbnail?id=11h-AzIMDU1_jsogwncVEKPopDtOJ89RL&sz=w1000">
   <meta property="og:type" content="book">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,12 +71,12 @@
   <section class="container">
     <div class="manga-page">
       <div class="manga-cover-side">
-        <img id="mangaCover" src="${cover}" alt="Portada del manga ${title}">
+        <img id="mangaCover" src="https://drive.google.com/thumbnail?id=11h-AzIMDU1_jsogwncVEKPopDtOJ89RL&sz=w1000" alt="Portada del manga Osananajimi ga Hisabisa ni Saikai Shitara Otagai Kyonyuu ni Natteta">
       </div>
 
       <div class="manga-content-side">
-        <h1 id="mangaTitle">${title}</h1>
-        <div id="mangaGenres">${genres}</div>
+        <h1 id="mangaTitle">Osananajimi ga Hisabisa ni Saikai Shitara Otagai Kyonyuu ni Natteta</h1>
+        <div id="mangaGenres">Comedia • Ecchi • Escolar • Deporte</div>
         
         <div class="fav-section">
             <div class="fav-btn-container" id="favWrapper">
@@ -88,7 +88,7 @@
             </div>
         </div>
 
-        <p id="mangaDescription">${description}</p>
+        <p id="mangaDescription">Un reencuentro de la infancia masivo sorprende a dos mejores amigos varones que pasan años sin verse y, al encontrarse de nuevo en la preparatoria, descubren que ambos han desarrollado físicos imponentes y voluptuosos que descolocan por completo su antigua dinámica varonil, desatando una comedia escolar cargada de fan service, deportes y malentendidos corporales.</p>
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; margin-bottom: 25px;">
             <h2 class="section-title" style="margin: 0;">Capítulos Disponibles</h2>
@@ -108,14 +108,32 @@
   <footer>MANGA 4 ALL © 2026</footer>
 
   <script type="module" src="../js/navbar.js"></script>
+  
+  <!-- 🛠️ CORRECCIÓN DE RUTAS DEL NAVBAR EN SUBDIRECTORIOS -->
+  <script>
+    // Un observador que espera a que el navbar inyecte su HTML para corregir los links rotos inmediatamente
+    const observer = new MutationObserver(() => {
+      const navLinks = document.querySelectorAll("#main-navbar a");
+      if (navLinks.length > 0) {
+        navLinks.forEach(link => {
+          const href = link.getAttribute("href");
+          // Si el link no va a un sitio externo ni empieza ya por "../" o "http", le reajustamos la ruta un nivel hacia atras
+          if (href && !href.startsWith("http") && !href.startsWith("../") && !href.startsWith("#")) {
+            link.setAttribute("href", "../" + href);
+          }
+        });
+        observer.disconnect(); // Una vez corregido, dejamos de escuchar para ahorrar rendimiento
+      }
+    });
+    observer.observe(document.getElementById("main-navbar"), { childList: true, subtree: true });
+  </script>
 
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-    import { db } from "../js/firebase.js";
-    import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    const mangaId = "${mangaId}";
+    const mangaId = "cItWxqFWGmNYkvrk0ll4";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
@@ -128,6 +146,7 @@
 
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     const favWrapper = document.getElementById("favWrapper");
     const favBtn = document.getElementById("favBtn");
@@ -138,7 +157,7 @@
     let allChapters = [];
     let itemsToShow = 20;
     let isDescending = true;
-    let mangaTipo = "${manga.tipo || '1'}";
+    let mangaTipo = "1";
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
@@ -199,20 +218,19 @@
 
       visibleChapters.forEach((tomo) => {
         const numeroLimpio = parseFloat(tomo.number);
-        chaptersGrid.innerHTML += `
-          <a class="chapter-row-item" href="${lectorFile}?manga=${mangaId}&number=${tomo.number}">
-            <div class="chapter-row-left">
-              <img src="${tomo.cover}" class="chapter-row-img" alt="Cap ${numeroLimpio}">
-              <div style="display: flex; flex-direction: column;">
-                 <span style="font-size: 0.65rem; color: #ff0055; font-weight: bold; letter-spacing: 1px;">CAPÍTULO</span>
-                 <span style="font-size: 1.1rem; font-weight: bold;">${numeroLimpio}</span>
-              </div>
-            </div>
-            <div style="background: #ff0055; color: white; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 0.75rem;">
-              LEER
-            </div>
-          </a>
-        `;
+        const finalImg = tomo.cover.startsWith('http') ? tomo.cover : '../' + tomo.cover;
+        
+        let row = '<a class="chapter-row-item" href="' + lectorFile + '?manga=' + mangaId + '&number=' + tomo.number + '">';
+        row += '<div class="chapter-row-left">';
+        row += '<img src="' + finalImg + '" class="chapter-row-img" alt="Cap ' + numeroLimpio + '">';
+        row += '<div style="display: flex; flex-direction: column;">';
+        row += '<span style="font-size: 0.65rem; color: #ff0055; font-weight: bold; letter-spacing: 1px;">CAPÍTULO</span>';
+        row += '<span style="font-size: 1.1rem; font-weight: bold;">' + numeroLimpio + '</span>';
+        row += '</div></div>';
+        row += '<div style="background: #ff0055; color: white; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 0.75rem;">LEER</div>';
+        row += '</a>';
+        
+        chaptersGrid.innerHTML += row;
       });
 
       const loadMoreContainer = document.getElementById("loadMoreContainer");
@@ -234,3 +252,4 @@
   </script>
 </body>
 </html>
+  
