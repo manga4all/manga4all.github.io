@@ -20,9 +20,6 @@ const provider = new GoogleAuthProvider();
 const isInMangaFolder = window.location.pathname.includes('/manga/');
 const prefix = isInMangaFolder ? '../' : '';
 
-// Obtener la raíz absoluta del sitio (ej: https://manga4all.github.io/)
-const siteRoot = window.location.origin + window.location.pathname.split('/manga/')[0].replace(/\/$/, '') + '/';
-
 // Inyectar HTML con prefijos corregidos dinámicamente
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
@@ -155,7 +152,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO TOTALMENTE SANITIZADO CON RUTAS ABSOLUTAS DEL SITIO
+// ESTADO DEL USUARIO REPARADO CON FALLBACK SEGURO
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -183,15 +180,15 @@ onAuthStateChanged(auth, async (user) => {
                 if (targetPhoto.startsWith('http')) {
                     userImg = targetPhoto;
                 } else {
-                    // Limpiamos cualquier residuo de rutas relativas antiguas y forzamos ruta absoluta desde la raíz
+                    // Limpiamos cualquier barra o punto inicial para evitar duplicación, y aplicamos el prefix
                     const cleanPath = targetPhoto.replace(/^(\.\.\/|\.\/|\/)/, '');
-                    userImg = `${siteRoot}${cleanPath}`;
+                    userImg = `${prefix}${cleanPath}`;
                 }
             }
         } catch (e) {
-            console.error("Error resolviendo avatar:", e);
+            console.error("Error al obtener foto:", e);
             if (user.photoURL) {
-                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${siteRoot}${user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '')}`;
+                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${prefix}${user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '')}`;
             }
         }
         
