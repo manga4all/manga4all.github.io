@@ -152,7 +152,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO REPARADO CON FALLBACK SEGURO
+// ESTADO DEL USUARIO CON RESOLUTOR ABSOLUTO DE URLS
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -180,19 +180,25 @@ onAuthStateChanged(auth, async (user) => {
                 if (targetPhoto.startsWith('http')) {
                     userImg = targetPhoto;
                 } else {
-                    // Limpiamos los puntos o barras iniciales
+                    // Calculamos la ruta relativa limpia
                     const cleanPath = targetPhoto.replace(/^(\.\.\/|\.\/|\/)/, '');
                     
-                    // SOLUCIÓN CLAVE: Si estamos en páginas de manga, retrocedemos una carpeta.
-                    // Si estamos en la raíz, usamos la ruta limpia directa.
-                    userImg = isInMangaFolder ? `../${cleanPath}` : cleanPath;
+                    // Usamos el constructor URL de JS que resuelve de forma nativa basándose en la ubicación del documento
+                    // Si estamos en '/manga/ajin.html', '../img/uploads/...' resolverá a 'https://manga4all.github.io/img/uploads/...'
+                    const relativePath = isInMangaFolder ? `../${cleanPath}` : cleanPath;
+                    userImg = new URL(relativePath, window.location.href).href;
                 }
             }
         } catch (e) {
             console.error("Error al obtener foto:", e);
             if (user.photoURL) {
-                const cleanFallbackPath = user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '');
-                userImg = user.photoURL.startsWith('http') ? user.photoURL : (isInMangaFolder ? `../${cleanFallbackPath}` : cleanFallbackPath);
+                if (user.photoURL.startsWith('http')) {
+                    userImg = user.photoURL;
+                } else {
+                    const cleanPath = user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '');
+                    const relativePath = isInMangaFolder ? `../${cleanPath}` : cleanPath;
+                    userImg = new URL(relativePath, window.location.href).href;
+                }
             }
         }
         
