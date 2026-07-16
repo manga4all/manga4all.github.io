@@ -108,6 +108,25 @@
   <footer>MANGA 4 ALL © 2026</footer>
 
   <script type="module" src="../js/navbar.js"></script>
+  
+  <!-- 🛠️ CORRECCIÓN DE RUTAS DEL NAVBAR EN SUBDIRECTORIOS -->
+  <script>
+    // Un observador que espera a que el navbar inyecte su HTML para corregir los links rotos inmediatamente
+    const observer = new MutationObserver(() => {
+      const navLinks = document.querySelectorAll("#main-navbar a");
+      if (navLinks.length > 0) {
+        navLinks.forEach(link => {
+          const href = link.getAttribute("href");
+          // Si el link no va a un sitio externo ni empieza ya por "../" o "http", le reajustamos la ruta un nivel hacia atras
+          if (href && !href.startsWith("http") && !href.startsWith("../") && !href.startsWith("#")) {
+            link.setAttribute("href", "../" + href);
+          }
+        });
+        observer.disconnect(); // Una vez corregido, dejamos de escuchar para ahorrar rendimiento
+      }
+    });
+    observer.observe(document.getElementById("main-navbar"), { childList: true, subtree: true });
+  </script>
 
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
