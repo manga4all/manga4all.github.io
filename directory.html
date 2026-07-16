@@ -336,8 +336,9 @@
             card.className = "manga-card";
             
             // 🟢 MODIFICADO: Apunta ahora a la carpeta física interna con slug SEO
-            const slug = generateSlug(manga.title);
-            const linkUrl = `manga/${slug}.html`;
+           // Cámbialo por esto:
+const slug = generateSlug(manga.title);
+const linkUrl = `manga/${slug}.html?id=${manga.id}`;
             
             const coverImg = manga.cover || manga.image || 'img/no-cover.png';
             const synopsis = manga.description || manga.synopsis || 'Sin descripción disponible por el momento.';
