@@ -20,13 +20,7 @@ const provider = new GoogleAuthProvider();
 const isInMangaFolder = window.location.pathname.includes('/manga/');
 const prefix = isInMangaFolder ? '../' : '';
 
-// 💥 LA SOLUCIÓN DEFINITIVA: Obtener la URL base exacta del sitio dinámicamente
-// Si estás en https://manga4all.github.io/manga/ajin.html -> Extrae: https://manga4all.github.io/
-// Si estás en un subdirectorio de proyecto -> Extrae la ruta exacta limpia hasta la raíz
-const currentHref = window.location.href;
-const baseSiteUrl = isInMangaFolder ? currentHref.split('/manga/')[0] + '/' : currentHref.substring(0, currentHref.lastIndexOf('/')) + '/';
-
-// Inyectar HTML con prefijos corregidos dinámicamente
+// Inyectar HTML con prefijos corregidos dinámicamente solo para los links
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
     navContainer.innerHTML = `
@@ -158,7 +152,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO CONSTRUIDO CON URLS ABSOLUTAS ADAPTATIVAS
+// ESTADO DEL USUARIO - SE QUEDA TAL CUAL FUNCIONABA ORIGINALMENTE
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -173,35 +167,15 @@ onAuthStateChanged(auth, async (user) => {
         
         try {
             const userSnap = await getDoc(doc(db, "users", user.uid));
-            let targetPhoto = null;
-            
             if (userSnap.exists()) {
                 const userData = userSnap.data();
-                targetPhoto = userData.photoURL || user.photoURL;
+                userImg = userData.photoURL || user.photoURL || absoluteFallback;
             } else {
-                targetPhoto = user.photoURL;
-            }
-            
-            if (targetPhoto) {
-                if (targetPhoto.startsWith('http')) {
-                    userImg = targetPhoto;
-                } else {
-                    // Limpiamos los caracteres de control de ruta previos del string
-                    const cleanPath = targetPhoto.replace(/^(\.\.\/|\.\/|\/)/, '');
-                    // Forzamos la concatenación usando la URL raíz calculada de forma segura
-                    userImg = `${baseSiteUrl}${cleanPath}`;
-                }
+                userImg = user.photoURL || absoluteFallback;
             }
         } catch (e) {
             console.error("Error al obtener foto:", e);
-            if (user.photoURL) {
-                if (user.photoURL.startsWith('http')) {
-                    userImg = user.photoURL;
-                } else {
-                    const cleanPath = user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '');
-                    userImg = `${baseSiteUrl}${cleanPath}`;
-                }
-            }
+            userImg = user.photoURL || absoluteFallback;
         }
         
         area.innerHTML = `
