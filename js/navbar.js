@@ -20,6 +20,9 @@ const provider = new GoogleAuthProvider();
 const isInMangaFolder = window.location.pathname.includes('/manga/');
 const prefix = isInMangaFolder ? '../' : '';
 
+// Obtener la raíz absoluta del sitio (ej: https://manga4all.github.io/)
+const siteRoot = window.location.origin + window.location.pathname.split('/manga/')[0].replace(/\/$/, '') + '/';
+
 // Inyectar HTML con prefijos corregidos dinámicamente
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
@@ -152,7 +155,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO TOTALMENTE SANITIZADO PARA SUBDIRECTORIOS
+// ESTADO DEL USUARIO TOTALMENTE SANITIZADO CON RUTAS ABSOLUTAS DEL SITIO
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -162,7 +165,6 @@ onAuthStateChanged(auth, async (user) => {
         const modal = document.getElementById('authModal');
         if(modal) modal.style.display = 'none';
         
-        // Imagen por defecto absoluta de internet para evitar fallos de carpetas locales
         const absoluteFallback = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         let userImg = absoluteFallback;
         
@@ -178,13 +180,18 @@ onAuthStateChanged(auth, async (user) => {
             }
             
             if (targetPhoto) {
-                // Si la imagen es externa (Google/FB) se usa tal cual, si es local se le pone el prefijo limpio
-                userImg = targetPhoto.startsWith('http') ? targetPhoto : `${prefix}${targetPhoto.replace(/^\.\.\//, '')}`;
+                if (targetPhoto.startsWith('http')) {
+                    userImg = targetPhoto;
+                } else {
+                    // Limpiamos cualquier residuo de rutas relativas antiguas y forzamos ruta absoluta desde la raíz
+                    const cleanPath = targetPhoto.replace(/^(\.\.\/|\.\/|\/)/, '');
+                    userImg = `${siteRoot}${cleanPath}`;
+                }
             }
         } catch (e) {
             console.error("Error resolviendo avatar:", e);
             if (user.photoURL) {
-                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${prefix}${user.photoURL.replace(/^\.\.\//, '')}`;
+                userImg = user.photoURL.startsWith('http') ? user.photoURL : `${siteRoot}${user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '')}`;
             }
         }
         
