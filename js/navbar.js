@@ -20,6 +20,12 @@ const provider = new GoogleAuthProvider();
 const isInMangaFolder = window.location.pathname.includes('/manga/');
 const prefix = isInMangaFolder ? '../' : '';
 
+// 💥 LA SOLUCIÓN DEFINITIVA: Obtener la URL base exacta del sitio dinámicamente
+// Si estás en https://manga4all.github.io/manga/ajin.html -> Extrae: https://manga4all.github.io/
+// Si estás en un subdirectorio de proyecto -> Extrae la ruta exacta limpia hasta la raíz
+const currentHref = window.location.href;
+const baseSiteUrl = isInMangaFolder ? currentHref.split('/manga/')[0] + '/' : currentHref.substring(0, currentHref.lastIndexOf('/')) + '/';
+
 // Inyectar HTML con prefijos corregidos dinámicamente
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
@@ -152,7 +158,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO CON RESOLUTOR ABSOLUTO DE URLS
+// ESTADO DEL USUARIO CONSTRUIDO CON URLS ABSOLUTAS ADAPTATIVAS
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
@@ -180,13 +186,10 @@ onAuthStateChanged(auth, async (user) => {
                 if (targetPhoto.startsWith('http')) {
                     userImg = targetPhoto;
                 } else {
-                    // Calculamos la ruta relativa limpia
+                    // Limpiamos los caracteres de control de ruta previos del string
                     const cleanPath = targetPhoto.replace(/^(\.\.\/|\.\/|\/)/, '');
-                    
-                    // Usamos el constructor URL de JS que resuelve de forma nativa basándose en la ubicación del documento
-                    // Si estamos en '/manga/ajin.html', '../img/uploads/...' resolverá a 'https://manga4all.github.io/img/uploads/...'
-                    const relativePath = isInMangaFolder ? `../${cleanPath}` : cleanPath;
-                    userImg = new URL(relativePath, window.location.href).href;
+                    // Forzamos la concatenación usando la URL raíz calculada de forma segura
+                    userImg = `${baseSiteUrl}${cleanPath}`;
                 }
             }
         } catch (e) {
@@ -196,8 +199,7 @@ onAuthStateChanged(auth, async (user) => {
                     userImg = user.photoURL;
                 } else {
                     const cleanPath = user.photoURL.replace(/^(\.\.\/|\.\/|\/)/, '');
-                    const relativePath = isInMangaFolder ? `../${cleanPath}` : cleanPath;
-                    userImg = new URL(relativePath, window.location.href).href;
+                    userImg = `${baseSiteUrl}${cleanPath}`;
                 }
             }
         }
