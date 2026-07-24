@@ -42,6 +42,8 @@
       font-size: 13px;
       color: #10b981;
       display: none;
+      max-height: 250px;
+      overflow-y: auto;
     }
   </style>
 </head>
@@ -49,7 +51,7 @@
 
   <div class="card">
     <h2>🗺️ Generar Sitemap</h2>
-    <p>Lee <code>directory.html</code> y genera el archivo <code>sitemap.xml</code> listo para Google Search Console.</p>
+    <p>Escanea la carpeta <code>/manga/</code> del repositorio en GitHub y genera tu <code>sitemap.xml</code>.</p>
     
     <button id="btn" onclick="generarSitemap()">Generar y Descargar</button>
     <div id="log"></div>
@@ -57,41 +59,50 @@
 
   <script>
     const DOMAIN = "https://manga4all.com";
-    const paginasEstaticas = ["", "directory.html"];
+    // Tu usuario y repositorio exactos de GitHub
+    const GITHUB_USER = "manga4all"; 
+    const GITHUB_REPO = "repo"; // Cambia 'repo' por el nombre exacto de tu repositorio si es distinto
+
+    const paginasEstaticas = [
+      "",               
+      "directory.html"  
+    ];
 
     async function generarSitemap() {
       const btn = document.getElementById("btn");
       const log = document.getElementById("log");
       
       btn.disabled = true;
-      btn.innerText = "Procesando...";
+      btn.innerText = "Consultando repositorio...";
       log.style.display = "block";
-      log.innerHTML = "🔍 Escaneando directory.html...<br>";
+      log.innerHTML = "🔍 Obteniendo lista de mangas desde GitHub...<br>";
 
       try {
-        const response = await fetch("/directory.html");
-        if (!response.ok) throw new Error("No se pudo cargar directory.html");
-        
-        const htmlText = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, "text/html");
-        const enlaces = doc.querySelectorAll("a[href]");
-
         const urlsEncontradas = new Set();
         paginasEstaticas.forEach(p => urlsEncontradas.add(`${DOMAIN}/${p}`));
 
-        enlaces.forEach(a => {
-          let href = a.getAttribute("href").trim();
+        // Consultar la API pública de GitHub para ver el contenido de /manga/
+        const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/manga`;
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+          throw new Error("No se pudo acceder a la carpeta /manga/ en GitHub. Revisa el nombre del repositorio.");
+        }
+        
+        const archivos = await response.json();
 
-          if (href.startsWith("#") || href.startsWith("javascript:")) return;
-          if (href.startsWith("./")) href = href.substring(2);
-          if (href.startsWith("/")) href = href.substring(1);
-
-          urlsEncontradas.add(`${DOMAIN}/${href}`);
+        let contadorMangas = 0;
+        archivos.forEach(item => {
+          if (item.type === "file" && item.name.endsWith(".html")) {
+            urlsEncontradas.add(`${DOMAIN}/manga/${item.name}`);
+            contadorMangas++;
+          }
         });
 
-        log.innerHTML += `✅ ${urlsEncontradas.size} páginas encontradas.<br>`;
+        log.innerHTML += `✅ Se encontraron <b>${contadorMangas}</b> mangas en /manga/.<br>`;
+        log.innerHTML += `📄 Total de URLs en el sitemap: <b>${urlsEncontradas.size}</b>.<br>`;
 
+        // Construir XML
         let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n`;
         xmlContent += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
@@ -104,7 +115,7 @@
 
         descargarArchivo(xmlContent, "sitemap.xml", "text/xml");
 
-        log.innerHTML += `🚀 <b>sitemap.xml</b> descargado.`;
+        log.innerHTML += `<br>🚀 <b>sitemap.xml</b> generado y descargado correctamente.`;
         btn.innerText = "¡Completado!";
         setTimeout(() => {
           btn.disabled = false;
