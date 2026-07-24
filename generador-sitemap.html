@@ -45,64 +45,87 @@
       max-height: 250px;
       overflow-y: auto;
     }
+    iframe {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
   <div class="card">
     <h2>🗺️ Generar Sitemap</h2>
-    <p>Escanea la carpeta <code>/manga/</code> del repositorio en GitHub y genera tu <code>sitemap.xml</code>.</p>
+    <p>Renderiza <code>directory.html</code> en segundo plano y extrae todos los enlaces generados.</p>
     
-    <button id="btn" onclick="generarSitemap()">Generar y Descargar</button>
+    <button id="btn" onclick="iniciarGeneracion()">Generar y Descargar</button>
     <div id="log"></div>
   </div>
 
+  <!-- Iframe oculto para cargar la página real con su JS ejecutado -->
+  <iframe id="directoryFrame"></iframe>
+
   <script>
     const DOMAIN = "https://manga4all.com";
-    // Tu usuario y repositorio exactos de GitHub
-    const GITHUB_USER = "manga4all"; 
-    const GITHUB_REPO = "repo"; // Cambia 'repo' por el nombre exacto de tu repositorio si es distinto
+    const paginasEstaticas = ["", "directory.html"];
 
-    const paginasEstaticas = [
-      "",               
-      "directory.html"  
-    ];
-
-    async function generarSitemap() {
+    function iniciarGeneracion() {
       const btn = document.getElementById("btn");
       const log = document.getElementById("log");
-      
+      const iframe = document.getElementById("directoryFrame");
+
       btn.disabled = true;
-      btn.innerText = "Consultando repositorio...";
+      btn.innerText = "Cargando directorio...";
       log.style.display = "block";
-      log.innerHTML = "🔍 Obteniendo lista de mangas desde GitHub...<br>";
+      log.innerHTML = "⏳ Cargando directory.html y ejecutando scripts...<br>";
+
+      // Cargar directory.html en el iframe
+      iframe.src = "/directory.html";
+
+      iframe.onload = () => {
+        log.innerHTML += "⏳ Esperando renderizado de enlaces (3 seg)...<br>";
+        
+        // Damos 3 segundos para que Firebase / JS renderice todos los mangas en el DOM
+        setTimeout(() => {
+          extraerYGenerar(iframe.contentDocument);
+        }, 3000);
+      };
+    }
+
+    function extraerYGenerar(doc) {
+      const btn = document.getElementById("btn");
+      const log = document.getElementById("log");
 
       try {
+        const enlaces = doc.querySelectorAll("a[href]");
         const urlsEncontradas = new Set();
+
+        // Agregar estáticas
         paginasEstaticas.forEach(p => urlsEncontradas.add(`${DOMAIN}/${p}`));
 
-        // Consultar la API pública de GitHub para ver el contenido de /manga/
-        const apiUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/manga`;
-        const response = await fetch(apiUrl);
-        
-        if (!response.ok) {
-          throw new Error("No se pudo acceder a la carpeta /manga/ en GitHub. Revisa el nombre del repositorio.");
-        }
-        
-        const archivos = await response.json();
-
         let contadorMangas = 0;
-        archivos.forEach(item => {
-          if (item.type === "file" && item.name.endsWith(".html")) {
-            urlsEncontradas.add(`${DOMAIN}/manga/${item.name}`);
+
+        enlaces.forEach(a => {
+          let href = a.getAttribute("href").trim();
+
+          // Filtrar enlaces inválidos
+          if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+
+          // Convertir rutas relativas a absolutas limpias
+          if (href.startsWith("./")) href = href.substring(2);
+          if (href.startsWith("/")) href = href.substring(1);
+
+          const fullUrl = href.startsWith("http") ? href : `${DOMAIN}/${href}`;
+          
+          // Solo agregar URLs de nuestro propio dominio
+          if (fullUrl.startsWith(DOMAIN)) {
+            urlsEncontradas.add(fullUrl);
             contadorMangas++;
           }
         });
 
-        log.innerHTML += `✅ Se encontraron <b>${contadorMangas}</b> mangas en /manga/.<br>`;
+        log.innerHTML += `✅ Enlaces extraídos del DOM con éxito.<br>`;
         log.innerHTML += `📄 Total de URLs en el sitemap: <b>${urlsEncontradas.size}</b>.<br>`;
 
-        // Construir XML
+        // Generar XML
         let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n`;
         xmlContent += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
@@ -115,7 +138,7 @@
 
         descargarArchivo(xmlContent, "sitemap.xml", "text/xml");
 
-        log.innerHTML += `<br>🚀 <b>sitemap.xml</b> generado y descargado correctamente.`;
+        log.innerHTML += `<br>🚀 <b>sitemap.xml</b> generado y descargado.`;
         btn.innerText = "¡Completado!";
         setTimeout(() => {
           btn.disabled = false;
