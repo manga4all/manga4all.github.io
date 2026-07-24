@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://manga4all.github.io/sitemap.xml
+Sitemap: https://manga4all.com/sitemap.xml
