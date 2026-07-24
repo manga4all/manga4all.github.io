@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Sitemap - Manga4All</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 500px;
+      margin: 60px auto;
+      padding: 20px;
+      background-color: #121212;
+      color: #fff;
+    }
+    .card {
+      background: #1e1e1e;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+    }
+    button:hover { background-color: #2563eb; }
+    button:disabled { background-color: #555; cursor: not-allowed; }
+    #log {
+      margin-top: 20px;
+      padding: 12px;
+      background: #000;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #10b981;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>🗺️ Generar Sitemap</h2>
+    <p>Lee <code>directory.html</code> y genera el archivo <code>sitemap.xml</code> listo para Google Search Console.</p>
+    
+    <button id="btn" onclick="generarSitemap()">Generar y Descargar</button>
+    <div id="log"></div>
+  </div>
+
+  <script>
+    const DOMAIN = "https://manga4all.com";
+    const paginasEstaticas = ["", "directory.html"];
+
+    async function generarSitemap() {
+      const btn = document.getElementById("btn");
+      const log = document.getElementById("log");
+      
+      btn.disabled = true;
+      btn.innerText = "Procesando...";
+      log.style.display = "block";
+      log.innerHTML = "🔍 Escaneando directory.html...<br>";
+
+      try {
+        const response = await fetch("/directory.html");
+        if (!response.ok) throw new Error("No se pudo cargar directory.html");
+        
+        const htmlText = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        const enlaces = doc.querySelectorAll("a[href]");
+
+        const urlsEncontradas = new Set();
+        paginasEstaticas.forEach(p => urlsEncontradas.add(`${DOMAIN}/${p}`));
+
+        enlaces.forEach(a => {
+          let href = a.getAttribute("href").trim();
+
+          if (href.startsWith("#") || href.startsWith("javascript:")) return;
+          if (href.startsWith("./")) href = href.substring(2);
+          if (href.startsWith("/")) href = href.substring(1);
+
+          urlsEncontradas.add(`${DOMAIN}/${href}`);
+        });
+
+        log.innerHTML += `✅ ${urlsEncontradas.size} páginas encontradas.<br>`;
+
+        let xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        xmlContent += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+
+        urlsEncontradas.forEach(url => {
+          const priority = url === `${DOMAIN}/` ? "1.0" : "0.7";
+          xmlContent += `  <url>\n    <loc>${url}</loc>\n    <priority>${priority}</priority>\n  </url>\n`;
+        });
+
+        xmlContent += `</urlset>`;
+
+        descargarArchivo(xmlContent, "sitemap.xml", "text/xml");
+
+        log.innerHTML += `🚀 <b>sitemap.xml</b> descargado.`;
+        btn.innerText = "¡Completado!";
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.innerText = "Generar y Descargar";
+        }, 3000);
+
+      } catch (error) {
+        log.innerHTML += `<span style="color: #ef4444;">❌ Error: ${error.message}</span>`;
+        btn.disabled = false;
+        btn.innerText = "Reintentar";
+      }
+    }
+
+    function descargarArchivo(contenido, nombreArchivo, tipoMime) {
+      const blob = new Blob([contenido], { type: tipoMime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nombreArchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
