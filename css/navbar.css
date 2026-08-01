@@ -1,4 +1,6 @@
-/* RESET DE NAVEGACION (DESKTOP) */
+/* ==========================================
+   RESET DE NAVEGACIÓN (DESKTOP / PC)
+   ========================================== */
 .main-navbar {
     background: #070707 !important;
     height: 75px;
@@ -38,7 +40,13 @@
 .btn-login { background: #ff0055; color: white !important; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
 .btn-register { background: #333; color: white !important; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
 
-/* MODAL */
+/* ELEMENTOS MÓVIL (OCULTOS EN PC) */
+.mobile-burger-btn,
+.mobile-drawer-menu {
+    display: none;
+}
+
+/* MODAL AUTH */
 .auth-modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.9);
     display: none; align-items: center; justify-content: center; z-index: 10000;
@@ -99,10 +107,13 @@
         font-size: 1.1rem;
     }
 
-    .nav-main-links {
-        display: none;
+    /* Ocultar elementos estáticos */
+    .nav-main-links,
+    .nav-auth-area {
+        display: none !important;
     }
 
+    /* Buscador adaptado al centro */
     .nav-search-container {
         position: relative;
         left: 0;
@@ -115,21 +126,21 @@
         font-size: 0.8rem;
     }
 
-    /* BOTÓN HAMBURGUESA */
+    /* Botón Hamburguesa visible en Móvil */
     .mobile-burger-btn {
+        display: block !important;
         background: transparent;
         border: none;
         color: white;
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         cursor: pointer;
         padding: 5px;
         line-height: 1;
         z-index: 10001;
     }
 
-    /* MENÚ FLOTANTE MÓVIL */
+    /* Menú flotante al desplegar */
     .mobile-drawer-menu {
-        display: none;
         position: fixed;
         top: 75px;
         left: 0;
@@ -142,7 +153,7 @@
     }
 
     .mobile-drawer-menu.open {
-        display: block;
+        display: block !important;
     }
 
     .drawer-links {
@@ -161,12 +172,5 @@
 
     .drawer-links a:hover {
         color: #ff0055 !important;
-    }
-}
-
-@media (min-width: 769px) {
-    .mobile-burger-btn,
-    .mobile-drawer-menu {
-        display: none !important;
     }
 }
