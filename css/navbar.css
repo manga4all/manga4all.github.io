@@ -107,7 +107,7 @@
         font-size: 1.1rem;
     }
 
-    /* Ocultar elementos estáticos */
+    /* Ocultar elementos horizontales de escritorio */
     .nav-main-links,
     .nav-auth-area {
         display: none !important;
@@ -126,7 +126,7 @@
         font-size: 0.8rem;
     }
 
-    /* Botón Hamburguesa visible en Móvil */
+    /* Botón Hamburguesa */
     .mobile-burger-btn {
         display: block !important;
         background: transparent;
@@ -172,5 +172,12 @@
 
     .drawer-links a:hover {
         color: #ff0055 !important;
+    }
+
+    .mobile-auth-wrapper {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        width: 100%;
     }
 }
