@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/navbar.css">
-    <link rel="stylesheet" href="css/style.css?v=25">
+    <link rel="stylesheet" href="css/style.css?v=26">
     
     <style>
         * { font-family: 'Poppins', sans-serif !important; }
@@ -112,7 +112,7 @@
         </div>
     </main>
 
-    <!-- 3. Sección de Noticias (Estructura Limpia) -->
+    <!-- 3. Sección de Noticias -->
     <section class="container" style="margin-top: 20px; margin-bottom: 30px;">
         <h2 class="section-title">Últimas Noticias</h2>
         <div id="news-grid" class="news-grid">
@@ -122,11 +122,9 @@
 
     <footer>Manga 4 All © 2026</footer>
 
-    <!-- Carga de Scripts del Navbar y App Global (Noticias y Carrusel) -->
     <script type="module" src="js/navbar.js"></script>
     <script type="module" src="js/app.js"></script>
 
-    <!-- Script Inline exclusivo para Continuar Leyendo y Destacados -->
     <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
@@ -207,11 +205,11 @@
             }
         });
 
-        // 2. Cargar Mangas Destacados
+        // 2. Cargar Mangas Destacados (SINTAXIS FIX)
         async function loadFeaturedManga() {
             const grid = document.getElementById("featured-manga-grid");
             try {
-                const featuredSnap = await getDoc(doc(doc(db, "settings", "featured")));
+                const featuredSnap = await getDoc(doc(db, "settings", "featured"));
                 if (!featuredSnap.exists() || !featuredSnap.data().ids || featuredSnap.data().ids.length === 0) {
                     grid.innerHTML = "<p style='color:#888; grid-column: 1 / -1; text-align: center;'>No hay mangas destacados seleccionados aún.</p>";
                     return;
