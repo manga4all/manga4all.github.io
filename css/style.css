@@ -1,5 +1,5 @@
 /* ============================================================
-   Manga 4 All - CSS Completo Corregido (v20)
+   Manga 4 All - CSS Completo Corregido (v22 - Fix Noticias Móvil)
    ============================================================ */
 
 /* --- RESET Y BASE --- */
@@ -209,139 +209,157 @@ footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #
 }
 
 /* ==========================================
-   SECCIÓN DE NOTICIAS (ACORDEÓN DINÁMICO)
+   SECCIÓN DE NOTICIAS (ACORDEÓN ADAPTATIVO MÓVIL)
    ========================================== */
 .news-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 15px;
-    margin-bottom: 30px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    margin-top: 15px !important;
+    margin-bottom: 30px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
 }
 
 .news-card {
-    background: #111;
-    border: 1px solid #1f1f1f;
-    border-radius: 8px;
-    overflow: hidden;
-    transition: 0.3s ease;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+    background: #111 !important;
+    border: 1px solid #1f1f1f !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    transition: border-color 0.3s ease, background-color 0.3s ease !important;
+    cursor: pointer !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    position: relative !important;
+}
+
+.news-card img {
+    display: none !important;
 }
 
 .news-card:hover {
-    border-color: #ff0055;
-    background: #161616;
+    border-color: #ff0055 !important;
+    background: #161616 !important;
 }
 
 .news-header {
-    padding: 15px 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    justify-content: space-between;
+    padding: 15px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    background: transparent !important;
 }
 
 .news-meta {
-    display: flex;
-    align-items: center;
-    gap: 15px;
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
 }
 
 .news-date {
-    font-size: 0.8rem;
-    color: #ff0055;
-    font-weight: 700;
-    text-transform: uppercase;
-    white-space: nowrap;
-    background: rgba(255, 0, 85, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
+    font-size: 0.8rem !important;
+    color: #ff0055 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    background: rgba(255, 0, 85, 0.1) !important;
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
 }
 
 .news-title {
-    margin: 0;
-    font-size: 1rem;
-    color: #fff;
-    font-weight: 600;
+    margin: 0 !important;
+    font-size: 1rem !important;
+    color: #fff !important;
+    font-weight: 600 !important;
 }
 
 .news-toggle-icon {
-    color: #555;
-    font-size: 1.2rem;
-    transition: transform 0.3s ease, color 0.3s ease;
+    color: #666 !important;
+    font-size: 1.1rem !important;
+    transition: transform 0.3s ease, color 0.3s ease !important;
 }
 
 .news-card:hover .news-toggle-icon {
-    color: #ff0055;
+    color: #ff0055 !important;
 }
 
 .news-body-container {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border-top: 0 solid #1f1f1f;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    transition: max-height 0.5s ease-in-out !important;
+    border-top: 0 solid #1f1f1f !important;
 }
 
 .news-body {
-    padding: 0 20px 20px 20px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    padding: 0 20px 20px 20px !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
 }
 
 .news-card.expanded {
-    border-color: #ff0055;
-    background: #161616;
-    box-shadow: 0 5px 15px rgba(255, 0, 85, 0.1);
+    border-color: #ff0055 !important;
+    background: #161616 !important;
+    box-shadow: 0 5px 15px rgba(255, 0, 85, 0.1) !important;
 }
 
+/* PERMITE MOSTRAR TODO EL TEXTO SIN CORTES */
 .news-card.expanded .news-body-container {
-    max-height: 1000px;
-    border-top-width: 1px;
+    max-height: 5000px !important; /* Límite suficiente para textos largos */
+    border-top-width: 1px !important;
 }
 
 .news-card.expanded .news-body {
-    padding-top: 20px;
-    opacity: 1;
+    padding-top: 20px !important;
+    opacity: 1 !important;
 }
 
 .news-card.expanded .news-toggle-icon {
-    transform: rotate(180deg);
-    color: #ff0055;
+    transform: rotate(180deg) !important;
+    color: #ff0055 !important;
 }
 
 .news-content {
-    margin: 0;
-    color: #ccc;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    white-space: pre-wrap; /* MANTIENE LOS ENTER */
+    margin: 0 !important;
+    color: #ccc !important;
+    font-size: 0.95rem !important;
+    line-height: 1.7 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important; /* Evita desbordamiento horizontal */
 }
 
 @media (max-width: 768px) {
     .news-header {
-        padding: 12px 15px;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        padding: 12px 15px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        padding-right: 40px !important; /* Deja espacio para la flecha */
     }
     .news-meta {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 5px;
-        width: 100%;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 5px !important;
+        width: 100% !important;
     }
     .news-title {
-        font-size: 0.95rem;
+        font-size: 0.95rem !important;
+        white-space: normal !important; /* Permite que el título ocupe varios renglones */
     }
     .news-toggle-icon {
-        position: absolute;
-        right: 15px;
-        top: 15px;
+        position: absolute !important;
+        right: 15px !important;
+        top: 15px !important;
     }
-    .news-card {
-        position: relative;
+    .news-body {
+        padding: 0 15px 15px 15px !important;
+    }
+    .news-content {
+        font-size: 0.9rem !important;
     }
 }
