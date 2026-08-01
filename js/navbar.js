@@ -68,6 +68,40 @@ if (navContainer) {
             </div>
         </div>
     `;
+
+    // INYECCIÓN DINÁMICA DEL MENÚ MÓVIL Y SU FUNCIONALIDAD
+    const navbar = navContainer.querySelector('.main-navbar');
+    if (navbar) {
+        const burgerBtn = document.createElement('button');
+        burgerBtn.className = 'mobile-burger-btn';
+        burgerBtn.innerHTML = '☰';
+        burgerBtn.setAttribute('aria-label', 'Abrir Menú');
+
+        const mobileDrawer = document.createElement('div');
+        mobileDrawer.className = 'mobile-drawer-menu';
+        mobileDrawer.innerHTML = `
+            <div class="drawer-links">
+                <a href="${prefix}index.html">Inicio</a>
+                <a href="${prefix}directory.html">Directorio</a>
+            </div>
+        `;
+
+        navbar.appendChild(burgerBtn);
+        navbar.appendChild(mobileDrawer);
+
+        burgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mobileDrawer.classList.toggle('open');
+            burgerBtn.innerHTML = mobileDrawer.classList.contains('open') ? '✕' : '☰';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!mobileDrawer.contains(e.target) && !burgerBtn.contains(e.target)) {
+                mobileDrawer.classList.remove('open');
+                burgerBtn.innerHTML = '☰';
+            }
+        });
+    }
 }
 
 // Lógica de intercambio entre Login y Registro
@@ -152,7 +186,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO - SE QUEDA TAL CUAL FUNCIONABA ORIGINALMENTE
+// ESTADO DEL USUARIO
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
