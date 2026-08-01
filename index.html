@@ -163,7 +163,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Función auxilar para convertir un título a nombre de archivo .html
+        // Función auxiliar para convertir el título en el slug del nombre de archivo .html
         function createSlug(title) {
             return title
                 .toLowerCase()
@@ -227,7 +227,7 @@
             }
         });
 
-        // 2. Cargar Mangas Destacados
+        // 2. Cargar Mangas Destacados (Ruta directa a manga/slug.html)
         async function loadFeaturedManga() {
             const grid = document.getElementById("manga-grid");
             try {
@@ -245,11 +245,10 @@
                     if (mangaSnap.exists()) {
                         const m = mangaSnap.data();
                         
-                        // Generación automática del nombre de archivo .html
-                        // Ejemplo: "Chainsaw Man" -> "chainsaw-man.html"
-                        const mangaUrl = `${createSlug(m.title)}.html`;
+                        // Generación de la ruta exacta dentro de la carpeta /manga/
+                        const mangaUrl = `manga/${createSlug(m.title)}.html`;
                         
-                        // Escapar comillas para el tooltip
+                        // Escapar comillas para el tooltip (hover)
                         const cleanDesc = (m.description || "Sin descripción disponible.")
                             .replace(/"/g, '&quot;')
                             .replace(/'/g, '&#39;');
