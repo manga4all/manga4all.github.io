@@ -10,8 +10,9 @@ import {
 
 const mangaGrid = document.getElementById("manga-grid");
 const updatesTrack = document.getElementById("updates-track");
+const newsGrid = document.getElementById("news-grid");
 
-// 1. LÓGICA: ÚLTIMAS ACTUALIZACIONES (1 POR SERIE - MÁXIMA VELOCIDAD)
+// 1. LÓGICA: ÚLTIMAS ACTUALIZACIONES (1 POR SERIE)
 async function loadUpdates() {
     if (!updatesTrack) return;
     try {
@@ -95,6 +96,60 @@ async function loadMangas() {
     }
 }
 
+// 3. LÓGICA: NOTICIAS (ACORDEÓN DINÁMICO)
+async function loadNews() {
+    if (!newsGrid) return;
+
+    try {
+        const q = query(collection(db, "noticias"), orderBy("createdAt", "desc"), limit(5));
+        const newsSnap = await getDocs(q);
+
+        if (newsSnap.empty) {
+            newsGrid.innerHTML = "<p style='color:#666; text-align:center; padding: 20px;'>Próximamente más novedades.</p>";
+            return;
+        }
+
+        let newsHtml = "";
+        
+        newsSnap.forEach(doc => {
+            const n = doc.data();
+            const rawContent = n.content || n.desc || "Sin contenido disponible.";
+            const cleanContent = rawContent
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            newsHtml += `
+                <article class="news-card" onclick="toggleNewsAccordion(this)">
+                    <div class="news-header">
+                        <div class="news-meta">
+                            <span class="news-date">${n.date || 'NOTICIA'}</span>
+                            <h3 class="news-title">${n.title}</h3>
+                        </div>
+                        <div class="news-toggle-icon">▼</div>
+                    </div>
+                    <div class="news-body-container">
+                        <div class="news-body">
+                            <p class="news-content">${cleanContent}</p>
+                        </div>
+                    </div>
+                </article>
+            `;
+        });
+
+        newsGrid.innerHTML = newsHtml;
+
+    } catch (e) {
+        console.error("Error al cargar noticias:", e);
+        newsGrid.innerHTML = "<p style='color:#888; text-align:center; padding: 20px;'>No se pudieron cargar las noticias.</p>";
+    }
+}
+
+// Función global para el evento de clic en el acordeón de noticias
+window.toggleNewsAccordion = function(element) {
+    element.classList.toggle('expanded');
+};
+
 // Ejecución inicial
 loadUpdates();
 loadMangas();
+loadNews();
