@@ -1,6 +1,5 @@
 /* ============================================================
-   Manga 4 All - CSS Completo Corregido (v19)
-   Corrección: Centrado de nombres y estabilidad en carrusel
+   Manga 4 All - CSS Completo Corregido (v20)
    ============================================================ */
 
 /* --- RESET Y BASE --- */
@@ -52,12 +51,12 @@ header {
     transition: 0.3s; 
     display: flex; 
     flex-direction: column; 
-    align-items: center; /* Asegura el centrado de los hijos */
+    align-items: center; 
 }
 
 .update-cover-wrapper { 
-    width: 160px; /* Ancho fijo para que no salte */
-    height: 230px; /* Alto fijo para simetría total */
+    width: 160px; 
+    height: 230px; 
     border-radius: 12px; 
     overflow: hidden; 
     border: 1px solid #222; 
@@ -121,7 +120,7 @@ header {
 
 footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #111; margin-top: 50px; }
 
-/* --- TOOLTIP DE INFORMACIÓN (NUEVO) --- */
+/* --- TOOLTIP DE INFORMACIÓN --- */
 .manga-card .tooltip {
     position: absolute;
     bottom: 100%;
@@ -207,4 +206,142 @@ footer { text-align: center; padding: 60px; color: #444; border-top: 1px solid #
     height: 65px !important;
     object-fit: cover;
     border-radius: 4px;
+}
+
+/* ==========================================
+   SECCIÓN DE NOTICIAS (ACORDEÓN DINÁMICO)
+   ========================================== */
+.news-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 30px;
+}
+
+.news-card {
+    background: #111;
+    border: 1px solid #1f1f1f;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.news-card:hover {
+    border-color: #ff0055;
+    background: #161616;
+}
+
+.news-header {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: space-between;
+}
+
+.news-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.news-date {
+    font-size: 0.8rem;
+    color: #ff0055;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    background: rgba(255, 0, 85, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.news-title {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.news-toggle-icon {
+    color: #555;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.news-card:hover .news-toggle-icon {
+    color: #ff0055;
+}
+
+.news-body-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-top: 0 solid #1f1f1f;
+}
+
+.news-body {
+    padding: 0 20px 20px 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.news-card.expanded {
+    border-color: #ff0055;
+    background: #161616;
+    box-shadow: 0 5px 15px rgba(255, 0, 85, 0.1);
+}
+
+.news-card.expanded .news-body-container {
+    max-height: 1000px;
+    border-top-width: 1px;
+}
+
+.news-card.expanded .news-body {
+    padding-top: 20px;
+    opacity: 1;
+}
+
+.news-card.expanded .news-toggle-icon {
+    transform: rotate(180deg);
+    color: #ff0055;
+}
+
+.news-content {
+    margin: 0;
+    color: #ccc;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    white-space: pre-wrap; /* MANTIENE LOS ENTER */
+}
+
+@media (max-width: 768px) {
+    .news-header {
+        padding: 12px 15px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .news-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+        width: 100%;
+    }
+    .news-title {
+        font-size: 0.95rem;
+    }
+    .news-toggle-icon {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+    }
+    .news-card {
+        position: relative;
+    }
 }
