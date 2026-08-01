@@ -15,7 +15,7 @@
     .login-box h2 { color: #ff0055; margin-bottom: 25px; }
 
     #admin-ui { display: none; width: 100%; }
-    .sidebar { width: 260px; background: #111; border-right: 1px solid #1f1f1f; display: flex; flex-direction: column; padding: 20px; position: fixed; height: 100vh; z-index: 100; }
+    .sidebar { width: 260px; background: #111; border-right: 1px solid #1f1f1f; display: flex; flex-direction: column; padding: 20px; position: fixed; height: 100vh; z-index: 100; overflow-y: auto; }
     .sidebar h2 { color: #ff0055; font-size: 1.4rem; margin-bottom: 30px; text-align: center; }
     
     .main-content { flex: 1; margin-left: 260px; padding: 40px; display: flex; justify-content: center; }
@@ -39,7 +39,12 @@
     .genre-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
     .file-input-wrapper { background: #1a1a1a; padding: 25px; border: 2px dashed #333; border-radius: 12px; text-align: center; cursor: pointer; }
     
-    #bulkStatus, #nukeStatus, #editStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:350px; overflow-y:auto; border: 1px solid #333; color: #0f0; }
+    #bulkStatus, #nukeStatus, #editStatus, #featuredStatus, #newsStatus { background:#000; padding:15px; border-radius:10px; font-family:monospace; font-size:0.8rem; margin-top:20px; display:none; max-height:350px; overflow-y:auto; border: 1px solid #333; color: #0f0; }
+
+    /* Estilos para lista de selección de destacados */
+    .featured-selector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: 400px; overflow-y: auto; background: #0a0a0a; padding: 15px; border-radius: 10px; border: 1px solid #222; }
+    .featured-item { display: flex; align-items: center; gap: 10px; background: #181818; padding: 8px; border-radius: 8px; border: 1px solid #2a2a2a; cursor: pointer; }
+    .featured-item img { width: 35px; height: 50px; object-fit: cover; border-radius: 4px; }
   </style>
 </head>
 <body>
@@ -59,6 +64,8 @@
       <h2>Manga 4 All</h2>
       <div class="tabs-header">
         <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
+        <button class="tab-btn" onclick="openTab('featuredTab')">🌟 Destacados (10)</button>
+        <button class="tab-btn" onclick="openTab('newsTab')">📰 Noticias</button>
         <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
         <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
         <button class="tab-btn" onclick="openTab('editTab')">✏️ Gestionar</button>
@@ -81,6 +88,34 @@
             <div class="input-group"><label>Géneros</label><div class="genres-grid" id="genresGrid"></div></div>
             <button class="primary-btn" id="createMangaBtn">Crear Manga</button>
             <div id="mangaResult" style="margin-top:20px; display:none; padding:10px; border:1px dashed #0f0;">ID: <span id="newMangaId"></span></div>
+        </div>
+
+        <!-- 🌟 NUEVO: TAB DE DESTACADOS -->
+        <div id="featuredTab" class="tab-content">
+            <h1>🌟 Seleccionar 10 Mangas Destacados</h1>
+            <p style="color: #888; font-size: 0.85rem; margin-bottom: 15px;">Selecciona exactamente hasta 10 mangas para mostrar en el grid principal de la portada.</p>
+            <div class="input-group">
+              <label>Seleccionados: <span id="featuredCount" style="color: #ff0055; font-weight: bold;">0</span> / 10</label>
+              <div id="featuredSelectorGrid" class="featured-selector-grid"></div>
+            </div>
+            <button class="primary-btn" id="saveFeaturedBtn">Guardar Mangas Destacados</button>
+            <div id="featuredStatus"></div>
+        </div>
+
+        <!-- 📰 NUEVO: TAB DE NOTICIAS -->
+        <div id="newsTab" class="tab-content">
+            <h1>📰 Publicar Noticia</h1>
+            <div class="input-group"><label>Título de la Noticia</label><input type="text" id="newsTitle"></div>
+            <div class="input-group"><label>Fecha (Ejemplo: 31 JUL 2026)</label><input type="text" id="newsDate"></div>
+            <div class="input-group"><label>URL de la Imagen/Banner</label><input type="text" id="newsImg"></div>
+            <div class="input-group"><label>Descripción / Contenido</label><textarea id="newsDesc" style="height: 100px;"></textarea></div>
+            <button class="primary-btn" id="publishNewsBtn">Publicar Noticia</button>
+            
+            <hr style="border: 0; border-top: 1px solid #222; margin: 30px 0;">
+            
+            <h3>Noticias Publicadas</h3>
+            <div id="newsListDisplay" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+            <div id="newsStatus"></div>
         </div>
 
         <div id="fullTab" class="tab-content">
@@ -166,7 +201,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, Timestamp, getDocs, doc, getDoc, updateDoc, onSnapshot, deleteDoc, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, Timestamp, getDocs, doc, getDoc, setDoc, updateDoc, onSnapshot, deleteDoc, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCWh1P5pyM7nqscPdenQDEHHbSNTduVufo",
@@ -211,6 +246,8 @@
         document.getElementById(n).classList.add('active');
         if(event) event.currentTarget.classList.add('active');
         if(n === 'editTab') window.dispatchEvent(new CustomEvent('refreshSelector'));
+        if(n === 'featuredTab') window.dispatchEvent(new CustomEvent('loadFeaturedSelector'));
+        if(n === 'newsTab') window.dispatchEvent(new CustomEvent('loadNewsList'));
     };
 
     function initAdminListeners() {
@@ -254,7 +291,7 @@
             document.getElementById('editStatus').innerHTML = "✅ Actualizado correctamente.";
         };
 
-        // 🟢 NUEVO: ACCIÓN ACCESIBLE PARA EL BOTÓN DE ELIMINAR TODO (FIREBASE + CLOUDFLARE R2)
+        // ACCIÓN DE ELIMINAR TODO (FIREBASE + CLOUDFLARE R2)
         document.getElementById('deleteMangaBtn').onclick = async () => {
             const id = document.getElementById('editMangaSelector').value;
             if (!id) return;
@@ -266,7 +303,6 @@
             stat.innerHTML = "⏳ Extrayendo lista de capítulos e imágenes...";
 
             try {
-                // 1. Conseguir todos los capítulos (tomos) que pertenecen a este manga
                 const ts = await getDocs(query(collection(db, "tomos"), where("mangaId", "==", id)));
                 let r2KeysToDelete = [];
                 let tomosIds = [];
@@ -277,10 +313,8 @@
                     if (tData.images && Array.isArray(tData.images)) {
                         tData.images.forEach(url => {
                             if (url && typeof url === 'string') {
-                                // Evitamos procesar enlaces antiguos de drive o imgbb
                                 if (!url.includes("drive.google.com") && !url.includes("ibb.co") && !url.includes("i.ibb.co")) {
                                     try {
-                                        // Extrae la ruta/key limpia borrando el dominio base
                                         const cleanPath = new URL(url).pathname.substring(1);
                                         if (cleanPath) r2KeysToDelete.push({ Key: decodeURIComponent(cleanPath) });
                                     } catch(urlErr) { console.error("Error leyendo URL:", url); }
@@ -290,7 +324,6 @@
                     }
                 });
 
-                // 2. Si se detectaron imágenes de Cloudflare R2, las eliminamos físicamente
                 if (r2KeysToDelete.length > 0) {
                     stat.innerHTML = `⏳ Eliminando ${r2KeysToDelete.length} imágenes físicas de Cloudflare R2...`;
 
@@ -302,7 +335,6 @@
                         s3ForcePathStyle: true
                     });
 
-                    // S3 borra objetos en bloques máximos de 1000 por petición
                     for (let i = 0; i < r2KeysToDelete.length; i += 1000) {
                         const chunk = r2KeysToDelete.slice(i, i + 1000);
                         await new Promise((resolve, reject) => {
@@ -317,24 +349,21 @@
                     }
                 }
 
-                // 3. Borrar los capítulos de Firestore
                 stat.innerHTML = "⏳ Eliminando capítulos de la base de datos...";
                 for (let tId of tomosIds) {
                     await deleteDoc(doc(db, "tomos", tId));
                 }
 
-                // 4. Borrar el manga principal de Firestore
                 stat.innerHTML = "⏳ Eliminando ficha principal del manga...";
                 await deleteDoc(doc(db, "mangas", id));
 
-                // 5. Reiniciar interfaz limpia
                 stat.innerHTML = "✅ Manga, capítulos y almacenamiento físico de Cloudflare R2 eliminados con éxito.";
                 document.getElementById('editForm').style.display = "none";
                 window.dispatchEvent(new CustomEvent('refreshSelector'));
 
             } catch(err) {
                 console.error("Fallo general durante la purga:", err);
-                stat.innerHTML = "❌ Error en la purga: " + err.message + ". Verifica si las reglas CORS de tu bucket R2 permiten solicitudes DELETE.";
+                stat.innerHTML = "❌ Error en la purga: " + err.message;
             }
         };
 
@@ -451,6 +480,134 @@
                     };
                 });
             }
+        });
+
+        // 🌟 LÓGICA DE DESTACADOS (CARGAR Y GUARDAR)
+        window.addEventListener('loadFeaturedSelector', async () => {
+            const grid = document.getElementById('featuredSelectorGrid');
+            const countLabel = document.getElementById('featuredCount');
+            grid.innerHTML = "Cargando mangas...";
+
+            // Obtener lista actual guardada en Firestore
+            const featuredDoc = await getDoc(doc(db, "settings", "featured"));
+            const currentIds = featuredDoc.exists() ? (featuredDoc.data().ids || []) : [];
+
+            // Obtener todos los mangas
+            const snap = await getDocs(collection(db, "mangas"));
+            const mangas = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => a.title.localeCompare(b.title));
+
+            grid.innerHTML = mangas.map(m => {
+                const isChecked = currentIds.includes(m.id) ? 'checked' : '';
+                return `
+                    <label class="featured-item">
+                        <input type="checkbox" class="featured-checkbox" value="${m.id}" ${isChecked}>
+                        <img src="${m.cover}" alt="">
+                        <span style="font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.title}</span>
+                    </label>
+                `;
+            }).join('');
+
+            const updateCount = () => {
+                const checked = document.querySelectorAll('.featured-checkbox:checked').length;
+                countLabel.innerText = checked;
+            };
+
+            grid.querySelectorAll('.featured-checkbox').forEach(cb => {
+                cb.onchange = () => {
+                    if(document.querySelectorAll('.featured-checkbox:checked').length > 10) {
+                        cb.checked = false;
+                        alert("Solo puedes seleccionar un máximo de 10 mangas destacados.");
+                    }
+                    updateCount();
+                };
+            });
+
+            updateCount();
+        });
+
+        document.getElementById('saveFeaturedBtn').onclick = async () => {
+            const selectedIds = Array.from(document.querySelectorAll('.featured-checkbox:checked')).map(cb => cb.value);
+            const stat = document.getElementById('featuredStatus');
+            stat.style.display = "block";
+            stat.innerHTML = "⏳ Guardando destacados...";
+
+            try {
+                await setDoc(doc(db, "settings", "featured"), { ids: selectedIds });
+                stat.innerHTML = "✅ Destacados guardados correctamente (" + selectedIds.length + " mangas).";
+            } catch(e) {
+                stat.innerHTML = "❌ Error: " + e.message;
+            }
+        };
+
+        // 📰 LÓGICA DE NOTICIAS (PUBLICAR, CARGAR Y BORRAR)
+        document.getElementById('publishNewsBtn').onclick = async () => {
+            const title = document.getElementById('newsTitle').value.trim();
+            const date = document.getElementById('newsDate').value.trim();
+            const img = document.getElementById('newsImg').value.trim();
+            const desc = document.getElementById('newsDesc').value.trim();
+            const stat = document.getElementById('newsStatus');
+
+            if(!title || !desc) return alert("El título y la descripción son obligatorios");
+
+            stat.style.display = "block";
+            stat.innerHTML = "⏳ Publicando noticia...";
+
+            try {
+                await addDoc(collection(db, "noticias"), {
+                    title,
+                    date: date || new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+                    img: formatDriveThumbnail(img, "w1000") || "assets/banners/1299859.jpg",
+                    desc,
+                    createdAt: Timestamp.now()
+                });
+
+                document.getElementById('newsTitle').value = "";
+                document.getElementById('newsDate').value = "";
+                document.getElementById('newsImg').value = "";
+                document.getElementById('newsDesc').value = "";
+
+                stat.innerHTML = "✅ Noticia publicada con éxito.";
+                window.dispatchEvent(new CustomEvent('loadNewsList'));
+            } catch(e) {
+                stat.innerHTML = "❌ Error: " + e.message;
+            }
+        };
+
+        window.addEventListener('loadNewsList', async () => {
+            const container = document.getElementById('newsListDisplay');
+            container.innerHTML = "Cargando noticias...";
+
+            const q = query(collection(db, "noticias"), orderBy("createdAt", "desc"));
+            const snap = await getDocs(q);
+
+            if(snap.empty) {
+                container.innerHTML = "<p style='color:#666; font-size:0.85rem;'>No hay noticias publicadas.</p>";
+                return;
+            }
+
+            container.innerHTML = snap.docs.map(d => {
+                const data = d.data();
+                return `
+                    <div style="background:#1a1a1a; padding:12px; border-radius:10px; border:1px solid #333; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="color:#ff0055; font-size:0.75rem; font-weight:bold;">${data.date}</span>
+                            <h4 style="margin:2px 0;">${data.title}</h4>
+                            <p style="color:#aaa; font-size:0.8rem; margin:0;">${data.desc.substring(0, 70)}...</p>
+                        </div>
+                        <button class="delete-news-btn" data-id="${d.id}" style="background:#700; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">Borrar</button>
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.delete-news-btn').forEach(btn => {
+                btn.onclick = async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    if(confirm("¿Seguro que quieres borrar esta noticia?")) {
+                        await deleteDoc(doc(db, "noticias", id));
+                        window.dispatchEvent(new CustomEvent('loadNewsList'));
+                    }
+                };
+            });
         });
 
         window.addEventListener('refreshSelector', async () => {
