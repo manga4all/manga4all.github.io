@@ -216,7 +216,7 @@
             }
         });
 
-        // 2. Cargar Mangas Destacados
+        // 2. Cargar Mangas Destacados (Con Tooltip de descripción en hover)
         async function loadFeaturedManga() {
             const grid = document.getElementById("manga-grid");
             try {
@@ -233,8 +233,14 @@
                     const mangaSnap = await getDoc(doc(db, "mangas", id));
                     if (mangaSnap.exists()) {
                         const m = mangaSnap.data();
+                        
+                        // Escapar comillas para evitar rupturas de HTML en el tooltip
+                        const cleanDesc = (m.description || "Sin descripción disponible.")
+                            .replace(/"/g, '&quot;')
+                            .replace(/'/g, '&#39;');
+
                         cardsHtml += `
-                            <a href="manga.html?id=${mangaSnap.id}" class="manga-card">
+                            <a href="manga.html?id=${mangaSnap.id}" class="manga-card" title="${cleanDesc}">
                                 <img src="${m.cover}" alt="${m.title}">
                                 <div class="manga-card-info">
                                     <h3 class="manga-card-title">${m.title}</h3>
