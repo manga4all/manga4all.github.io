@@ -163,6 +163,17 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Función auxilar para convertir un título a nombre de archivo .html
+        function createSlug(title) {
+            return title
+                .toLowerCase()
+                .trim()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
+                .replace(/[^a-z0-9 -]/g, "") // Quitar caracteres especiales
+                .replace(/\s+/g, "-") // Reemplazar espacios por guiones
+                .replace(/-+/g, "-"); // Evitar guiones dobles
+        }
+
         // 1. Cargar "Continuar Leyendo"
         onAuthStateChanged(auth, async (user) => {
             const track = document.getElementById("continue-track");
@@ -216,7 +227,7 @@
             }
         });
 
-        // 2. Cargar Mangas Destacados (Con Tooltip de descripción en hover)
+        // 2. Cargar Mangas Destacados
         async function loadFeaturedManga() {
             const grid = document.getElementById("manga-grid");
             try {
@@ -234,13 +245,17 @@
                     if (mangaSnap.exists()) {
                         const m = mangaSnap.data();
                         
-                        // Escapar comillas para evitar rupturas de HTML en el tooltip
+                        // Generación automática del nombre de archivo .html
+                        // Ejemplo: "Chainsaw Man" -> "chainsaw-man.html"
+                        const mangaUrl = `${createSlug(m.title)}.html`;
+                        
+                        // Escapar comillas para el tooltip
                         const cleanDesc = (m.description || "Sin descripción disponible.")
                             .replace(/"/g, '&quot;')
                             .replace(/'/g, '&#39;');
 
                         cardsHtml += `
-                            <a href="manga.html?id=${mangaSnap.id}" class="manga-card" title="${cleanDesc}">
+                            <a href="${mangaUrl}" class="manga-card" title="${cleanDesc}">
                                 <img src="${m.cover}" alt="${m.title}">
                                 <div class="manga-card-info">
                                     <h3 class="manga-card-title">${m.title}</h3>
