@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manga 4 All</title>
+    <title>Manga 4 All - Lee Manga Online Gratis en Español</title>
+    
+    <!-- Meta SEO -->
+    <meta name="description" content="Lee tus mangas favoritos online gratis y en español. Disfruta de la mejor calidad de lectura, navegación rápida y un gran catálogo en Manga 4 All.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+    <!-- Fuentes y Estilos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/navbar.css">
-    <link rel="stylesheet" href="css/style.css?v=23">
+    <link rel="stylesheet" href="css/style.css?v=24">
+    
     <style>
         * { font-family: 'Poppins', sans-serif !important; }
-        .container { padding-top: 5px; padding-bottom: 5px; }
-        .section-title { margin-top: 15px !important; margin-bottom: 15px !important; }
+        .container { padding-top: 15px; padding-bottom: 15px; }
+        .section-title { margin-top: 15px !important; margin-bottom: 15px !important; border-left: 4px solid #ff0055; padding-left: 10px; }
         
+        /* Continuar Leyendo */
         .continue-wrapper { position: relative; display: flex; align-items: center; }
         .carousel-track { 
             display: flex; gap: 15px; overflow-x: auto; scroll-behavior: smooth; 
@@ -35,6 +47,29 @@
         }
         .history-item:hover { border-color: #ff0055; transform: translateY(-3px); }
         .history-item img { width: 55px; height: 80px; object-fit: cover; border-radius: 6px; }
+
+        /* Estilos de Noticias */
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .news-card {
+            background: #111;
+            border: 1px solid #1f1f1f;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: 0.3s;
+        }
+        .news-card:hover { border-color: #ff0055; transform: translateY(-3px); }
+        .news-img { width: 100%; height: 150px; object-fit: cover; }
+        .news-body { padding: 15px; }
+        .news-date { font-size: 0.75rem; color: #ff0055; font-weight: 600; text-transform: uppercase; }
+        .news-title { margin: 5px 0 8px 0; font-size: 1.1rem; color: #fff; }
+        .news-desc { font-size: 0.85rem; color: #aaa; margin: 0; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -42,7 +77,7 @@
     <div id="main-navbar"></div>
 
     <header>
-        <img src="assets/banners/1299859.jpg" alt="Banner" class="banner-img">
+        <img src="assets/banners/1299859.jpg" alt="Banner Manga 4 All" class="banner-img">
         <div class="overlay"></div>
         <div class="header-content">
             <h1>Manga 4 All</h1>
@@ -50,6 +85,7 @@
         </div>
     </header>
 
+    <!-- 1. Continuar Leyendo -->
     <div id="continue-container" class="container" style="display: none; margin-bottom: 20px;">
         <h2 class="section-title">Continuar Leyendo</h2>
         <div class="continue-wrapper">
@@ -59,17 +95,21 @@
         </div>
     </div>
 
-    <div class="container" style="margin-bottom: 10px;">
-        <h2 class="section-title">Últimas Actualizaciones</h2>
-        <div class="updates-wrapper">
-            <div id="updates-track" class="updates-track"></div>
-        </div>
-    </div>
-
+    <!-- 2. Grid de 10 Mangas Destacados -->
     <main class="container">
-        <h2 class="section-title">Destacados</h2>
-        <div id="manga-grid" class="manga-grid"></div>
+        <h2 class="section-title">Mangas Destacados</h2>
+        <div id="manga-grid" class="manga-grid">
+            <!-- Carga dinámica mediante JS desde Firestore -->
+        </div>
     </main>
+
+    <!-- 3. Sección de Noticias -->
+    <section class="container" style="margin-top: 20px; margin-bottom: 30px;">
+        <h2 class="section-title">Últimas Noticias</h2>
+        <div id="news-grid" class="news-grid">
+            <!-- Carga dinámica de noticias mediante JS -->
+        </div>
+    </section>
 
     <footer>Manga 4 All © 2026</footer>
 
@@ -93,6 +133,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Lógica de "Continuar Leyendo"
         onAuthStateChanged(auth, async (user) => {
             const track = document.getElementById("continue-track");
             const container = document.getElementById("continue-container");
@@ -115,9 +156,8 @@
                 container.style.display = "block";
                 
                 let htmlFinal = "";
-                // Usamos un bucle for tradicional para asegurar la sincronía de los tipos
                 for (const m of items) {
-                    let readerFile = "reader.html"; // Por defecto Drive
+                    let readerFile = "reader.html"; 
                     try {
                         const mSnap = await getDoc(doc(db, "mangas", m.id));
                         if (mSnap.exists() && String(mSnap.data().tipo) === "2") {
@@ -125,11 +165,10 @@
                         }
                     } catch(e) {}
 
-                    // Usamos imageIndex que es lo que guarda tu sistema
                     const pos = m.imageIndex || 0;
                     htmlFinal += `
                         <a href="${readerFile}?manga=${m.id}&number=${m.chapter}&scroll=true&savedScroll=${pos}" class="history-item">
-                            <img src="${m.image}">
+                            <img src="${m.image}" alt="${m.title}">
                             <div style="overflow: hidden;">
                                 <span style="color: #ff0055; font-weight: bold; font-size: 0.65rem; letter-spacing: 1px;">REANUDAR</span>
                                 <h3 style="margin: 0; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.title}</h3>
