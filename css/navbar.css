@@ -1,6 +1,4 @@
-/* ==========================================
-   1. ESTILOS ORIGINALES (DESKTOP / PC)
-   ========================================== */
+/* RESET DE NAVEGACION (DESKTOP) */
 .main-navbar {
     background: #070707 !important;
     height: 75px;
@@ -84,9 +82,8 @@
     font-size: 0.75rem;
 }
 
-
 /* ==========================================
-   2. REGLAS EXCLUSIVAS PARA MÓVIL (< 768px)
+   REGLAS EXCLUSIVAS PARA MÓVIL (< 768px)
    ========================================== */
 @media (max-width: 768px) {
     .main-navbar {
@@ -94,26 +91,18 @@
         gap: 8px;
     }
 
-    /* Reducir espacio ocupado por el logo */
     .nav-left {
         min-width: auto;
         gap: 0;
     }
     .nav-logo {
-        font-size: 1rem;
+        font-size: 1.1rem;
     }
 
-    /* Ocultar links horizontales "Inicio" y "Directorio" */
     .nav-main-links {
         display: none;
     }
 
-    /* Ocultar botones/perfil de login del header principal */
-    .nav-auth-area {
-        display: none;
-    }
-
-    /* El buscador ocupa el centro sin solapar */
     .nav-search-container {
         position: relative;
         left: 0;
@@ -126,13 +115,58 @@
         font-size: 0.8rem;
     }
 
-    /* Crear botón de 3 rayas dinámico usando CSS en la esquina derecha */
-    .main-navbar::after {
-        content: "☰";
-        color: #fff;
+    /* BOTÓN HAMBURGUESA */
+    .mobile-burger-btn {
+        background: transparent;
+        border: none;
+        color: white;
         font-size: 1.5rem;
         cursor: pointer;
         padding: 5px;
         line-height: 1;
+        z-index: 10001;
+    }
+
+    /* MENÚ FLOTANTE MÓVIL */
+    .mobile-drawer-menu {
+        display: none;
+        position: fixed;
+        top: 75px;
+        left: 0;
+        width: 100%;
+        background: #070707;
+        border-bottom: 2px solid #ff0055;
+        padding: 20px 0;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+        z-index: 10000;
+    }
+
+    .mobile-drawer-menu.open {
+        display: block;
+    }
+
+    .drawer-links {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .drawer-links a {
+        color: #eee !important;
+        text-decoration: none;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .drawer-links a:hover {
+        color: #ff0055 !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-burger-btn,
+    .mobile-drawer-menu {
+        display: none !important;
     }
 }
