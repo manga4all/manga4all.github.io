@@ -20,22 +20,34 @@ const provider = new GoogleAuthProvider();
 const isInMangaFolder = window.location.pathname.includes('/manga/');
 const prefix = isInMangaFolder ? '../' : '';
 
-// Inyectar HTML con prefijos corregidos dinámicamente solo para los links
+// Inyectar HTML con estructura responsive y menú hamburguesa
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
     navContainer.innerHTML = `
         <nav class="main-navbar">
             <div class="nav-left">
-                <a href="${prefix}index.html" class="nav-logo">MANGA 4 ALL</a>
+                <a href="${prefix}index.html" class="nav-logo">M4A</a>
+            </div>
+
+            <div class="nav-search-container">
+                <input type="text" id="globalSearch" placeholder="Buscar manga...">
+            </div>
+
+            <!-- Botón Hamburguesa Móvil -->
+            <button class="hamburger-btn" id="mobileMenuBtn" aria-label="Abrir Menú">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <!-- Menú Desplegable / Contenedor de links -->
+            <div class="mobile-menu-drawer" id="menuDrawer">
                 <div class="nav-main-links">
                     <a href="${prefix}index.html">Inicio</a>
                     <a href="${prefix}directory.html">Directorio</a>
                 </div>
+                <div class="nav-auth-area" id="auth-content"></div>
             </div>
-            <div class="nav-search-container">
-                <input type="text" id="globalSearch" placeholder="Buscar manga o autor...">
-            </div>
-            <div class="nav-auth-area" id="auth-content"></div>
         </nav>
 
         <div class="auth-modal-overlay" id="authModal">
@@ -70,6 +82,25 @@ if (navContainer) {
     `;
 }
 
+// 🍔 LÓGICA DEL MENÚ HAMBURGUESA
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const menuDrawer = document.getElementById('menuDrawer');
+
+if (mobileMenuBtn && menuDrawer) {
+    mobileMenuBtn.addEventListener('click', () => {
+        mobileMenuBtn.classList.toggle('open');
+        menuDrawer.classList.toggle('active');
+    });
+
+    // Cerrar menú al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!mobileMenuBtn.contains(e.target) && !menuDrawer.contains(e.target)) {
+            mobileMenuBtn.classList.remove('open');
+            menuDrawer.classList.remove('active');
+        }
+    });
+}
+
 // Lógica de intercambio entre Login y Registro
 let isRegisterMode = false;
 const toggleText = document.getElementById('toggleAuthText');
@@ -94,7 +125,13 @@ if(toggleText) {
     };
 }
 
-window.openAuth = () => document.getElementById('authModal').style.display = 'flex';
+window.openAuth = () => {
+    document.getElementById('authModal').style.display = 'flex';
+    // Cerrar menú móvil si está abierto al abrir modal
+    if (menuDrawer) menuDrawer.classList.remove('active');
+    if (mobileMenuBtn) mobileMenuBtn.classList.remove('open');
+};
+
 const closeBtn = document.getElementById('closeM');
 if(closeBtn) closeBtn.onclick = () => document.getElementById('authModal').style.display = 'none';
 
@@ -152,7 +189,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO - SE QUEDA TAL CUAL FUNCIONABA ORIGINALMENTE
+// ESTADO DEL USUARIO
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
