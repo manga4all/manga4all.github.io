@@ -20,7 +20,7 @@ const provider = new GoogleAuthProvider();
 const isInMangaFolder = window.location.pathname.includes('/manga/');
 const prefix = isInMangaFolder ? '../' : '';
 
-// Inyectar HTML con prefijos corregidos dinámicamente solo para los links
+// Inyectar HTML original + Elementos del Menú Móvil integrados directamente
 const navContainer = document.getElementById('main-navbar');
 if (navContainer) {
     navContainer.innerHTML = `
@@ -36,6 +36,17 @@ if (navContainer) {
                 <input type="text" id="globalSearch" placeholder="Buscar manga o autor...">
             </div>
             <div class="nav-auth-area" id="auth-content"></div>
+
+            <!-- BOTÓN HAMBURGUESA INTEGRADO EN EL HTML INYECTADO -->
+            <button class="mobile-burger-btn" id="burgerToggleBtn" aria-label="Abrir Menú">☰</button>
+
+            <!-- MENÚ FLOTANTE MÓVIL INTEGRADO -->
+            <div class="mobile-drawer-menu" id="mobileDrawer">
+                <div class="drawer-links">
+                    <a href="${prefix}index.html">Inicio</a>
+                    <a href="${prefix}directory.html">Directorio</a>
+                </div>
+            </div>
         </nav>
 
         <div class="auth-modal-overlay" id="authModal">
@@ -69,36 +80,21 @@ if (navContainer) {
         </div>
     `;
 
-    // INYECCIÓN DINÁMICA DEL MENÚ MÓVIL Y SU FUNCIONALIDAD
-    const navbar = navContainer.querySelector('.main-navbar');
-    if (navbar) {
-        const burgerBtn = document.createElement('button');
-        burgerBtn.className = 'mobile-burger-btn';
-        burgerBtn.innerHTML = '☰';
-        burgerBtn.setAttribute('aria-label', 'Abrir Menú');
+    // LÓGICA DE APERTURA Y CIERRE DEL MENÚ MÓVIL
+    const burgerToggleBtn = document.getElementById('burgerToggleBtn');
+    const mobileDrawer = document.getElementById('mobileDrawer');
 
-        const mobileDrawer = document.createElement('div');
-        mobileDrawer.className = 'mobile-drawer-menu';
-        mobileDrawer.innerHTML = `
-            <div class="drawer-links">
-                <a href="${prefix}index.html">Inicio</a>
-                <a href="${prefix}directory.html">Directorio</a>
-            </div>
-        `;
-
-        navbar.appendChild(burgerBtn);
-        navbar.appendChild(mobileDrawer);
-
-        burgerBtn.addEventListener('click', (e) => {
+    if (burgerToggleBtn && mobileDrawer) {
+        burgerToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            mobileDrawer.classList.toggle('open');
-            burgerBtn.innerHTML = mobileDrawer.classList.contains('open') ? '✕' : '☰';
+            const isOpen = mobileDrawer.classList.toggle('open');
+            burgerToggleBtn.innerText = isOpen ? '✕' : '☰';
         });
 
         document.addEventListener('click', (e) => {
-            if (!mobileDrawer.contains(e.target) && !burgerBtn.contains(e.target)) {
+            if (!mobileDrawer.contains(e.target) && e.target !== burgerToggleBtn) {
                 mobileDrawer.classList.remove('open');
-                burgerBtn.innerHTML = '☰';
+                burgerToggleBtn.innerText = '☰';
             }
         });
     }
@@ -186,7 +182,7 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO
+// ESTADO DEL USUARIO - SE QUEDA TAL CUAL FUNCIONABA ORIGINALMENTE
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
     if (!area) return;
