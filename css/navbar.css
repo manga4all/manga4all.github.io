@@ -1,5 +1,5 @@
 /* ==========================================
-   RESET & ESTRUCTURA BASE (DESKTOP FIRST)
+   Navegación Desktop (Restaurada al 100%)
    ========================================== */
 .main-navbar {
     background: #070707 !important;
@@ -20,7 +20,7 @@
     display: flex; 
     align-items: center; 
     gap: 25px; 
-    min-width: 250px; 
+    min-width: 300px; 
 }
 .nav-logo { 
     color: #ff0055 !important; 
@@ -76,7 +76,7 @@
     align-items: center; 
     justify-content: flex-end; 
     gap: 10px; 
-    min-width: 250px; 
+    min-width: 300px; 
 }
 .btn-login { 
     background: #ff0055; 
@@ -99,7 +99,7 @@
     font-size: 0.9rem; 
 }
 
-/* BOTÓN HAMBURGUESA (Oculto en Escritorio) */
+/* BOTÓN HAMBURGUESA (Oculto en PC) */
 .hamburger-btn {
     display: none;
     flex-direction: column;
@@ -119,8 +119,6 @@
     border-radius: 2px;
     transition: all 0.3s ease;
 }
-
-/* Animación del botón a 'X' */
 .hamburger-btn.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
 .hamburger-btn.open span:nth-child(2) { opacity: 0; }
 .hamburger-btn.open span:nth-child(3) { transform: rotate(-45deg) translate(6px, -6px); }
@@ -145,96 +143,46 @@
 /* PERFIL LOGUEADO */
 .user-capsule { display: flex; align-items: center; gap: 10px; background: #1a1a1a; padding: 5px 15px; border-radius: 30px; border: 1px solid #333; }
 .user-capsule img { 
-    width: 32px; 
-    height: 32px; 
-    border-radius: 50%; 
-    border: 2px solid #ff0055; 
-    object-fit: cover; 
+    width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ff0055; object-fit: cover; 
 }
-
-.auth-divider {
-    margin: 20px 0;
-    position: relative;
-    border-bottom: 1px solid #333;
-    height: 1px;
-}
-.auth-divider span {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #111;
-    padding: 0 15px;
-    color: #555;
-    font-size: 0.75rem;
-}
+.auth-divider { margin: 20px 0; position: relative; border-bottom: 1px solid #333; height: 1px; }
+.auth-divider span { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; padding: 0 15px; color: #555; font-size: 0.75rem; }
 
 
 /* ==========================================
-   RESPONSIVO: MÓVIL (< 768px)
+   SOLO MÓVIL (< 768px)
    ========================================== */
 @media (max-width: 768px) {
-    .main-navbar {
-        padding: 0 15px;
-        gap: 10px;
-    }
-
-    /* Ocultar elementos estáticos */
+    .main-navbar { padding: 0 15px; }
     .nav-left { min-width: auto; }
-    .nav-logo { font-size: 1.2rem; }
     
-    /* El buscador ocupa el centro sin chocar */
     .nav-search-container {
         position: static;
         transform: none;
         width: 100%;
-        max-width: none;
-        margin: 0 5px;
-    }
-    .nav-search-container input {
-        padding: 8px 12px;
-        font-size: 0.8rem;
+        margin: 0 10px;
     }
 
-    /* Mostrar botón Hamburguesa */
-    .hamburger-btn {
-        display: flex;
-    }
+    .hamburger-btn { display: flex; }
 
-    /* Contenedor del Menú Desplegable Móvil */
+    /* En móvil, los links y auth se ocultan y pasan al menú flotante */
     .mobile-menu-drawer {
         position: fixed;
         top: 75px;
         left: 0;
         width: 100%;
-        background: #0a0a0a;
+        background: #070707;
         border-bottom: 2px solid #ff0055;
         flex-direction: column;
         align-items: center;
         padding: 20px 0;
         gap: 20px;
-        display: none; /* Se activa vía JS */
-        box-shadow: 0 10px 20px rgba(0,0,0,0.8);
+        display: none;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.9);
         z-index: 9998;
     }
-    .mobile-menu-drawer.active {
-        display: flex;
-    }
+    .mobile-menu-drawer.active { display: flex; }
 
-    /* Reorganización de links dentro del menú móvil */
-    .nav-main-links {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-        width: 100%;
-    }
-    .nav-main-links a {
-        font-size: 1.1rem;
-    }
-
-    .nav-auth-area {
-        min-width: auto;
-        justify-content: center;
-        width: 100%;
-    }
+    .nav-main-links { flex-direction: column; align-items: center; }
+    .nav-auth-area { min-width: auto; justify-content: center; }
 }
