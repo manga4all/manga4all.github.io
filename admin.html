@@ -64,7 +64,7 @@
       <h2>Manga 4 All</h2>
       <div class="tabs-header">
         <button class="tab-btn active" onclick="openTab('mangaTab')">🆕 Crear Manga</button>
-        <button class="tab-btn" onclick="openTab('featuredTab')">🌟 Destacados (10)</button>
+        <button class="tab-btn" onclick="openTab('featuredTab')">🌟 Destacados (12)</button>
         <button class="tab-btn" onclick="openTab('newsTab')">📰 Noticias</button>
         <button class="tab-btn" onclick="openTab('fullTab')">🚀 Todo en Uno</button>
         <button class="tab-btn" onclick="openTab('bulkTab')">📦 Carga Industrial</button>
@@ -90,19 +90,19 @@
             <div id="mangaResult" style="margin-top:20px; display:none; padding:10px; border:1px dashed #0f0;">ID: <span id="newMangaId"></span></div>
         </div>
 
-        <!-- 🌟 NUEVO: TAB DE DESTACADOS -->
+        <!-- 🌟 TAB DE DESTACADOS (AJUSTADO A 12) -->
         <div id="featuredTab" class="tab-content">
-            <h1>🌟 Seleccionar 10 Mangas Destacados</h1>
-            <p style="color: #888; font-size: 0.85rem; margin-bottom: 15px;">Selecciona exactamente hasta 10 mangas para mostrar en el grid principal de la portada.</p>
+            <h1>🌟 Seleccionar 12 Mangas Destacados</h1>
+            <p style="color: #888; font-size: 0.85rem; margin-bottom: 15px;">Selecciona exactamente hasta 12 mangas para mostrar en el grid principal de la portada.</p>
             <div class="input-group">
-              <label>Seleccionados: <span id="featuredCount" style="color: #ff0055; font-weight: bold;">0</span> / 10</label>
+              <label>Seleccionados: <span id="featuredCount" style="color: #ff0055; font-weight: bold;">0</span> / 12</label>
               <div id="featuredSelectorGrid" class="featured-selector-grid"></div>
             </div>
             <button class="primary-btn" id="saveFeaturedBtn">Guardar Mangas Destacados</button>
             <div id="featuredStatus"></div>
         </div>
 
-        <!-- 📰 NUEVO: TAB DE NOTICIAS -->
+        <!-- 📰 TAB DE NOTICIAS -->
         <div id="newsTab" class="tab-content">
             <h1>📰 Publicar Noticia</h1>
             <div class="input-group"><label>Título de la Noticia</label><input type="text" id="newsTitle"></div>
@@ -482,7 +482,7 @@
             }
         });
 
-        // 🌟 LÓGICA DE DESTACADOS (CARGAR Y GUARDAR)
+        // 🌟 LÓGICA DE DESTACADOS (AJUSTADA A MÁXIMO 12)
         window.addEventListener('loadFeaturedSelector', async () => {
             const grid = document.getElementById('featuredSelectorGrid');
             const countLabel = document.getElementById('featuredCount');
@@ -514,9 +514,9 @@
 
             grid.querySelectorAll('.featured-checkbox').forEach(cb => {
                 cb.onchange = () => {
-                    if(document.querySelectorAll('.featured-checkbox:checked').length > 10) {
+                    if(document.querySelectorAll('.featured-checkbox:checked').length > 12) {
                         cb.checked = false;
-                        alert("Solo puedes seleccionar un máximo de 10 mangas destacados.");
+                        alert("Solo puedes seleccionar un máximo de 12 mangas destacados.");
                     }
                     updateCount();
                 };
