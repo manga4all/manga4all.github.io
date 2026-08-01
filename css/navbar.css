@@ -1,4 +1,6 @@
-/* RESET DE NAVEGACION */
+/* ==========================================
+   1. ESTILOS ORIGINALES (DESKTOP / PC)
+   ========================================== */
 .main-navbar {
     background: #070707 !important;
     height: 75px;
@@ -29,6 +31,7 @@
     width: 100%; background: #1a1a1a; border: 1px solid #333;
     padding: 10px 20px; border-radius: 25px; color: white;
     outline: none; font-size: 0.9rem; transition: 0.3s;
+    box-sizing: border-box;
 }
 .nav-search-container input:focus { border-color: #ff0055; background: #222; }
 
@@ -45,11 +48,12 @@
 .auth-modal {
     background: #111; width: 90%; max-width: 400px; padding: 40px;
     border-radius: 20px; border: 1px solid #ff0055; text-align: center; position: relative;
+    box-sizing: border-box;
 }
 .auth-input-group { margin-bottom: 15px; text-align: left; }
 .auth-input-group input { 
     width: 100%; background: #000; border: 1px solid #333; padding: 12px; 
-    border-radius: 8px; color: white; margin-top: 5px; 
+    border-radius: 8px; color: white; margin-top: 5px; box-sizing: border-box;
 }
 .close-modal { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #555; }
 
@@ -60,7 +64,6 @@
     height: 32px; 
     border-radius: 50%; 
     border: 2px solid #ff0055; 
-    /* AJUSTE PARA EVITAR DEFORMACIÓN */
     object-fit: cover; 
 }
 
@@ -79,4 +82,57 @@
     padding: 0 15px;
     color: #555;
     font-size: 0.75rem;
+}
+
+
+/* ==========================================
+   2. REGLAS EXCLUSIVAS PARA MÓVIL (< 768px)
+   ========================================== */
+@media (max-width: 768px) {
+    .main-navbar {
+        padding: 0 12px;
+        gap: 8px;
+    }
+
+    /* Reducir espacio ocupado por el logo */
+    .nav-left {
+        min-width: auto;
+        gap: 0;
+    }
+    .nav-logo {
+        font-size: 1rem;
+    }
+
+    /* Ocultar links horizontales "Inicio" y "Directorio" */
+    .nav-main-links {
+        display: none;
+    }
+
+    /* Ocultar botones/perfil de login del header principal */
+    .nav-auth-area {
+        display: none;
+    }
+
+    /* El buscador ocupa el centro sin solapar */
+    .nav-search-container {
+        position: relative;
+        left: 0;
+        transform: none;
+        width: 100%;
+        max-width: none;
+    }
+    .nav-search-container input {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* Crear botón de 3 rayas dinámico usando CSS en la esquina derecha */
+    .main-navbar::after {
+        content: "☰";
+        color: #fff;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 5px;
+        line-height: 1;
+    }
 }
