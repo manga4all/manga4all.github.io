@@ -37,14 +37,15 @@ if (navContainer) {
             </div>
             <div class="nav-auth-area" id="auth-content"></div>
 
-            <!-- BOTÓN HAMBURGUESA INTEGRADO EN EL HTML INYECTADO -->
+            <!-- BOTÓN HAMBURGUESA INTEGRADO -->
             <button class="mobile-burger-btn" id="burgerToggleBtn" aria-label="Abrir Menú">☰</button>
 
-            <!-- MENÚ FLOTANTE MÓVIL INTEGRADO -->
+            <!-- MENÚ FLOTANTE MÓVIL CON ÁREA DE LOGIN/PERFIL -->
             <div class="mobile-drawer-menu" id="mobileDrawer">
                 <div class="drawer-links">
                     <a href="${prefix}index.html">Inicio</a>
                     <a href="${prefix}directory.html">Directorio</a>
+                    <div class="mobile-auth-wrapper" id="mobile-auth-content"></div>
                 </div>
             </div>
         </nav>
@@ -158,11 +159,13 @@ if (googleBtn) {
 }
 
 function setupLogout() {
-    const btn = document.getElementById('logout');
-    if(btn) btn.onclick = (e) => {
-        e.stopPropagation();
-        signOut(auth);
-    };
+    const btns = document.querySelectorAll('.logout-action');
+    btns.forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            signOut(auth);
+        };
+    });
 }
 
 async function syncUser(user) {
@@ -182,9 +185,10 @@ async function syncUser(user) {
     }
 }
 
-// ESTADO DEL USUARIO - SE QUEDA TAL CUAL FUNCIONABA ORIGINALMENTE
+// ESTADO DEL USUARIO (SINCRONIZA ESCRITORIO Y MÓVIL)
 onAuthStateChanged(auth, async (user) => {
     const area = document.getElementById('auth-content');
+    const mobileArea = document.getElementById('mobile-auth-content');
     if (!area) return;
     
     if (user) {
@@ -207,19 +211,27 @@ onAuthStateChanged(auth, async (user) => {
             console.error("Error al obtener foto:", e);
             userImg = user.photoURL || absoluteFallback;
         }
-        
-        area.innerHTML = `
-            <div class="user-capsule" id="goToProfile" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
+
+        const userHtml = `
+            <div class="user-capsule go-to-profile" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
                 <img src="${userImg}" alt="Perfil" onerror="this.onerror=null; this.src='${absoluteFallback}';">
                 <span style="font-size:0.85rem; font-weight:bold; color:white;">${user.displayName ? user.displayName.split(' ')[0] : 'Usuario'}</span>
-                <button id="logout" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:10px; text-decoration:underline;">Salir</button>
+                <button class="logout-action" style="background:none; border:none; color:#555; cursor:pointer; font-size:0.7rem; margin-left:10px; text-decoration:underline;">Salir</button>
             </div>
         `;
+
+        area.innerHTML = userHtml;
+        if (mobileArea) mobileArea.innerHTML = userHtml;
+
+        document.querySelectorAll('.go-to-profile').forEach(el => {
+            el.onclick = () => window.location.href = `${prefix}perfil.html`;
+        });
         
-        document.getElementById('goToProfile').onclick = () => window.location.href = `${prefix}perfil.html`;
         setupLogout();
     } else {
-        area.innerHTML = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
+        const loginBtnHtml = `<button class="btn-login" onclick="openAuth()">Iniciar sesión</button>`;
+        area.innerHTML = loginBtnHtml;
+        if (mobileArea) mobileArea.innerHTML = loginBtnHtml;
     }
 });
 
